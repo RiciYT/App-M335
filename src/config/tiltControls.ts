@@ -70,12 +70,15 @@ export const TILT_CONTROLS = {
  * Values within the deadzone are set to 0.
  */
 export function applyDeadzone(value: number, deadzone: number): number {
-  if (Math.abs(value) < deadzone) {
+  // Ensure deadzone is within valid range (0 to 0.99)
+  const safeDeadzone = Math.min(Math.max(deadzone, 0), 0.99);
+  
+  if (Math.abs(value) < safeDeadzone) {
     return 0;
   }
   // Rescale the value so it starts from 0 at the deadzone boundary
   const sign = value > 0 ? 1 : -1;
-  return sign * (Math.abs(value) - deadzone) / (1 - deadzone);
+  return sign * (Math.abs(value) - safeDeadzone) / (1 - safeDeadzone);
 }
 
 /**
@@ -84,3 +87,18 @@ export function applyDeadzone(value: number, deadzone: number): number {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
+
+/**
+ * Round a value to a specified number of decimal places.
+ */
+export function roundToDecimals(value: number, decimals: number): number {
+  const multiplier = Math.pow(10, decimals);
+  return Math.round(value * multiplier) / multiplier;
+}
+
+/**
+ * Multiplier used to display force values in a more readable format.
+ * Force values are typically very small (e.g., 0.003), so we multiply by this
+ * to show them as more intuitive numbers (e.g., 3.0).
+ */
+export const FORCE_DISPLAY_MULTIPLIER = 1000;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Matter from 'matter-js';
-import { TILT_CONTROLS, applyDeadzone, clamp } from '../config/tiltControls';
+import { TILT_CONTROLS, applyDeadzone, clamp, roundToDecimals, FORCE_DISPLAY_MULTIPLIER } from '../config/tiltControls';
 
 interface GameScreenProps {
   onGameComplete: (time: number) => void;
@@ -265,7 +265,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const adjustSetting = useCallback((key: keyof typeof settings, delta: number, min: number, max: number, decimals: number = 2) => {
     setSettings(prev => ({
       ...prev,
-      [key]: Math.round(clamp(prev[key] as number + delta, min, max) * Math.pow(10, decimals)) / Math.pow(10, decimals)
+      [key]: roundToDecimals(clamp(prev[key] as number + delta, min, max), decimals)
     }));
   }, []);
 
@@ -440,7 +440,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
               {/* Max Force */}
               <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Max Force: {(settings.maxForce * 1000).toFixed(1)}</Text>
+                <Text style={styles.settingLabel}>Max Force: {(settings.maxForce * FORCE_DISPLAY_MULTIPLIER).toFixed(1)}</Text>
                 <View style={styles.adjustButtons}>
                   <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('maxForce', -0.0005, 0.001, 0.01, 4)}>
                     <Text style={styles.adjustButtonText}>−</Text>
