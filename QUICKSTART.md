@@ -12,7 +12,7 @@ npm install
 ### 2. Set Up Firebase (Required)
 Follow the detailed guide in [FIREBASE_SETUP.md](FIREBASE_SETUP.md) to:
 - Create a Firebase project
-- Enable Email/Password authentication
+- Enable Google and Anonymous authentication
 - Create a Realtime Database
 - Get your configuration keys
 
@@ -63,7 +63,7 @@ The game requires device motion sensors, so testing on a physical device is esse
 ## 🐛 Common Issues
 
 ### "Firebase Error: auth/operation-not-allowed"
-- **Fix**: Enable Email/Password authentication in Firebase Console
+- **Fix**: Enable Google and Anonymous authentication in Firebase Console
 
 ### "Permission denied" error on database
 - **Fix**: Set database rules to test mode in Firebase Console

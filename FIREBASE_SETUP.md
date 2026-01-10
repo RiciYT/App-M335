@@ -21,21 +21,14 @@ This guide will walk you through setting up Firebase for the Tilt Maze app.
 
 ## Step 3: Enable Authentication Methods
 
-### Email/Password Authentication
+### Anonymous Authentication
 
 1. In the left sidebar, click "Authentication"
 2. Click "Get started" if you haven't used Authentication before
-3. Go to the "Sign-in method" tab
-4. Click on "Email/Password"
-5. Enable the first toggle (Email/Password)
+3. In the "Sign-in method" tab
+4. Click on "Anonymous"
+5. Enable the toggle
 6. Click "Save"
-
-### Anonymous Authentication
-
-1. In the "Sign-in method" tab
-2. Click on "Anonymous"
-3. Enable the toggle
-4. Click "Save"
 
 ### Google Sign-In
 
@@ -152,9 +145,8 @@ const firebaseConfig = {
 ## Troubleshooting
 
 ### Authentication Errors
-- **"auth/operation-not-allowed"**: Make sure Email/Password is enabled in Firebase Console
-- **"auth/invalid-email"**: Check that you're using a valid email format
-- **"auth/weak-password"**: Password must be at least 6 characters
+- **"auth/operation-not-allowed"**: Make sure Google and Anonymous authentication are enabled in Firebase Console
+- **"Google Sign-In Error"**: Verify your Google OAuth client IDs are correctly configured
 
 ### Database Errors
 - **"PERMISSION_DENIED"**: Check your database security rules

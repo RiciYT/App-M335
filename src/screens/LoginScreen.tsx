@@ -2,15 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
   ActivityIndicator,
 } from 'react-native';
 import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signInAnonymously,
   GoogleAuthProvider,
   signInWithCredential,
@@ -28,8 +25,6 @@ interface LoginScreenProps {
 }
 
 export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Google Sign-In setup
@@ -55,40 +50,6 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
       onLogin();
     } catch (error: any) {
       Alert.alert('Google Sign-In Error', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      onLogin();
-    } catch (error: any) {
-      Alert.alert('Login Error', error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      onLogin();
-    } catch (error: any) {
-      Alert.alert('Sign Up Error', error.message);
     } finally {
       setLoading(false);
     }
@@ -147,37 +108,6 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
           <TouchableOpacity style={[styles.button, styles.anonymousButton]} onPress={handleAnonymousLogin}>
             <Text style={styles.buttonText}>👤 Anonymous Login</Text>
           </TouchableOpacity>
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or use email</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
-            <Text style={styles.buttonText}>Login</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.button, styles.signupButton]} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Sign Up</Text>
-          </TouchableOpacity>
         </>
       )}
     </View>
@@ -203,17 +133,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#666',
   },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
   button: {
     width: '100%',
     height: 50,
@@ -222,9 +141,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
-  },
-  signupButton: {
-    backgroundColor: '#34C759',
   },
   guestButton: {
     backgroundColor: '#FF9500',

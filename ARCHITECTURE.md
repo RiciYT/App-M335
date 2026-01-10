@@ -12,11 +12,11 @@
                ├─── Firebase Auth State Listener
                │    (Guest Mode Support)
                │
-         ┌─────┼──────┬─────────┐
-         │     │      │         │
-     Guest  Anonymous  Google   Email
-         │     │      │         │
-         └─────┴──────┴─────────┘
+         ┌─────┼──────┐
+         │     │      │
+     Guest  Anonymous  Google
+         │     │      │
+         └─────┴──────┘
                    │
                    ▼
               MenuScreen
@@ -36,14 +36,10 @@ App (Root)
 ├─ LoginScreen
 │  ├─ Button (Play as Guest)
 │  ├─ Button (Google Sign-In)
-│  ├─ Button (Anonymous Login)
-│  ├─ TextInput (email)
-│  ├─ TextInput (password)
-│  ├─ Button (Login)
-│  └─ Button (Sign Up)
+│  └─ Button (Anonymous Login)
 │
 ├─ MenuScreen
-│  ├─ Welcome Message (with nickname/email)
+│  ├─ Welcome Message (with nickname)
 │  ├─ Guest Warning (if guest)
 │  ├─ Nickname Editor (if logged in)
 │  ├─ Button (Play Game)
@@ -79,7 +75,8 @@ App (Root)
 
 ### Authentication Flow
 ```
-User Input (email/password)
+User Selects Login Option
+(Google/Anonymous/Guest)
     │
     ▼
 Firebase Auth API
@@ -180,8 +177,6 @@ Display in List
 
 #### LoginScreen
 ```typescript
-- email: string
-- password: string
 - loading: boolean
 ```
 
@@ -213,8 +208,6 @@ Display in List
 ```
 Firebase Auth Module
 │
-├─ signInWithEmailAndPassword()
-├─ createUserWithEmailAndPassword()
 ├─ signInAnonymously()
 ├─ signInWithCredential() (Google)
 ├─ signOut()
@@ -335,7 +328,7 @@ Navigation Methods:
 
 ### Screen Transitions
 ```
-Login (Guest/Anonymous/Google/Email)
+Login (Guest/Anonymous/Google)
          │
          ▼
       Menu ←→ Highscores
@@ -352,7 +345,7 @@ Login (Guest/Anonymous/Google/Email)
 ### Authentication Errors
 ```
 try {
-  await signInWithEmailAndPassword(...)
+  await signInAnonymously(...)
 } catch (error) {
   Alert.alert('Login Error', error.message)
 }
@@ -446,7 +439,6 @@ try {
 │     Firebase Services               │
 │  ┌───────────────────────────────┐  │
 │  │   Authentication               │  │
-│  │   - Email/Password             │  │
 │  │   - Google Sign-In             │  │
 │  │   - Anonymous                  │  │
 │  └───────────────────────────────┘  │
