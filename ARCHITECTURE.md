@@ -10,20 +10,23 @@
 └──────────────┬──────────────────────────────────┘
                │
                ├─── Firebase Auth State Listener
+               │    (Guest Mode Support)
                │
-        ┌──────┴──────┐
-        │             │
-    Logged Out    Logged In
-        │             │
-        ▼             ▼
-   LoginScreen    MenuScreen
-                      │
-        ┌─────────────┼─────────────┐
-        │             │             │
-        ▼             ▼             ▼
-   GameScreen   HighscoresScreen  Logout
-        │
-        └──> ResultScreen
+         ┌─────┼──────┬─────────┐
+         │     │      │         │
+     Guest  Anonymous  Google   Email
+         │     │      │         │
+         └─────┴──────┴─────────┘
+                   │
+                   ▼
+              MenuScreen
+                   │
+      ┌────────────┼─────────────┐
+      │            │             │
+      ▼            ▼             ▼
+ GameScreen  HighscoresScreen  Logout
+      │
+      └──> ResultScreen
 ```
 
 ### Component Hierarchy
@@ -31,29 +34,37 @@
 App (Root)
 │
 ├─ LoginScreen
+│  ├─ Button (Play as Guest)
+│  ├─ Button (Google Sign-In)
+│  ├─ Button (Anonymous Login)
 │  ├─ TextInput (email)
 │  ├─ TextInput (password)
 │  ├─ Button (Login)
 │  └─ Button (Sign Up)
 │
 ├─ MenuScreen
+│  ├─ Welcome Message (with nickname/email)
+│  ├─ Guest Warning (if guest)
+│  ├─ Nickname Editor (if logged in)
 │  ├─ Button (Play Game)
 │  ├─ Button (Highscores)
-│  └─ Button (Logout)
+│  └─ Button (Logout/Back)
 │
-├─ GameScreen
+├─ GameScreen (matter-js physics)
 │  ├─ Header
 │  │  ├─ Back Button
 │  │  └─ Timer Display
 │  ├─ Game Area
-│  │  ├─ Ball (animated)
-│  │  ├─ Target (green hole)
+│  │  ├─ Ball (physics body)
+│  │  ├─ Maze Walls (physics bodies)
+│  │  ├─ Target (sensor body)
 │  │  └─ Win Message (conditional)
 │  └─ Instructions
 │
 ├─ ResultScreen
 │  ├─ Time Display
-│  ├─ Save Status (loading/best/not best)
+│  ├─ Guest Warning (if guest)
+│  ├─ Save Status (loading/best/not best - logged in only)
 │  ├─ Button (Play Again)
 │  ├─ Button (View Highscores)
 │  └─ Button (Back to Menu)
@@ -61,7 +72,7 @@ App (Root)
 └─ HighscoresScreen
    ├─ Header (with Back Button)
    └─ FlatList (Top 10 Scores)
-      └─ ScoreItem (rank, email, time)
+      └─ ScoreItem (rank, nickname, time)
 ```
 
 ## Data Flow
@@ -204,6 +215,8 @@ Firebase Auth Module
 │
 ├─ signInWithEmailAndPassword()
 ├─ createUserWithEmailAndPassword()
+├─ signInAnonymously()
+├─ signInWithCredential() (Google)
 ├─ signOut()
 └─ onAuthStateChanged()
 ```
@@ -211,16 +224,24 @@ Firebase Auth Module
 ### Database Structure
 ```
 firebase-database/
+├─ users/
+│  ├─ userId1/
+│  │  └─ nickname: "CoolPlayer"
+│  └─ userId2/
+│     └─ nickname: "ProGamer"
+│
 └─ scores/
    ├─ userId1/
    │  ├─ userId: "abc123"
    │  ├─ email: "user1@example.com"
+   │  ├─ nickname: "CoolPlayer"
    │  ├─ time: 5420
    │  └─ timestamp: 1704902400000
    │
    └─ userId2/
       ├─ userId: "xyz789"
       ├─ email: "user2@example.com"
+      ├─ nickname: "ProGamer"
       ├─ time: 6150
       └─ timestamp: 1704902500000
 ```
@@ -228,51 +249,72 @@ firebase-database/
 ### Database Operations
 ```
 Write Operations:
+- set(ref(database, `users/${userId}/nickname`), nickname)
 - set(ref(database, `scores/${userId}`), scoreData)
 
 Read Operations:
 - get(ref(database, 'scores'))
 - get(ref(database, `scores/${userId}`))
+- get(ref(database, `users/${userId}/nickname`))
 ```
 
-## Physics Engine
+## Physics Engine (matter-js)
 
-### Ball Movement Calculation
+### Matter.js Integration
+```
+1. Create Engine
+   engine = Matter.Engine.create({ gravity: { x: 0, y: 0 } })
+
+2. Create Bodies
+   ├─ Ball: Matter.Bodies.circle() - dynamic body
+   ├─ Target: Matter.Bodies.circle() - static sensor
+   └─ Walls: Matter.Bodies.rectangle() - static bodies
+
+3. Add to World
+   Matter.Composite.add(engine.world, [ball, target, ...walls])
+
+4. Apply Forces (from accelerometer)
+   Matter.Body.applyForce(ball, position, { x, y })
+
+5. Collision Detection
+   Matter.Events.on(engine, 'collisionStart', callback)
+
+6. Run Physics Loop
+   Matter.Runner.run(runner, engine)
+```
+
+### Ball Movement with matter-js
 ```
 1. Get Accelerometer Data
    ├─ x: left/right tilt
    └─ y: forward/backward tilt
 
-2. Update Velocity
-   vx += x * SENSITIVITY
-   vy -= y * SENSITIVITY  // Inverted Y
+2. Apply Force to Ball
+   forceMagnitude = 0.0015
+   Matter.Body.applyForce(ball, ball.position, {
+     x: x * forceMagnitude,
+     y: -y * forceMagnitude  // Inverted Y
+   })
 
-3. Apply Friction
-   vx *= FRICTION (0.95)
-   vy *= FRICTION (0.95)
-
-4. Update Position
-   x += vx
-   y += vy
-
-5. Check Boundaries
-   if (x < BALL_RADIUS) → bounce
-   if (x > SCREEN_WIDTH) → bounce
-   if (y < BALL_RADIUS) → bounce
-   if (y > SCREEN_HEIGHT) → bounce
-
-6. Check Target Collision
-   distance = sqrt((ball.x - target.x)² + (ball.y - target.y)²)
-   if (distance < BALL_RADIUS + TARGET_RADIUS) → WIN!
+3. Physics Engine Handles:
+   - Velocity updates
+   - Friction
+   - Collision detection with walls
+   - Bouncing (restitution)
 ```
 
 ### Constants
 ```typescript
-BALL_RADIUS = 15        // Ball size
-TARGET_RADIUS = 30      // Target size
-FRICTION = 0.95         // Velocity damping
-SENSITIVITY = 20        // Accelerometer multiplier
-UPDATE_RATE = 16ms      // ~60fps
+BALL_RADIUS = 15          // Ball size
+TARGET_RADIUS = 30        // Target size
+WALL_THICKNESS = 20       // Wall thickness
+FORCE_MAGNITUDE = 0.0015  // Accelerometer force multiplier
+UPDATE_RATE = 16ms        // ~60fps
+
+// Matter.js body properties
+RESTITUTION = 0.7         // Bounciness
+FRICTION = 0.05           // Surface friction
+FRICTION_AIR = 0.02       // Air resistance
 ```
 
 ## Navigation System
@@ -286,15 +328,23 @@ Navigation Methods:
 - onNavigate(screen: string)
 - onBack() → previous screen
 - onLogin() → Menu
+- onGuestPlay() → Menu (guest mode)
 - onLogout() → Login
 - onGameComplete(time) → Result
 ```
 
 ### Screen Transitions
 ```
-Login ←→ Menu ←→ Game → Result
-              ↓           ↓
-         Highscores ←─────┘
+Login (Guest/Anonymous/Google/Email)
+         │
+         ▼
+      Menu ←→ Highscores
+         │
+         ▼
+       Game
+         │
+         ▼
+      Result
 ```
 
 ## Error Handling
@@ -357,6 +407,12 @@ try {
 // Firebase Realtime Database Rules
 {
   "rules": {
+    "users": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid"
+      }
+    },
     "scores": {
       "$uid": {
         ".read": true,
@@ -377,15 +433,22 @@ try {
 │  └───────────────────────────────┘  │
 │  ┌───────────────────────────────┐  │
 │  │      Expo Framework            │  │
-│  │  - Sensors API                 │  │
-│  │  - Status Bar                  │  │
+│  │  - expo-sensors (Accelerometer)│  │
+│  │  - expo-auth-session (Google)  │  │
+│  │  - expo-web-browser            │  │
+│  └───────────────────────────────┘  │
+│  ┌───────────────────────────────┐  │
+│  │      matter-js (2D Physics)    │  │
 │  └───────────────────────────────┘  │
 └─────────────────────────────────────┘
 
 ┌─────────────────────────────────────┐
 │     Firebase Services               │
 │  ┌───────────────────────────────┐  │
-│  │   Authentication (Email/Pass)  │  │
+│  │   Authentication               │  │
+│  │   - Email/Password             │  │
+│  │   - Google Sign-In             │  │
+│  │   - Anonymous                  │  │
 │  └───────────────────────────────┘  │
 │  ┌───────────────────────────────┐  │
 │  │   Realtime Database (NoSQL)    │  │

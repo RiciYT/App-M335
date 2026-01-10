@@ -19,7 +19,9 @@ This guide will walk you through setting up Firebase for the Tilt Maze app.
 4. Click "Register app"
 5. Copy the Firebase configuration object that appears
 
-## Step 3: Enable Email/Password Authentication
+## Step 3: Enable Authentication Methods
+
+### Email/Password Authentication
 
 1. In the left sidebar, click "Authentication"
 2. Click "Get started" if you haven't used Authentication before
@@ -27,6 +29,41 @@ This guide will walk you through setting up Firebase for the Tilt Maze app.
 4. Click on "Email/Password"
 5. Enable the first toggle (Email/Password)
 6. Click "Save"
+
+### Anonymous Authentication
+
+1. In the "Sign-in method" tab
+2. Click on "Anonymous"
+3. Enable the toggle
+4. Click "Save"
+
+### Google Sign-In
+
+1. In the "Sign-in method" tab
+2. Click on "Google"
+3. Enable the toggle
+4. Add a project support email
+5. Click "Save"
+6. **Important**: Copy the Web Client ID for your app configuration
+
+#### Configure Google OAuth for Expo
+
+1. After enabling Google Sign-In, go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Select your Firebase project
+3. Go to "APIs & Services" > "Credentials"
+4. You'll see OAuth 2.0 Client IDs created by Firebase
+5. Copy the Web Client ID
+6. Update `src/screens/LoginScreen.tsx` with your client IDs:
+
+```typescript
+const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+  clientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+  androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
+  iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
+});
+```
+
+**Note**: For development with Expo Go, you typically only need the Web Client ID.
 
 ## Step 4: Create Realtime Database
 
@@ -51,6 +88,12 @@ For production, you should secure your database. Here are recommended rules:
 ```json
 {
   "rules": {
+    "users": {
+      "$uid": {
+        ".read": true,
+        ".write": "$uid === auth.uid"
+      }
+    },
     "scores": {
       "$uid": {
         ".read": true,
@@ -62,8 +105,8 @@ For production, you should secure your database. Here are recommended rules:
 ```
 
 This ensures:
-- Anyone can read all scores (for highscores)
-- Users can only write their own score
+- Anyone can read all scores and nicknames (for highscores)
+- Users can only write their own score and nickname
 
 3. Click "Publish"
 
@@ -134,15 +177,21 @@ const firebaseConfig = {
 Your database will have this structure:
 
 ```
+users/
+  └── <userId>/
+      └── nickname: "CoolPlayer123"
+
 scores/
   └── <userId>/
       ├── userId: "abc123..."
       ├── email: "user@example.com"
+      ├── nickname: "CoolPlayer123"
       ├── time: 5420 (milliseconds)
       └── timestamp: 1704902400000
 ```
 
 Each user has one entry with their best time. When they beat their time, it gets updated.
+The nickname is stored separately in the users collection for easy updating.
 
 ## Next Steps
 

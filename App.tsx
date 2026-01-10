@@ -13,6 +13,7 @@ type Screen = 'Login' | 'Menu' | 'Game' | 'Result' | 'Highscores';
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<Screen>('Login');
   const [gameTime, setGameTime] = useState(0);
@@ -22,21 +23,29 @@ export default function App() {
       setUser(user);
       setLoading(false);
       if (user) {
+        setIsGuest(false);
         setCurrentScreen('Menu');
-      } else {
+      } else if (!isGuest) {
         setCurrentScreen('Login');
       }
     });
 
     return unsubscribe;
-  }, []);
+  }, [isGuest]);
 
   const handleLogin = () => {
+    setIsGuest(false);
+    setCurrentScreen('Menu');
+  };
+
+  const handleGuestPlay = () => {
+    setIsGuest(true);
     setCurrentScreen('Menu');
   };
 
   const handleLogout = () => {
     setUser(null);
+    setIsGuest(false);
     setCurrentScreen('Login');
   };
 
@@ -62,11 +71,16 @@ export default function App() {
       <StatusBar style="auto" />
       
       {currentScreen === 'Login' && (
-        <LoginScreen onLogin={handleLogin} />
+        <LoginScreen onLogin={handleLogin} onGuestPlay={handleGuestPlay} />
       )}
       
       {currentScreen === 'Menu' && (
-        <MenuScreen onNavigate={handleNavigate} onLogout={handleLogout} />
+        <MenuScreen 
+          onNavigate={handleNavigate} 
+          onLogout={handleLogout}
+          isGuest={isGuest}
+          user={user}
+        />
       )}
       
       {currentScreen === 'Game' && (
@@ -80,6 +94,7 @@ export default function App() {
         <ResultScreen 
           time={gameTime}
           onNavigate={handleNavigate}
+          isGuest={isGuest}
         />
       )}
       

@@ -13,16 +13,19 @@ import { auth, database } from '../config/firebase';
 interface ResultScreenProps {
   time: number;
   onNavigate: (screen: string) => void;
+  isGuest: boolean;
 }
 
-export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
+export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreenProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
 
   useEffect(() => {
-    saveScore();
-  }, []);
+    if (!isGuest) {
+      saveScore();
+    }
+  }, [isGuest]);
 
   const saveScore = async () => {
     const user = auth.currentUser;
@@ -31,6 +34,15 @@ export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
     setSaving(true);
 
     try {
+      // First get the user's nickname
+      const nicknameRef = ref(database, `users/${user.uid}/nickname`);
+      const nicknameSnapshot = await get(nicknameRef);
+      const nickname = nicknameSnapshot.exists() 
+        ? nicknameSnapshot.val() 
+        : user.isAnonymous 
+          ? 'Anonymous' 
+          : user.email || 'Player';
+
       const userScoreRef = ref(database, `scores/${user.uid}`);
       const snapshot = await get(userScoreRef);
       const existingData = snapshot.val();
@@ -40,7 +52,8 @@ export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
       if (newBest) {
         await set(userScoreRef, {
           userId: user.uid,
-          email: user.email,
+          email: user.email || 'anonymous@user.com',
+          nickname: nickname,
           time: time,
           timestamp: Date.now(),
         });
@@ -70,23 +83,32 @@ export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
         <Text style={styles.timeValue}>{formatTime(time)}</Text>
       </View>
 
-      {saving && (
-        <View style={styles.savingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.savingText}>Saving score...</Text>
+      {isGuest ? (
+        <View style={styles.guestContainer}>
+          <Text style={styles.guestText}>⚠️ Playing as Guest</Text>
+          <Text style={styles.guestSubtext}>Log in to save your highscores!</Text>
         </View>
-      )}
+      ) : (
+        <>
+          {saving && (
+            <View style={styles.savingContainer}>
+              <ActivityIndicator size="large" color="#007AFF" />
+              <Text style={styles.savingText}>Saving score...</Text>
+            </View>
+          )}
 
-      {saved && isNewBest && (
-        <View style={styles.bestContainer}>
-          <Text style={styles.bestText}>🎉 New Personal Best! 🎉</Text>
-        </View>
-      )}
+          {saved && isNewBest && (
+            <View style={styles.bestContainer}>
+              <Text style={styles.bestText}>🎉 New Personal Best! 🎉</Text>
+            </View>
+          )}
 
-      {saved && !isNewBest && (
-        <View style={styles.notBestContainer}>
-          <Text style={styles.notBestText}>Keep practicing to beat your best time!</Text>
-        </View>
+          {saved && !isNewBest && (
+            <View style={styles.notBestContainer}>
+              <Text style={styles.notBestText}>Keep practicing to beat your best time!</Text>
+            </View>
+          )}
+        </>
       )}
 
       <TouchableOpacity
@@ -94,7 +116,7 @@ export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
         onPress={() => onNavigate('Game')}
         disabled={saving}
       >
-        <Text style={styles.buttonText}>Play Again</Text>
+        <Text style={styles.buttonText}>🎮 Play Again</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -102,7 +124,7 @@ export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
         onPress={() => onNavigate('Highscores')}
         disabled={saving}
       >
-        <Text style={styles.buttonText}>View Highscores</Text>
+        <Text style={styles.buttonText}>🏆 View Highscores</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -110,7 +132,7 @@ export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
         onPress={() => onNavigate('Menu')}
         disabled={saving}
       >
-        <Text style={styles.buttonText}>Back to Menu</Text>
+        <Text style={styles.buttonText}>← Back to Menu</Text>
       </TouchableOpacity>
     </View>
   );
@@ -182,6 +204,23 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     textAlign: 'center',
+  },
+  guestContainer: {
+    backgroundColor: '#8E8E93',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  guestText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  guestSubtext: {
+    color: 'white',
+    fontSize: 14,
+    marginTop: 5,
   },
   button: {
     width: '100%',
