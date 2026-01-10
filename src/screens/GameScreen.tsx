@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
-import { Ball, Target } from '../types';
+import Matter from 'matter-js';
 
 interface GameScreenProps {
   onGameComplete: (time: number) => void;
@@ -10,69 +10,167 @@ interface GameScreenProps {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
+const GAME_AREA_HEIGHT = SCREEN_HEIGHT - 200; // Subtract header and footer
 const BALL_RADIUS = 15;
 const TARGET_RADIUS = 30;
-const FRICTION = 0.95;
-const SENSITIVITY = 20;
+const WALL_THICKNESS = 20;
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
-  const [ball, setBall] = useState<Ball>({
-    x: 50,
-    y: 50,
-    vx: 0,
-    vy: 0,
-  });
-  const [target] = useState<Target>({
-    x: SCREEN_WIDTH - 80,
-    y: SCREEN_HEIGHT - 150,
-    radius: TARGET_RADIUS,
+  const [ballPosition, setBallPosition] = useState({ x: 50, y: 50 });
+  const [targetPosition] = useState({ 
+    x: SCREEN_WIDTH - 80, 
+    y: GAME_AREA_HEIGHT - 80 
   });
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [gameWon, setGameWon] = useState(false);
-  const animationFrameId = useRef<number | null>(null);
+  
+  const engineRef = useRef<Matter.Engine | null>(null);
+  const ballRef = useRef<Matter.Body | null>(null);
+  const targetRef = useRef<Matter.Body | null>(null);
   const subscription = useRef<any>(null);
+  const runnerRef = useRef<any>(null);
 
   useEffect(() => {
+    // Create matter-js engine
+    const engine = Matter.Engine.create({
+      gravity: { x: 0, y: 0, scale: 0.001 }, // No default gravity, we control it
+    });
+    engineRef.current = engine;
+
+    // Create the ball
+    const ball = Matter.Bodies.circle(50, 50, BALL_RADIUS, {
+      restitution: 0.7, // Bounciness
+      friction: 0.05,
+      frictionAir: 0.02,
+      label: 'ball',
+    });
+    ballRef.current = ball;
+
+    // Create the target (static sensor)
+    const target = Matter.Bodies.circle(
+      SCREEN_WIDTH - 80,
+      GAME_AREA_HEIGHT - 80,
+      TARGET_RADIUS,
+      {
+        isStatic: true,
+        isSensor: true, // It doesn't collide physically
+        label: 'target',
+      }
+    );
+    targetRef.current = target;
+
+    // Create walls
+    const walls = [
+      // Top wall
+      Matter.Bodies.rectangle(
+        SCREEN_WIDTH / 2,
+        -WALL_THICKNESS / 2,
+        SCREEN_WIDTH + WALL_THICKNESS * 2,
+        WALL_THICKNESS,
+        { isStatic: true, label: 'wall' }
+      ),
+      // Bottom wall
+      Matter.Bodies.rectangle(
+        SCREEN_WIDTH / 2,
+        GAME_AREA_HEIGHT + WALL_THICKNESS / 2,
+        SCREEN_WIDTH + WALL_THICKNESS * 2,
+        WALL_THICKNESS,
+        { isStatic: true, label: 'wall' }
+      ),
+      // Left wall
+      Matter.Bodies.rectangle(
+        -WALL_THICKNESS / 2,
+        GAME_AREA_HEIGHT / 2,
+        WALL_THICKNESS,
+        GAME_AREA_HEIGHT + WALL_THICKNESS * 2,
+        { isStatic: true, label: 'wall' }
+      ),
+      // Right wall
+      Matter.Bodies.rectangle(
+        SCREEN_WIDTH + WALL_THICKNESS / 2,
+        GAME_AREA_HEIGHT / 2,
+        WALL_THICKNESS,
+        GAME_AREA_HEIGHT + WALL_THICKNESS * 2,
+        { isStatic: true, label: 'wall' }
+      ),
+      // Inner maze walls - horizontal
+      Matter.Bodies.rectangle(
+        SCREEN_WIDTH * 0.25,
+        GAME_AREA_HEIGHT * 0.3,
+        SCREEN_WIDTH * 0.4,
+        10,
+        { isStatic: true, label: 'maze-wall' }
+      ),
+      Matter.Bodies.rectangle(
+        SCREEN_WIDTH * 0.75,
+        GAME_AREA_HEIGHT * 0.5,
+        SCREEN_WIDTH * 0.4,
+        10,
+        { isStatic: true, label: 'maze-wall' }
+      ),
+      Matter.Bodies.rectangle(
+        SCREEN_WIDTH * 0.3,
+        GAME_AREA_HEIGHT * 0.7,
+        SCREEN_WIDTH * 0.5,
+        10,
+        { isStatic: true, label: 'maze-wall' }
+      ),
+    ];
+
+    // Add all bodies to the world
+    Matter.Composite.add(engine.world, [ball, target, ...walls]);
+
+    // Collision detection for winning
+    Matter.Events.on(engine, 'collisionStart', (event) => {
+      event.pairs.forEach((pair) => {
+        const { bodyA, bodyB } = pair;
+        if (
+          (bodyA.label === 'ball' && bodyB.label === 'target') ||
+          (bodyA.label === 'target' && bodyB.label === 'ball')
+        ) {
+          if (!gameWon) {
+            setGameWon(true);
+            const finalTime = Date.now() - startTime;
+            setTimeout(() => {
+              onGameComplete(finalTime);
+            }, 500);
+          }
+        }
+      });
+    });
+
+    // Start the physics engine
+    const runner = Matter.Runner.create();
+    runnerRef.current = runner;
+    Matter.Runner.run(runner, engine);
+
+    // Update ball position for rendering
+    const updatePosition = () => {
+      if (ballRef.current) {
+        setBallPosition({
+          x: ballRef.current.position.x,
+          y: ballRef.current.position.y,
+        });
+      }
+      if (!gameWon) {
+        requestAnimationFrame(updatePosition);
+      }
+    };
+    requestAnimationFrame(updatePosition);
+
     // Subscribe to accelerometer
     subscription.current = Accelerometer.addListener((accelerometerData) => {
       const { x, y } = accelerometerData;
       
-      setBall((prevBall) => {
-        let newVx = prevBall.vx + x * SENSITIVITY;
-        let newVy = prevBall.vy - y * SENSITIVITY; // Inverted Y axis
-
-        // Apply friction
-        newVx *= FRICTION;
-        newVy *= FRICTION;
-
-        let newX = prevBall.x + newVx;
-        let newY = prevBall.y + newVy;
-
-        // Boundary collision
-        if (newX - BALL_RADIUS < 0) {
-          newX = BALL_RADIUS;
-          newVx = -newVx * 0.7;
-        } else if (newX + BALL_RADIUS > SCREEN_WIDTH) {
-          newX = SCREEN_WIDTH - BALL_RADIUS;
-          newVx = -newVx * 0.7;
-        }
-
-        if (newY - BALL_RADIUS < 0) {
-          newY = BALL_RADIUS;
-          newVy = -newVy * 0.7;
-        } else if (newY + BALL_RADIUS > SCREEN_HEIGHT - 100) {
-          newY = SCREEN_HEIGHT - 100 - BALL_RADIUS;
-          newVy = -newVy * 0.7;
-        }
-
-        return {
-          x: newX,
-          y: newY,
-          vx: newVx,
-          vy: newVy,
-        };
-      });
+      if (ballRef.current && engineRef.current) {
+        // Apply force based on device tilt
+        const forceMagnitude = 0.0015;
+        Matter.Body.applyForce(ballRef.current, ballRef.current.position, {
+          x: x * forceMagnitude,
+          y: -y * forceMagnitude, // Inverted Y axis
+        });
+      }
     });
 
     Accelerometer.setUpdateInterval(16); // ~60fps
@@ -81,8 +179,14 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       if (subscription.current) {
         subscription.current.remove();
       }
+      if (runnerRef.current) {
+        Matter.Runner.stop(runnerRef.current);
+      }
+      if (engineRef.current) {
+        Matter.Engine.clear(engineRef.current);
+      }
     };
-  }, []);
+  }, [gameWon, onGameComplete, startTime]);
 
   // Timer update
   useEffect(() => {
@@ -95,28 +199,18 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     }
   }, [gameWon, startTime]);
 
-  // Check for collision with target
-  useEffect(() => {
-    if (!gameWon) {
-      const distance = Math.sqrt(
-        Math.pow(ball.x - target.x, 2) + Math.pow(ball.y - target.y, 2)
-      );
-
-      if (distance < BALL_RADIUS + target.radius) {
-        setGameWon(true);
-        const finalTime = Date.now() - startTime;
-        setTimeout(() => {
-          onGameComplete(finalTime);
-        }, 500);
-      }
-    }
-  }, [ball, target, gameWon, startTime, onGameComplete]);
-
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
     const milliseconds = Math.floor((ms % 1000) / 10);
     return `${seconds}.${milliseconds.toString().padStart(2, '0')}s`;
   };
+
+  // Get maze wall positions for rendering
+  const mazeWalls = [
+    { x: SCREEN_WIDTH * 0.25 - (SCREEN_WIDTH * 0.4) / 2, y: GAME_AREA_HEIGHT * 0.3 - 5, width: SCREEN_WIDTH * 0.4, height: 10 },
+    { x: SCREEN_WIDTH * 0.75 - (SCREEN_WIDTH * 0.4) / 2, y: GAME_AREA_HEIGHT * 0.5 - 5, width: SCREEN_WIDTH * 0.4, height: 10 },
+    { x: SCREEN_WIDTH * 0.3 - (SCREEN_WIDTH * 0.5) / 2, y: GAME_AREA_HEIGHT * 0.7 - 5, width: SCREEN_WIDTH * 0.5, height: 10 },
+  ];
 
   return (
     <View style={styles.container}>
@@ -127,17 +221,33 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         <Text style={styles.timer}>{formatTime(elapsedTime)}</Text>
       </View>
 
-      <View style={styles.gameArea}>
+      <View style={[styles.gameArea, { height: GAME_AREA_HEIGHT }]}>
+        {/* Maze Walls */}
+        {mazeWalls.map((wall, index) => (
+          <View
+            key={`wall-${index}`}
+            style={[
+              styles.mazeWall,
+              {
+                left: wall.x,
+                top: wall.y,
+                width: wall.width,
+                height: wall.height,
+              },
+            ]}
+          />
+        ))}
+
         {/* Target */}
         <View
           style={[
             styles.target,
             {
-              left: target.x - target.radius,
-              top: target.y - target.radius,
-              width: target.radius * 2,
-              height: target.radius * 2,
-              borderRadius: target.radius,
+              left: targetPosition.x - TARGET_RADIUS,
+              top: targetPosition.y - TARGET_RADIUS,
+              width: TARGET_RADIUS * 2,
+              height: TARGET_RADIUS * 2,
+              borderRadius: TARGET_RADIUS,
             },
           ]}
         />
@@ -147,8 +257,8 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
           style={[
             styles.ball,
             {
-              left: ball.x - BALL_RADIUS,
-              top: ball.y - BALL_RADIUS,
+              left: ballPosition.x - BALL_RADIUS,
+              top: ballPosition.y - BALL_RADIUS,
               width: BALL_RADIUS * 2,
               height: BALL_RADIUS * 2,
               borderRadius: BALL_RADIUS,
@@ -165,7 +275,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
       <View style={styles.instructions}>
         <Text style={styles.instructionText}>Tilt your device to move the ball</Text>
-        <Text style={styles.instructionText}>Guide it into the green target!</Text>
+        <Text style={styles.instructionText}>Navigate through the maze to the green target!</Text>
       </View>
     </View>
   );
@@ -219,6 +329,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
     borderWidth: 3,
     borderColor: '#34C759',
+  },
+  mazeWall: {
+    position: 'absolute',
+    backgroundColor: '#333',
+    borderRadius: 2,
   },
   winMessage: {
     position: 'absolute',

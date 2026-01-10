@@ -1,12 +1,18 @@
 # Tilt Maze
 
-A React Native game built with Expo where you control a ball by tilting your device using the gyroscope/accelerometer. Guide the ball to the target hole and compete for the best time!
+A React Native game built with Expo where you control a ball by tilting your device using the gyroscope/accelerometer. Navigate through a maze, guide the ball to the target hole, and compete for the best time!
 
 ## Features
 
-- **Device Motion Control**: Tilt your device to control the ball
-- **Firebase Authentication**: Secure user login and signup
-- **Firebase Realtime Database**: Store and retrieve best times per user
+- **Physics Engine**: Uses matter-js for realistic 2D physics (ball, walls, collisions)
+- **Device Motion Control**: Tilt your device to control the ball via accelerometer
+- **Firebase Authentication**: Multiple login options:
+  - Google Sign-In
+  - Anonymous login
+  - Email/Password
+  - **Guest Mode**: Play without any login (scores not saved)
+- **Nickname System**: Logged-in users can set a display name
+- **Firebase Realtime Database**: Store and retrieve best times for logged-in users
 - **Highscores**: View top 10 fastest times globally
 - **Multiple Screens**: Login, Menu, Game, Result, and Highscores
 
@@ -14,9 +20,11 @@ A React Native game built with Expo where you control a ball by tilting your dev
 
 - React Native with Expo
 - TypeScript
-- Firebase Authentication
+- matter-js (2D physics engine)
+- Firebase Authentication (Google, Anonymous, Email/Password)
 - Firebase Realtime Database
 - Expo Sensors (Accelerometer)
+- Expo Auth Session (Google Sign-In)
 - React Hooks
 
 ## Setup Instructions
@@ -30,9 +38,11 @@ npm install
 ### 2. Configure Firebase
 
 1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable **Email/Password Authentication**:
+2. Enable Authentication methods:
    - Go to Authentication > Sign-in method
-   - Enable Email/Password
+   - Enable **Email/Password**
+   - Enable **Anonymous**
+   - Enable **Google** (for Google Sign-In)
 3. Create a **Realtime Database**:
    - Go to Realtime Database
    - Create database in test mode
@@ -54,6 +64,10 @@ const firebaseConfig = {
 };
 ```
 
+6. For Google Sign-In, update `src/screens/LoginScreen.tsx` with your Google Client IDs.
+
+See [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for detailed instructions.
+
 ### 3. Run the App
 
 **For Android:**
@@ -73,12 +87,18 @@ npm run web
 
 ## How to Play
 
-1. **Login/Sign Up**: Create an account or log in with existing credentials
-2. **Play Game**: From the menu, tap "Play Game"
-3. **Tilt to Control**: Tilt your device to move the blue ball
-4. **Reach the Target**: Guide the ball into the green target hole
-5. **Beat Your Time**: Try to complete the game as fast as possible
-6. **View Highscores**: Check out the top 10 fastest times
+1. **Choose Your Mode**: 
+   - Play as Guest (scores not saved)
+   - Sign in with Google
+   - Login anonymously
+   - Use email/password
+2. **Set Nickname** (optional, logged-in users only)
+3. **Play Game**: From the menu, tap "Play Game"
+4. **Tilt to Control**: Tilt your device to move the blue ball
+5. **Navigate the Maze**: Avoid walls and find your way through
+6. **Reach the Target**: Guide the ball into the green target hole
+7. **Beat Your Time**: Try to complete the game as fast as possible
+8. **View Highscores**: Check out the top 10 fastest times
 
 ## Project Structure
 
@@ -89,9 +109,9 @@ App-M335/
 │   ├── config/
 │   │   └── firebase.ts     # Firebase configuration
 │   ├── screens/
-│   │   ├── LoginScreen.tsx    # Login/Signup screen
-│   │   ├── MenuScreen.tsx     # Main menu
-│   │   ├── GameScreen.tsx     # Game with ball physics
+│   │   ├── LoginScreen.tsx    # Login/Signup/Guest screen
+│   │   ├── MenuScreen.tsx     # Main menu with nickname
+│   │   ├── GameScreen.tsx     # Game with matter-js physics
 │   │   ├── ResultScreen.tsx   # Post-game results
 │   │   └── HighscoresScreen.tsx  # Top scores
 │   └── types/
@@ -103,19 +123,26 @@ App-M335/
 ## Game Mechanics
 
 - Ball is controlled by device accelerometer
-- Physics include velocity, friction, and boundary collision
+- Uses matter-js physics engine for realistic movement
+- Maze walls create obstacles to navigate around
+- Physics include velocity, friction, restitution (bounce), and collision
 - Timer starts when game begins
 - Game completes when ball reaches target
-- Best time per user is saved to Firebase
+- Best time per user is saved to Firebase (logged-in users only)
 - Only personal bests are stored (overwrites if improved)
 
 ## Firebase Database Structure
 
 ```
+users/
+  └── userId/
+      └── nickname: "CoolPlayer"
+
 scores/
   ├── userId1/
   │   ├── userId: "userId1"
   │   ├── email: "user@example.com"
+  │   ├── nickname: "CoolPlayer"
   │   ├── time: 5420
   │   └── timestamp: 1704902400000
   └── userId2/

@@ -57,11 +57,14 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     else if (index === 1) rankStyle = styles.rank2;
     else if (index === 2) rankStyle = styles.rank3;
 
+    // Display nickname if available, otherwise email
+    const displayName = item.nickname || item.email || 'Anonymous';
+
     return (
       <View style={[styles.scoreItem, rankStyle]}>
         <Text style={styles.rank}>#{index + 1}</Text>
         <View style={styles.scoreInfo}>
-          <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
+          <Text style={styles.email} numberOfLines={1}>{displayName}</Text>
           <Text style={styles.time}>{formatTime(item.time)}</Text>
         </View>
       </View>
