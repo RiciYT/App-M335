@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Matter from 'matter-js';
+import { TILT_CONTROLS, applyDeadzone, clamp, roundToDecimals, FORCE_DISPLAY_MULTIPLIER } from '../config/tiltControls';
 
 interface GameScreenProps {
   onGameComplete: (time: number) => void;
@@ -24,12 +25,33 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [gameWon, setGameWon] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  
+  // Tilt control settings (can be adjusted in-game)
+  const [settings, setSettings] = useState({
+    invertX: TILT_CONTROLS.INVERT_X,
+    invertY: TILT_CONTROLS.INVERT_Y,
+    sensitivity: TILT_CONTROLS.SENSITIVITY,
+    deadzone: TILT_CONTROLS.DEADZONE,
+    smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
+    maxForce: TILT_CONTROLS.MAX_FORCE,
+    updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
+  });
   
   const engineRef = useRef<Matter.Engine | null>(null);
   const ballRef = useRef<Matter.Body | null>(null);
   const targetRef = useRef<Matter.Body | null>(null);
   const subscription = useRef<any>(null);
   const runnerRef = useRef<any>(null);
+  
+  // Smoothed sensor values (for low-pass filter)
+  const smoothedValues = useRef({ x: 0, y: 0 });
+  
+  // Reference to current settings for use in sensor callback
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   useEffect(() => {
     // Create matter-js engine
@@ -159,21 +181,50 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     };
     requestAnimationFrame(updatePosition);
 
-    // Subscribe to accelerometer
+    // Subscribe to accelerometer with improved controls
     subscription.current = Accelerometer.addListener((accelerometerData) => {
       const { x, y } = accelerometerData;
+      const currentSettings = settingsRef.current;
       
       if (ballRef.current && engineRef.current) {
-        // Apply force based on device tilt
-        const forceMagnitude = 0.0015;
+        // Apply low-pass filter for smoothing
+        const alpha = currentSettings.smoothingAlpha;
+        smoothedValues.current.x = alpha * x + (1 - alpha) * smoothedValues.current.x;
+        smoothedValues.current.y = alpha * y + (1 - alpha) * smoothedValues.current.y;
+        
+        // Apply deadzone to filtered values
+        let filteredX = applyDeadzone(smoothedValues.current.x, currentSettings.deadzone);
+        let filteredY = applyDeadzone(smoothedValues.current.y, currentSettings.deadzone);
+        
+        // Apply inversion for natural control feel
+        // When INVERT_X is true: tilting phone left (negative accelerometer X) moves ball left
+        // When INVERT_Y is true: tilting phone forward (positive accelerometer Y) moves ball up (negative screen Y)
+        if (currentSettings.invertX) {
+          filteredX = -filteredX;
+        }
+        if (currentSettings.invertY) {
+          filteredY = -filteredY;
+        }
+        
+        // Calculate force with sensitivity scaling
+        const baseForceMagnitude = TILT_CONTROLS.BASE_FORCE_MAGNITUDE;
+        let forceX = filteredX * baseForceMagnitude * currentSettings.sensitivity;
+        let forceY = filteredY * baseForceMagnitude * currentSettings.sensitivity;
+        
+        // Clamp force to maximum
+        forceX = clamp(forceX, -currentSettings.maxForce, currentSettings.maxForce);
+        forceY = clamp(forceY, -currentSettings.maxForce, currentSettings.maxForce);
+        
+        // Apply force to ball
         Matter.Body.applyForce(ballRef.current, ballRef.current.position, {
-          x: x * forceMagnitude,
-          y: -y * forceMagnitude, // Inverted Y axis
+          x: forceX,
+          y: forceY,
         });
       }
     });
 
-    Accelerometer.setUpdateInterval(16); // ~60fps
+    // Use configured update interval for stability
+    Accelerometer.setUpdateInterval(settings.updateInterval);
 
     return () => {
       if (subscription.current) {
@@ -187,6 +238,11 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       }
     };
   }, [gameWon, onGameComplete, startTime]);
+
+  // Update accelerometer interval when setting changes
+  useEffect(() => {
+    Accelerometer.setUpdateInterval(settings.updateInterval);
+  }, [settings.updateInterval]);
 
   // Timer update
   useEffect(() => {
@@ -205,6 +261,35 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     return `${seconds}.${milliseconds.toString().padStart(2, '0')}s`;
   };
 
+  // Settings adjustment helpers
+  const adjustSetting = useCallback((key: keyof typeof settings, delta: number, min: number, max: number, decimals: number = 2) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: roundToDecimals(clamp(prev[key] as number + delta, min, max), decimals)
+    }));
+  }, []);
+
+  const toggleSetting = useCallback((key: 'invertX' | 'invertY') => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  }, []);
+
+  const resetSettings = useCallback(() => {
+    setSettings({
+      invertX: TILT_CONTROLS.INVERT_X,
+      invertY: TILT_CONTROLS.INVERT_Y,
+      sensitivity: TILT_CONTROLS.SENSITIVITY,
+      deadzone: TILT_CONTROLS.DEADZONE,
+      smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
+      maxForce: TILT_CONTROLS.MAX_FORCE,
+      updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
+    });
+    // Reset smoothed values when resetting settings
+    smoothedValues.current = { x: 0, y: 0 };
+  }, []);
+
   // Get maze wall positions for rendering
   const mazeWalls = [
     { x: SCREEN_WIDTH * 0.25 - (SCREEN_WIDTH * 0.4) / 2, y: GAME_AREA_HEIGHT * 0.3 - 5, width: SCREEN_WIDTH * 0.4, height: 10 },
@@ -219,6 +304,9 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.timer}>{formatTime(elapsedTime)}</Text>
+        <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
+          <Text style={styles.settingsButtonText}>⚙️</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={[styles.gameArea, { height: GAME_AREA_HEIGHT }]}>
@@ -277,6 +365,117 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         <Text style={styles.instructionText}>Tilt your device to move the ball</Text>
         <Text style={styles.instructionText}>Navigate through the maze to the green target!</Text>
       </View>
+
+      {/* Settings Modal */}
+      <Modal
+        visible={showSettings}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowSettings(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Tilt Control Settings</Text>
+            
+            <ScrollView style={styles.settingsList}>
+              {/* Inversion Settings */}
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Invert X-axis</Text>
+                <TouchableOpacity 
+                  style={[styles.toggleButton, settings.invertX && styles.toggleButtonActive]}
+                  onPress={() => toggleSetting('invertX')}
+                >
+                  <Text style={styles.toggleButtonText}>{settings.invertX ? 'ON' : 'OFF'}</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Invert Y-axis</Text>
+                <TouchableOpacity 
+                  style={[styles.toggleButton, settings.invertY && styles.toggleButtonActive]}
+                  onPress={() => toggleSetting('invertY')}
+                >
+                  <Text style={styles.toggleButtonText}>{settings.invertY ? 'ON' : 'OFF'}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Sensitivity */}
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Sensitivity: {settings.sensitivity.toFixed(1)}</Text>
+                <View style={styles.adjustButtons}>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('sensitivity', -0.1, 0.3, 3.0, 1)}>
+                    <Text style={styles.adjustButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('sensitivity', 0.1, 0.3, 3.0, 1)}>
+                    <Text style={styles.adjustButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Deadzone */}
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Deadzone: {settings.deadzone.toFixed(2)}</Text>
+                <View style={styles.adjustButtons}>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('deadzone', -0.01, 0.01, 0.15, 2)}>
+                    <Text style={styles.adjustButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('deadzone', 0.01, 0.01, 0.15, 2)}>
+                    <Text style={styles.adjustButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Smoothing */}
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Smoothing: {settings.smoothingAlpha.toFixed(2)}</Text>
+                <View style={styles.adjustButtons}>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('smoothingAlpha', -0.05, 0.1, 0.8, 2)}>
+                    <Text style={styles.adjustButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('smoothingAlpha', 0.05, 0.1, 0.8, 2)}>
+                    <Text style={styles.adjustButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Max Force */}
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Max Force: {(settings.maxForce * FORCE_DISPLAY_MULTIPLIER).toFixed(1)}</Text>
+                <View style={styles.adjustButtons}>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('maxForce', -0.0005, 0.001, 0.01, 4)}>
+                    <Text style={styles.adjustButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('maxForce', 0.0005, 0.001, 0.01, 4)}>
+                    <Text style={styles.adjustButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Update Interval */}
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>Update Interval: {settings.updateInterval}ms</Text>
+                <View style={styles.adjustButtons}>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('updateInterval', -10, 20, 100, 0)}>
+                    <Text style={styles.adjustButtonText}>−</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('updateInterval', 10, 20, 100, 0)}>
+                    <Text style={styles.adjustButtonText}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.resetButton} onPress={resetSettings}>
+                <Text style={styles.resetButtonText}>Reset to Defaults</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.closeButton} onPress={() => setShowSettings(false)}>
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -362,5 +561,109 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginBottom: 5,
+  },
+  settingsButton: {
+    padding: 10,
+  },
+  settingsButtonText: {
+    fontSize: 24,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 20,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 15,
+    color: '#333',
+  },
+  settingsList: {
+    maxHeight: 350,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  settingLabel: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  toggleButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#ccc',
+    minWidth: 70,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#34C759',
+  },
+  toggleButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  adjustButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  adjustButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  adjustButtonText: {
+    color: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    gap: 10,
+  },
+  resetButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: '#FF9500',
+    alignItems: 'center',
+  },
+  resetButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  closeButton: {
+    flex: 1,
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
