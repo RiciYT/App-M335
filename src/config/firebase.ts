@@ -3,7 +3,8 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 
 // Firebase configuration
-// Note: Replace with your actual Firebase config
+// TODO: Replace with your actual Firebase config from Firebase Console
+// See FIREBASE_SETUP.md for detailed instructions on getting these values
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -16,5 +17,7 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+
+// Export Firebase services for use throughout the app
 export const auth = getAuth(app);
 export const database = getDatabase(app);
