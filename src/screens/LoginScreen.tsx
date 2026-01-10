@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import {
   signInWithEmailAndPassword,
