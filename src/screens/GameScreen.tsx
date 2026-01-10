@@ -239,6 +239,11 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     };
   }, [gameWon, onGameComplete, startTime]);
 
+  // Update accelerometer interval when setting changes
+  useEffect(() => {
+    Accelerometer.setUpdateInterval(settings.updateInterval);
+  }, [settings.updateInterval]);
+
   // Timer update
   useEffect(() => {
     if (!gameWon) {
