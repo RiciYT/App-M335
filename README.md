@@ -9,7 +9,6 @@ A React Native game built with Expo where you control a ball by tilting your dev
 - **Firebase Authentication**: Multiple login options:
   - Google Sign-In
   - Anonymous login
-  - Email/Password
   - **Guest Mode**: Play without any login (scores not saved)
 - **Nickname System**: Logged-in users can set a display name
 - **Firebase Realtime Database**: Store and retrieve best times for logged-in users
@@ -21,7 +20,7 @@ A React Native game built with Expo where you control a ball by tilting your dev
 - React Native with Expo
 - TypeScript
 - matter-js (2D physics engine)
-- Firebase Authentication (Google, Anonymous, Email/Password)
+- Firebase Authentication (Google, Anonymous)
 - Firebase Realtime Database
 - Expo Sensors (Accelerometer)
 - Expo Auth Session (Google Sign-In)
@@ -40,7 +39,6 @@ npm install
 1. Create a new Firebase project at [Firebase Console](https://console.firebase.google.com/)
 2. Enable Authentication methods:
    - Go to Authentication > Sign-in method
-   - Enable **Email/Password**
    - Enable **Anonymous**
    - Enable **Google** (for Google Sign-In)
 3. Create a **Realtime Database**:

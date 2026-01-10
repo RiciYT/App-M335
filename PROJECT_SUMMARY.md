@@ -16,7 +16,7 @@ A complete Expo React Native Android game application where players control a ba
 ### 🏗️ Architecture
 
 #### Screens (5)
-1. **LoginScreen** - Firebase Email/Password authentication with signup
+1. **LoginScreen** - Firebase authentication with Google, Anonymous, and Guest modes
 2. **MenuScreen** - Navigation hub with logout functionality
 3. **GameScreen** - Real-time physics-based gameplay with accelerometer
 4. **ResultScreen** - Post-game results with Firebase score saving
@@ -74,8 +74,9 @@ Menu → Play Game → Game Screen
 
 #### Implemented
 - Firebase Authentication for user verification
-- Secure password handling (min 6 characters)
-- Email validation
+- Google Sign-In
+- Anonymous login
+- Guest mode for testing
 - Database rules ready for production setup
 
 #### Verified
@@ -111,7 +112,8 @@ Accelerometer.addListener((data) => {
 #### Firebase Integration
 ```typescript
 // Authentication
-signInWithEmailAndPassword(auth, email, password)
+signInAnonymously(auth)
+signInWithCredential(auth, googleCredential)
 
 // Database Operations
 set(ref(database, `scores/${userId}`), scoreData)
