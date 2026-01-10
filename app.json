@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TiltMaze",
-    "slug": "TiltMaze",
+    "slug": "app-m335",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -32,6 +32,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ea02cbdc-02ce-4529-a804-2cfd1dcc00c9"
+      }
+    },
+    "owner": "riciyt"
   }
 }
