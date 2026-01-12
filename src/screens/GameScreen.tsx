@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { Accelerometer } from 'expo-sensors';
 import Matter from 'matter-js';
-import { TILT_CONTROLS, applyDeadzone, clamp, roundToDecimals, FORCE_DISPLAY_MULTIPLIER } from '../config/tiltControls';
+import { TILT_CONTROLS, applyDeadzone, clamp, roundToDecimals } from '../config/tiltControls';
 
 interface GameScreenProps {
   onGameComplete: (time: number) => void;
@@ -34,7 +34,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     sensitivity: TILT_CONTROLS.SENSITIVITY,
     deadzone: TILT_CONTROLS.DEADZONE,
     smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
-    maxForce: TILT_CONTROLS.MAX_FORCE,
     updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
   });
   
@@ -182,7 +181,9 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     requestAnimationFrame(updatePosition);
 
     // Subscribe to accelerometer with improved controls
+    // Uses ONLY x and y axes - z axis is explicitly ignored for 2D maze control
     subscription.current = Accelerometer.addListener((accelerometerData) => {
+      // Only use x and y axes; z axis is ignored for 2D maze game
       const { x, y } = accelerometerData;
       const currentSettings = settingsRef.current;
       
@@ -192,13 +193,13 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         smoothedValues.current.x = alpha * x + (1 - alpha) * smoothedValues.current.x;
         smoothedValues.current.y = alpha * y + (1 - alpha) * smoothedValues.current.y;
         
-        // Apply deadzone to filtered values
+        // Apply deadzone to filtered values to ignore small movements
         let filteredX = applyDeadzone(smoothedValues.current.x, currentSettings.deadzone);
         let filteredY = applyDeadzone(smoothedValues.current.y, currentSettings.deadzone);
         
         // Apply inversion for natural control feel
-        // When INVERT_X is true: tilting phone left (negative accelerometer X) moves ball left
-        // When INVERT_Y is true: tilting phone forward (positive accelerometer Y) moves ball up (negative screen Y)
+        // x axis → left / right movement
+        // y axis → forward / backward movement (inverted so tilting forward moves ball forward/up)
         if (currentSettings.invertX) {
           filteredX = -filteredX;
         }
@@ -206,20 +207,18 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
           filteredY = -filteredY;
         }
         
-        // Calculate force with sensitivity scaling
-        const baseForceMagnitude = TILT_CONTROLS.BASE_FORCE_MAGNITUDE;
-        let forceX = filteredX * baseForceMagnitude * currentSettings.sensitivity;
-        let forceY = filteredY * baseForceMagnitude * currentSettings.sensitivity;
+        // Clamp max tilt values before applying sensitivity
+        const maxTilt = 1.0;
+        filteredX = clamp(filteredX, -maxTilt, maxTilt);
+        filteredY = clamp(filteredY, -maxTilt, maxTilt);
         
-        // Clamp force to maximum
-        forceX = clamp(forceX, -currentSettings.maxForce, currentSettings.maxForce);
-        forceY = clamp(forceY, -currentSettings.maxForce, currentSettings.maxForce);
+        // Apply sensitivity scaling
+        let gravityX = filteredX * currentSettings.sensitivity;
+        let gravityY = filteredY * currentSettings.sensitivity;
         
-        // Apply force to ball
-        Matter.Body.applyForce(ballRef.current, ballRef.current.position, {
-          x: forceX,
-          y: forceY,
-        });
+        // Control ball by setting Matter.js gravity based on accelerometer x/y
+        engineRef.current.gravity.x = gravityX;
+        engineRef.current.gravity.y = gravityY;
       }
     });
 
@@ -283,7 +282,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       sensitivity: TILT_CONTROLS.SENSITIVITY,
       deadzone: TILT_CONTROLS.DEADZONE,
       smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
-      maxForce: TILT_CONTROLS.MAX_FORCE,
       updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
     });
     // Reset smoothed values when resetting settings
@@ -433,19 +431,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                     <Text style={styles.adjustButtonText}>−</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('smoothingAlpha', 0.05, 0.1, 0.8, 2)}>
-                    <Text style={styles.adjustButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Max Force */}
-              <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Max Force: {(settings.maxForce * FORCE_DISPLAY_MULTIPLIER).toFixed(1)}</Text>
-                <View style={styles.adjustButtons}>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('maxForce', -0.0005, 0.001, 0.01, 4)}>
-                    <Text style={styles.adjustButtonText}>−</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('maxForce', 0.0005, 0.001, 0.01, 4)}>
                     <Text style={styles.adjustButtonText}>+</Text>
                   </TouchableOpacity>
                 </View>
