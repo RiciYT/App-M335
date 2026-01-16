@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Matter from 'matter-js';
 import { useTiltControl, DEFAULT_TILT_SETTINGS, TiltSettings } from '../hooks/useTiltControl';
 import { TILT_CONTROLS, clamp, roundToDecimals } from '../config/tiltControls';

@@ -4,8 +4,8 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   signInAnonymously,
   GoogleAuthProvider,
