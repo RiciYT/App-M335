@@ -8,8 +8,9 @@ import MenuScreen from './src/screens/MenuScreen';
 import GameScreen from './src/screens/GameScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import HighscoresScreen from './src/screens/HighscoresScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 
-type Screen = 'Login' | 'Menu' | 'Game' | 'Result' | 'Highscores';
+type Screen = 'Login' | 'Menu' | 'Game' | 'Result' | 'Highscores' | 'Settings';
 
 export default function App() {
   const [user, setUser] = useState<any>(null);
@@ -100,6 +101,14 @@ export default function App() {
       
       {currentScreen === 'Highscores' && (
         <HighscoresScreen onBack={() => handleNavigate('Menu')} />
+      )}
+      
+      {currentScreen === 'Settings' && (
+        <SettingsScreen 
+          onBack={() => handleNavigate('Menu')} 
+          isGuest={isGuest}
+          onLogout={handleLogout}
+        />
       )}
     </View>
   );

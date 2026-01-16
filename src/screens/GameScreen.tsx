@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
-import { Accelerometer } from 'expo-sensors';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView, SafeAreaView } from 'react-native';
 import Matter from 'matter-js';
-import { TILT_CONTROLS, applyDeadzone, clamp, roundToDecimals } from '../config/tiltControls';
+import { useTiltControl, DEFAULT_TILT_SETTINGS, TiltSettings } from '../hooks/useTiltControl';
+import { TILT_CONTROLS, clamp, roundToDecimals } from '../config/tiltControls';
 
 interface GameScreenProps {
   onGameComplete: (time: number) => void;
@@ -26,38 +26,29 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [elapsedTime, setElapsedTime] = useState(0);
   const [gameWon, setGameWon] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [engine, setEngine] = useState<Matter.Engine | null>(null);
   
-  // Tilt control settings (can be adjusted in-game)
-  const [settings, setSettings] = useState({
-    invertX: TILT_CONTROLS.INVERT_X,
-    invertY: TILT_CONTROLS.INVERT_Y,
-    sensitivity: TILT_CONTROLS.SENSITIVITY,
-    deadzone: TILT_CONTROLS.DEADZONE,
-    smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
-    updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
+  // Tilt control settings (X-axis only)
+  const [settings, setSettings] = useState<TiltSettings>({
+    ...DEFAULT_TILT_SETTINGS,
   });
   
-  const engineRef = useRef<Matter.Engine | null>(null);
   const ballRef = useRef<Matter.Body | null>(null);
   const targetRef = useRef<Matter.Body | null>(null);
-  const subscription = useRef<any>(null);
-  const runnerRef = useRef<any>(null);
-  
-  // Smoothed sensor values (for low-pass filter)
-  const smoothedValues = useRef({ x: 0, y: 0 });
-  
-  // Reference to current settings for use in sensor callback
-  const settingsRef = useRef(settings);
-  useEffect(() => {
-    settingsRef.current = settings;
-  }, [settings]);
+  const runnerRef = useRef<Matter.Runner | null>(null);
+
+  // Use the tilt control hook (X-axis only)
+  useTiltControl({
+    engine,
+    enabled: !gameWon && engine !== null,
+    settings,
+  });
 
   useEffect(() => {
-    // Create matter-js engine
-    const engine = Matter.Engine.create({
-      gravity: { x: 0, y: 0, scale: 0.001 }, // No default gravity, we control it
+    // Create matter-js engine with constant downward gravity
+    const newEngine = Matter.Engine.create({
+      gravity: { x: 0, y: TILT_CONTROLS.CONSTANT_GRAVITY_Y, scale: 0.001 },
     });
-    engineRef.current = engine;
 
     // Create the ball
     const ball = Matter.Bodies.circle(50, 50, BALL_RADIUS, {
@@ -140,10 +131,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     ];
 
     // Add all bodies to the world
-    Matter.Composite.add(engine.world, [ball, target, ...walls]);
+    Matter.Composite.add(newEngine.world, [ball, target, ...walls]);
 
     // Collision detection for winning
-    Matter.Events.on(engine, 'collisionStart', (event) => {
+    Matter.Events.on(newEngine, 'collisionStart', (event) => {
       event.pairs.forEach((pair) => {
         const { bodyA, bodyB } = pair;
         if (
@@ -164,7 +155,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     // Start the physics engine
     const runner = Matter.Runner.create();
     runnerRef.current = runner;
-    Matter.Runner.run(runner, engine);
+    Matter.Runner.run(runner, newEngine);
+    
+    // Set engine state to trigger tilt control hook
+    setEngine(newEngine);
 
     // Update ball position for rendering
     const updatePosition = () => {
@@ -180,68 +174,14 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     };
     requestAnimationFrame(updatePosition);
 
-    // Subscribe to accelerometer with improved controls
-    // Uses ONLY x and y axes - z axis is explicitly ignored for 2D maze control
-    subscription.current = Accelerometer.addListener((accelerometerData) => {
-      // Only use x and y axes; z axis is ignored for 2D maze game
-      const { x, y } = accelerometerData;
-      const currentSettings = settingsRef.current;
-      
-      if (ballRef.current && engineRef.current) {
-        // Apply low-pass filter for smoothing
-        const alpha = currentSettings.smoothingAlpha;
-        smoothedValues.current.x = alpha * x + (1 - alpha) * smoothedValues.current.x;
-        smoothedValues.current.y = alpha * y + (1 - alpha) * smoothedValues.current.y;
-        
-        // Apply deadzone to filtered values to ignore small movements
-        let filteredX = applyDeadzone(smoothedValues.current.x, currentSettings.deadzone);
-        let filteredY = applyDeadzone(smoothedValues.current.y, currentSettings.deadzone);
-        
-        // Apply inversion for natural control feel
-        // x axis → left / right movement
-        // y axis → forward / backward movement (inverted so tilting forward moves ball forward/up)
-        if (currentSettings.invertX) {
-          filteredX = -filteredX;
-        }
-        if (currentSettings.invertY) {
-          filteredY = -filteredY;
-        }
-        
-        // Clamp max tilt values before applying sensitivity
-        const maxTilt = 1.0;
-        filteredX = clamp(filteredX, -maxTilt, maxTilt);
-        filteredY = clamp(filteredY, -maxTilt, maxTilt);
-        
-        // Apply sensitivity scaling
-        let gravityX = filteredX * currentSettings.sensitivity;
-        let gravityY = filteredY * currentSettings.sensitivity;
-        
-        // Control ball by setting Matter.js gravity based on accelerometer x/y
-        engineRef.current.gravity.x = gravityX;
-        engineRef.current.gravity.y = gravityY;
-      }
-    });
-
-    // Use configured update interval for stability
-    Accelerometer.setUpdateInterval(settings.updateInterval);
-
     return () => {
-      if (subscription.current) {
-        subscription.current.remove();
-      }
       if (runnerRef.current) {
         Matter.Runner.stop(runnerRef.current);
       }
-      if (engineRef.current) {
-        Matter.Engine.clear(engineRef.current);
-      }
+      Matter.Engine.clear(newEngine);
+      setEngine(null);
     };
   }, [gameWon, onGameComplete, startTime]);
-
-  // Update accelerometer interval when setting changes
-  useEffect(() => {
-    Accelerometer.setUpdateInterval(settings.updateInterval);
-  }, [settings.updateInterval]);
 
   // Timer update
   useEffect(() => {
@@ -260,32 +200,23 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     return `${seconds}.${milliseconds.toString().padStart(2, '0')}s`;
   };
 
-  // Settings adjustment helpers
-  const adjustSetting = useCallback((key: keyof typeof settings, delta: number, min: number, max: number, decimals: number = 2) => {
+  // Settings adjustment helpers (X-axis only)
+  const adjustSetting = useCallback((key: keyof TiltSettings, delta: number, min: number, max: number, decimals: number = 2) => {
     setSettings(prev => ({
       ...prev,
-      [key]: roundToDecimals(clamp(prev[key] as number + delta, min, max), decimals)
+      [key]: roundToDecimals(clamp((prev[key] as number) + delta, min, max), decimals)
     }));
   }, []);
 
-  const toggleSetting = useCallback((key: 'invertX' | 'invertY') => {
+  const toggleInvertX = useCallback(() => {
     setSettings(prev => ({
       ...prev,
-      [key]: !prev[key]
+      invertX: !prev.invertX
     }));
   }, []);
 
   const resetSettings = useCallback(() => {
-    setSettings({
-      invertX: TILT_CONTROLS.INVERT_X,
-      invertY: TILT_CONTROLS.INVERT_Y,
-      sensitivity: TILT_CONTROLS.SENSITIVITY,
-      deadzone: TILT_CONTROLS.DEADZONE,
-      smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
-      updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
-    });
-    // Reset smoothed values when resetting settings
-    smoothedValues.current = { x: 0, y: 0 };
+    setSettings({ ...DEFAULT_TILT_SETTINGS });
   }, []);
 
   // Get maze wall positions for rendering
@@ -296,12 +227,19 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   ];
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      {/* Modern Header with Timer Pill */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.timer}>{formatTime(elapsedTime)}</Text>
+        
+        {/* Timer as prominent pill/chip */}
+        <View style={styles.timerPill}>
+          <Text style={styles.timerIcon}>⏱</Text>
+          <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
+        </View>
+        
         <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
           <Text style={styles.settingsButtonText}>⚙️</Text>
         </TouchableOpacity>
@@ -354,17 +292,25 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
         {gameWon && (
           <View style={styles.winMessage}>
-            <Text style={styles.winText}>You Won!</Text>
+            <Text style={styles.winText}>🎉</Text>
+            <Text style={styles.winSubtext}>You Won!</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.instructions}>
-        <Text style={styles.instructionText}>Tilt your device to move the ball</Text>
-        <Text style={styles.instructionText}>Navigate through the maze to the green target!</Text>
+      {/* Modern Help Card */}
+      <View style={styles.helpCard}>
+        <View style={styles.helpRow}>
+          <Text style={styles.helpIcon}>📱</Text>
+          <Text style={styles.helpText}>Tilt left/right to move the ball</Text>
+        </View>
+        <View style={styles.helpRow}>
+          <Text style={styles.helpIcon}>🎯</Text>
+          <Text style={styles.helpText}>Reach the green target!</Text>
+        </View>
       </View>
 
-      {/* Settings Modal */}
+      {/* Settings Modal - X-axis only */}
       <Modal
         visible={showSettings}
         animationType="slide"
@@ -373,33 +319,30 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Tilt Control Settings</Text>
+            <Text style={styles.modalTitle}>Tilt Settings</Text>
+            <Text style={styles.modalSubtitle}>Adjust horizontal (left/right) controls</Text>
             
             <ScrollView style={styles.settingsList}>
-              {/* Inversion Settings */}
+              {/* Inversion Setting - X-axis only */}
               <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Invert X-axis</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>Invert Direction</Text>
+                  <Text style={styles.settingHint}>Swap left/right movement</Text>
+                </View>
                 <TouchableOpacity 
                   style={[styles.toggleButton, settings.invertX && styles.toggleButtonActive]}
-                  onPress={() => toggleSetting('invertX')}
+                  onPress={toggleInvertX}
                 >
                   <Text style={styles.toggleButtonText}>{settings.invertX ? 'ON' : 'OFF'}</Text>
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Invert Y-axis</Text>
-                <TouchableOpacity 
-                  style={[styles.toggleButton, settings.invertY && styles.toggleButtonActive]}
-                  onPress={() => toggleSetting('invertY')}
-                >
-                  <Text style={styles.toggleButtonText}>{settings.invertY ? 'ON' : 'OFF'}</Text>
-                </TouchableOpacity>
-              </View>
-
               {/* Sensitivity */}
               <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Sensitivity: {settings.sensitivity.toFixed(1)}</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>Sensitivity</Text>
+                  <Text style={styles.settingHint}>{settings.sensitivity.toFixed(1)}x</Text>
+                </View>
                 <View style={styles.adjustButtons}>
                   <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('sensitivity', -0.1, 0.3, 3.0, 1)}>
                     <Text style={styles.adjustButtonText}>−</Text>
@@ -412,7 +355,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
               {/* Deadzone */}
               <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Deadzone: {settings.deadzone.toFixed(2)}</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>Deadzone</Text>
+                  <Text style={styles.settingHint}>{settings.deadzone.toFixed(2)}</Text>
+                </View>
                 <View style={styles.adjustButtons}>
                   <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('deadzone', -0.01, 0.01, 0.15, 2)}>
                     <Text style={styles.adjustButtonText}>−</Text>
@@ -425,7 +371,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
               {/* Smoothing */}
               <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Smoothing: {settings.smoothingAlpha.toFixed(2)}</Text>
+                <View style={styles.settingInfo}>
+                  <Text style={styles.settingLabel}>Smoothing</Text>
+                  <Text style={styles.settingHint}>{settings.smoothingAlpha.toFixed(2)}</Text>
+                </View>
                 <View style={styles.adjustButtons}>
                   <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('smoothingAlpha', -0.05, 0.1, 0.8, 2)}>
                     <Text style={styles.adjustButtonText}>−</Text>
@@ -435,63 +384,79 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                   </TouchableOpacity>
                 </View>
               </View>
-
-              {/* Update Interval */}
-              <View style={styles.settingRow}>
-                <Text style={styles.settingLabel}>Update Interval: {settings.updateInterval}ms</Text>
-                <View style={styles.adjustButtons}>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('updateInterval', -10, 20, 100, 0)}>
-                    <Text style={styles.adjustButtonText}>−</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('updateInterval', 10, 20, 100, 0)}>
-                    <Text style={styles.adjustButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
             </ScrollView>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity style={styles.resetButton} onPress={resetSettings}>
-                <Text style={styles.resetButtonText}>Reset to Defaults</Text>
+                <Text style={styles.resetButtonText}>Reset</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.closeButton} onPress={() => setShowSettings(false)}>
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text style={styles.closeButtonText}>Done</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
-    backgroundColor: 'white',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#E5E7EB',
   },
   backButton: {
-    padding: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   backButtonText: {
-    fontSize: 18,
-    color: '#007AFF',
-    fontWeight: 'bold',
+    fontSize: 20,
+    color: '#374151',
+    fontWeight: '600',
   },
-  timer: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+  timerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
+    gap: 6,
+  },
+  timerIcon: {
+    fontSize: 16,
+  },
+  timerText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#4F46E5',
+    fontVariant: ['tabular-nums'],
+  },
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsButtonText: {
+    fontSize: 20,
   },
   gameArea: {
     flex: 1,
@@ -500,58 +465,72 @@ const styles = StyleSheet.create({
   },
   ball: {
     position: 'absolute',
-    backgroundColor: '#007AFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
+    backgroundColor: '#3B82F6',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
   },
   target: {
     position: 'absolute',
-    backgroundColor: '#34C759',
-    opacity: 0.5,
+    backgroundColor: '#10B981',
+    opacity: 0.6,
     borderWidth: 3,
-    borderColor: '#34C759',
+    borderColor: '#059669',
   },
   mazeWall: {
     position: 'absolute',
-    backgroundColor: '#333',
-    borderRadius: 2,
+    backgroundColor: '#1F2937',
+    borderRadius: 4,
   },
   winMessage: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -100 }, { translateY: -50 }],
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    padding: 20,
-    borderRadius: 10,
-    width: 200,
+    transform: [{ translateX: -80 }, { translateY: -60 }],
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 20,
+    width: 160,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
   },
   winText: {
-    color: 'white',
-    fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 48,
+    marginBottom: 8,
   },
-  instructions: {
-    padding: 20,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
-  instructionText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  settingsButton: {
-    padding: 10,
-  },
-  settingsButtonText: {
+  winSubtext: {
+    color: '#10B981',
     fontSize: 24,
+    fontWeight: '700',
+  },
+  helpCard: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    gap: 8,
+  },
+  helpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  helpIcon: {
+    fontSize: 16,
+    width: 24,
+    textAlign: 'center',
+  },
+  helpText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   modalOverlay: {
     flex: 1,
@@ -560,95 +539,110 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 24,
     width: '90%',
-    maxHeight: '80%',
+    maxHeight: '70%',
   },
   modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 15,
-    color: '#333',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   settingsList: {
-    maxHeight: 350,
+    maxHeight: 280,
   },
   settingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F3F4F6',
+  },
+  settingInfo: {
+    flex: 1,
   },
   settingLabel: {
     fontSize: 16,
-    color: '#333',
-    flex: 1,
+    color: '#111827',
+    fontWeight: '600',
+  },
+  settingHint: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginTop: 2,
   },
   toggleButton: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#ccc',
+    backgroundColor: '#E5E7EB',
     minWidth: 70,
   },
   toggleButtonActive: {
-    backgroundColor: '#34C759',
+    backgroundColor: '#10B981',
   },
   toggleButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '700',
     textAlign: 'center',
+    fontSize: 14,
   },
   adjustButtons: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   adjustButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#4F46E5',
     justifyContent: 'center',
     alignItems: 'center',
   },
   adjustButtonText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   modalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
-    gap: 10,
+    marginTop: 24,
+    gap: 12,
   },
   resetButton: {
     flex: 1,
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: '#FF9500',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
     alignItems: 'center',
   },
   resetButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: '#D97706',
+    fontWeight: '700',
     fontSize: 16,
   },
   closeButton: {
     flex: 1,
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#4F46E5',
     alignItems: 'center',
   },
   closeButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '700',
     fontSize: 16,
   },
 });
