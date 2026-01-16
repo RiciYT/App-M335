@@ -28,7 +28,8 @@ export const auth = initializeAuth(app, {
 export const database = getDatabase(app);
 
 // Analytics initialization - only on web platform
-let analytics: ReturnType<typeof import('firebase/analytics').getAnalytics> | null = null;
+// Analytics type is dynamically loaded only on web to avoid bundling on native
+let analytics: unknown = null;
 
 const initAnalytics = async () => {
   if (Platform.OS === 'web') {
