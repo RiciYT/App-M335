@@ -133,6 +133,10 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
         <Text style={styles.buttonText}>🏆 Highscores</Text>
       </TouchableOpacity>
 
+      <TouchableOpacity style={[styles.button, styles.settingsMenuButton]} onPress={() => onNavigate('Settings')}>
+        <Text style={styles.buttonText}>⚙️ Settings</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
         <Text style={styles.buttonText}>{isGuest ? '← Back to Login' : '🚪 Logout'}</Text>
       </TouchableOpacity>
@@ -232,11 +236,14 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 15,
+  },
+  settingsMenuButton: {
+    backgroundColor: '#6B7280',
   },
   logoutButton: {
     backgroundColor: '#FF3B30',
-    marginTop: 20,
+    marginTop: 10,
   },
   buttonText: {
     color: 'white',

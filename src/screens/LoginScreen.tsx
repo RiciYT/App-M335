@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Alert,
   ActivityIndicator,
+  SafeAreaView,
 } from 'react-native';
 import {
   signInAnonymously,
@@ -15,6 +14,7 @@ import {
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { auth } from '../config/firebase';
+import { PrimaryButton, SecondaryButton, Divider, Toast } from '../components/ui';
 
 // Required for Google Sign-In on web
 WebBrowser.maybeCompleteAuthSession();
@@ -26,9 +26,14 @@ interface LoginScreenProps {
 
 export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState<'guest' | 'google' | 'anonymous' | null>(null);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'error' | 'success' | 'info' }>({
+    visible: false,
+    message: '',
+    type: 'info',
+  });
 
   // Google Sign-In setup
-  // Note: Replace with your actual Google client IDs from Firebase Console > Authentication > Sign-in method > Google
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com',
     androidClientId: 'YOUR_GOOGLE_ANDROID_CLIENT_ID.apps.googleusercontent.com',
@@ -42,135 +47,189 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
     }
   }, [response]);
 
+  const showToast = (message: string, type: 'error' | 'success' | 'info' = 'error') => {
+    setToast({ visible: true, message, type });
+  };
+
   const handleGoogleCredential = async (idToken: string) => {
     setLoading(true);
+    setLoadingType('google');
     try {
       const credential = GoogleAuthProvider.credential(idToken);
       await signInWithCredential(auth, credential);
       onLogin();
-    } catch (error: any) {
-      Alert.alert('Google Sign-In Error', error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
   const handleAnonymousLogin = async () => {
     setLoading(true);
+    setLoadingType('anonymous');
     try {
       await signInAnonymously(auth);
       onLogin();
-    } catch (error: any) {
-      Alert.alert('Anonymous Login Error', error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      showToast(errorMessage, 'error');
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    setLoadingType('google');
     try {
       await promptAsync();
-    } catch (error: any) {
-      Alert.alert('Google Sign-In Error', error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      showToast(errorMessage, 'error');
+      setLoadingType(null);
     }
   };
 
+  const handleGuestPlay = () => {
+    setLoadingType('guest');
+    // Small delay to show visual feedback
+    setTimeout(() => {
+      onGuestPlay();
+    }, 100);
+  };
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tilt Maze</Text>
-      <Text style={styles.subtitle}>Guide the ball to the target!</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <Toast
+          visible={toast.visible}
+          message={toast.message}
+          type={toast.type}
+          onHide={() => setToast({ ...toast, visible: false })}
+        />
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#007AFF" />
-      ) : (
-        <>
-          {/* Guest Play Button - Most prominent */}
-          <TouchableOpacity style={[styles.button, styles.guestButton]} onPress={onGuestPlay}>
-            <Text style={styles.buttonText}>🎮 Play as Guest</Text>
-          </TouchableOpacity>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Tilt Maze</Text>
+          <Text style={styles.subtitle}>
+            Guide the ball through the maze{'\n'}by tilting your device
+          </Text>
+        </View>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or login to save scores</Text>
-            <View style={styles.dividerLine} />
-          </View>
+        {/* Main Content */}
+        <View style={styles.content}>
+          {loading && loadingType !== 'guest' ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF9500" />
+              <Text style={styles.loadingText}>Signing in...</Text>
+            </View>
+          ) : (
+            <>
+              {/* Primary CTA - Play as Guest */}
+              <PrimaryButton
+                title="Play as Guest"
+                icon="🎮"
+                onPress={handleGuestPlay}
+                disabled={loading}
+                loading={loadingType === 'guest'}
+              />
 
-          {/* Google Sign-In Button */}
-          <TouchableOpacity
-            style={[styles.button, styles.googleButton]}
-            onPress={handleGoogleSignIn}
-            disabled={!request}
-          >
-            <Text style={styles.buttonText}>🔵 Sign in with Google</Text>
-          </TouchableOpacity>
+              {/* Divider */}
+              <Divider text="or login to save scores" />
 
-          {/* Anonymous Login Button */}
-          <TouchableOpacity style={[styles.button, styles.anonymousButton]} onPress={handleAnonymousLogin}>
-            <Text style={styles.buttonText}>👤 Anonymous Login</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+              {/* Login Options */}
+              <View style={styles.loginOptions}>
+                <SecondaryButton
+                  title="Continue with Google"
+                  icon="🔵"
+                  variant="google"
+                  onPress={handleGoogleSignIn}
+                  disabled={!request || loading}
+                  loading={loadingType === 'google'}
+                  style={styles.loginButton}
+                />
+
+                <SecondaryButton
+                  title="Anonymous Login"
+                  icon="👤"
+                  variant="anonymous"
+                  onPress={handleAnonymousLogin}
+                  disabled={loading}
+                  loading={loadingType === 'anonymous'}
+                  style={styles.loginButton}
+                />
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>
+            Tilt left/right to control the ball
+          </Text>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 40,
+    paddingBottom: 24,
+  },
+  header: {
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 20,
+    marginBottom: 48,
   },
   title: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
+    fontSize: 44,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 12,
+    letterSpacing: -1,
   },
   subtitle: {
-    fontSize: 18,
-    marginBottom: 30,
-    color: '#666',
+    fontSize: 17,
+    color: '#6B7280',
+    textAlign: 'center',
+    lineHeight: 24,
   },
-  button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#007AFF',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  guestButton: {
-    backgroundColor: '#FF9500',
-    marginBottom: 10,
-  },
-  googleButton: {
-    backgroundColor: '#4285F4',
-  },
-  anonymousButton: {
-    backgroundColor: '#8E8E93',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-    width: '100%',
-  },
-  dividerLine: {
+  content: {
     flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
+    justifyContent: 'center',
   },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#666',
+  loadingContainer: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  loginOptions: {
+    gap: 12,
+  },
+  loginButton: {
+    marginBottom: 0,
+  },
+  footer: {
+    alignItems: 'center',
+    paddingTop: 24,
+  },
+  footerText: {
     fontSize: 14,
+    color: '#9CA3AF',
+    textAlign: 'center',
   },
 });

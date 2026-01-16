@@ -1,22 +1,21 @@
 /**
  * Tilt Control Configuration
  * 
- * Adjust these values to tune the ball movement behavior.
- * These settings make the controls feel natural and responsive.
+ * This game uses ONLY X-axis (left/right) tilt for horizontal ball movement.
+ * Gravity is constant downward - forward/backward tilting does NOT affect the ball.
  */
 
 export const TILT_CONTROLS = {
   /**
-   * Control Inversion
+   * Control Inversion (X-axis only)
    * When true, tilting the phone left moves the ball left (natural behavior).
    * The accelerometer by default reports values that feel "reversed".
    */
   INVERT_X: true,  // Invert X-axis: tilting left moves ball left
-  INVERT_Y: true,  // Invert Y-axis: tilting forward moves ball forward (up)
 
   /**
-   * Sensitivity
-   * Higher values = faster ball movement. Range: 0.5 - 3.0 recommended.
+   * Sensitivity (X-axis only)
+   * Higher values = faster horizontal ball movement. Range: 0.5 - 3.0 recommended.
    * Default: 1.0
    */
   SENSITIVITY: 1.0,
@@ -31,7 +30,7 @@ export const TILT_CONTROLS = {
 
   /**
    * Smoothing Alpha (Low-pass filter coefficient)
-   * Controls how much smoothing is applied to sensor readings.
+   * Controls how much smoothing is applied to X-axis sensor readings.
    * Lower values = more smoothing (smoother but less responsive).
    * Higher values = less smoothing (more responsive but more jittery).
    * Range: 0.1 - 0.5 recommended.
@@ -40,12 +39,12 @@ export const TILT_CONTROLS = {
   SMOOTHING_ALPHA: 0.3,
 
   /**
-   * Maximum Force
-   * Clamps the maximum force applied to the ball to prevent
-   * uncontrollable acceleration. Range: 0.001 - 0.005 recommended.
-   * Default: 0.003
+   * Constant Gravity (Y-axis)
+   * The constant downward force applied to the ball.
+   * This is NOT affected by device tilt.
+   * Default: 0.8
    */
-  MAX_FORCE: 0.003,
+  CONSTANT_GRAVITY_Y: 0.8,
 
   /**
    * Update Interval (milliseconds)
@@ -55,14 +54,6 @@ export const TILT_CONTROLS = {
    * Default: 50 (20 updates per second)
    */
   UPDATE_INTERVAL: 50,
-
-  /**
-   * Base Force Magnitude
-   * The base multiplier for converting sensor values to force.
-   * This is scaled by SENSITIVITY.
-   * Default: 0.0015
-   */
-  BASE_FORCE_MAGNITUDE: 0.0015,
 };
 
 /**
@@ -97,8 +88,11 @@ export function roundToDecimals(value: number, decimals: number): number {
 }
 
 /**
- * Multiplier used to display force values in a more readable format.
- * Force values are typically very small (e.g., 0.003), so we multiply by this
- * to show them as more intuitive numbers (e.g., 3.0).
+ * Low-pass filter (lerp) for smoothing sensor values.
+ * @param current The current smoothed value
+ * @param target The new raw sensor value
+ * @param alpha Smoothing factor (0-1). Higher = more responsive, lower = smoother
  */
-export const FORCE_DISPLAY_MULTIPLIER = 1000;
+export function lerp(current: number, target: number, alpha: number): number {
+  return current + alpha * (target - current);
+}
