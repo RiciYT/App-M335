@@ -26,30 +26,29 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [elapsedTime, setElapsedTime] = useState(0);
   const [gameWon, setGameWon] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [engine, setEngine] = useState<Matter.Engine | null>(null);
   
   // Tilt control settings (X-axis only)
   const [settings, setSettings] = useState<TiltSettings>({
     ...DEFAULT_TILT_SETTINGS,
   });
   
-  const engineRef = useRef<Matter.Engine | null>(null);
   const ballRef = useRef<Matter.Body | null>(null);
   const targetRef = useRef<Matter.Body | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
 
   // Use the tilt control hook (X-axis only)
   useTiltControl({
-    engine: engineRef.current,
-    enabled: !gameWon,
+    engine,
+    enabled: !gameWon && engine !== null,
     settings,
   });
 
   useEffect(() => {
     // Create matter-js engine with constant downward gravity
-    const engine = Matter.Engine.create({
+    const newEngine = Matter.Engine.create({
       gravity: { x: 0, y: TILT_CONTROLS.CONSTANT_GRAVITY_Y, scale: 0.001 },
     });
-    engineRef.current = engine;
 
     // Create the ball
     const ball = Matter.Bodies.circle(50, 50, BALL_RADIUS, {
@@ -132,10 +131,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     ];
 
     // Add all bodies to the world
-    Matter.Composite.add(engine.world, [ball, target, ...walls]);
+    Matter.Composite.add(newEngine.world, [ball, target, ...walls]);
 
     // Collision detection for winning
-    Matter.Events.on(engine, 'collisionStart', (event) => {
+    Matter.Events.on(newEngine, 'collisionStart', (event) => {
       event.pairs.forEach((pair) => {
         const { bodyA, bodyB } = pair;
         if (
@@ -156,7 +155,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     // Start the physics engine
     const runner = Matter.Runner.create();
     runnerRef.current = runner;
-    Matter.Runner.run(runner, engine);
+    Matter.Runner.run(runner, newEngine);
+    
+    // Set engine state to trigger tilt control hook
+    setEngine(newEngine);
 
     // Update ball position for rendering
     const updatePosition = () => {
@@ -176,9 +178,8 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       if (runnerRef.current) {
         Matter.Runner.stop(runnerRef.current);
       }
-      if (engineRef.current) {
-        Matter.Engine.clear(engineRef.current);
-      }
+      Matter.Engine.clear(newEngine);
+      setEngine(null);
     };
   }, [gameWon, onGameComplete, startTime]);
 

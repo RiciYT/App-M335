@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ interface AppSettings {
 }
 
 const SETTINGS_KEY = '@tiltmaze_settings';
+const APP_VERSION = '1.0.0';
 
 const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
@@ -38,15 +39,35 @@ const DEFAULT_SETTINGS: AppSettings = {
 export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsScreenProps) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitializedRef = useRef(false);
 
   // Load settings on mount
   useEffect(() => {
     loadSettings();
+    return () => {
+      // Clean up timeout on unmount
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, []);
 
-  // Save settings whenever they change
+  // Debounced save settings whenever they change (after initial load)
   useEffect(() => {
-    saveSettings();
+    if (!isInitializedRef.current) {
+      return;
+    }
+    
+    // Debounce saves to avoid excessive AsyncStorage writes
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      saveSettings();
+    }, 500);
   }, [settings]);
 
   const loadSettings = async () => {
@@ -55,16 +76,21 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
       if (storedSettings) {
         setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(storedSettings) });
       }
+      isInitializedRef.current = true;
     } catch (error) {
       console.error('Error loading settings:', error);
+      isInitializedRef.current = true;
     }
   };
 
   const saveSettings = async () => {
     try {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      setSaveError(false);
     } catch (error) {
       console.error('Error saving settings:', error);
+      setSaveError(true);
+      Alert.alert('Error', 'Failed to save settings. Please try again.');
     }
   };
 
@@ -262,7 +288,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
 
         {/* App Info */}
         <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>Tilt Maze v1.0.0</Text>
+          <Text style={styles.appInfoText}>Tilt Maze v{APP_VERSION}</Text>
           <Text style={styles.appInfoSubtext}>Tilt left/right only • Gravity pulls down</Text>
         </View>
       </ScrollView>
