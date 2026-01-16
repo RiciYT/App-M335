@@ -180,7 +180,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F0F4F8',
   },
   container: {
     flex: 1,

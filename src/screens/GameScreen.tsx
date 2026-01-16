@@ -405,7 +405,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F0F4F8',
   },
   header: {
     flexDirection: 'row',
