@@ -4,6 +4,12 @@ import { signOut } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 import { auth, database } from '../config/firebase';
 
+// UI Constants
+const BUTTON_ICONS = {
+  SAVE: '✓',
+  CANCEL: '✕',
+} as const;
+
 interface MenuScreenProps {
   onNavigate: (screen: string) => void;
   onLogout: () => void;
@@ -104,7 +110,7 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
                 />
                 <View style={styles.nicknameButtons}>
                   <TouchableOpacity style={styles.saveButton} onPress={saveNickname}>
-                    <Text style={styles.smallButtonText}>✓ Save</Text>
+                    <Text style={styles.smallButtonText}>{BUTTON_ICONS.SAVE} Save</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.cancelButton} 
@@ -113,7 +119,7 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
                       setEditingNickname(false);
                     }}
                   >
-                    <Text style={styles.smallButtonText}>✕ Cancel</Text>
+                    <Text style={styles.smallButtonText}>{BUTTON_ICONS.CANCEL} Cancel</Text>
                   </TouchableOpacity>
                 </View>
               </View>

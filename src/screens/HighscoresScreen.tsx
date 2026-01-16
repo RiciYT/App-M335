@@ -11,6 +11,13 @@ import { ref, get } from 'firebase/database';
 import { database } from '../config/firebase';
 import { GameScore } from '../types';
 
+// Medal constants for top 3 positions
+const MEDALS = {
+  FIRST: '🥇',
+  SECOND: '🥈',
+  THIRD: '🥉',
+} as const;
+
 interface HighscoresScreenProps {
   onBack: () => void;
 }
@@ -56,11 +63,13 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     const displayName = item.nickname || item.email || 'Anonymous';
     
     // Medal emojis for top 3
-    const getMedalIcon = (rank: number) => {
-      if (rank === 0) return '🥇';
-      if (rank === 1) return '🥈';
-      if (rank === 2) return '🥉';
-      return null;
+    const getMedalIcon = (rank: number): string | null => {
+      switch (rank) {
+        case 0: return MEDALS.FIRST;
+        case 1: return MEDALS.SECOND;
+        case 2: return MEDALS.THIRD;
+        default: return null;
+      }
     };
 
     const medal = getMedalIcon(index);
