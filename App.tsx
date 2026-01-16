@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/config/firebase';
 import LoginScreen from './src/screens/LoginScreen';
@@ -68,49 +69,51 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      
-      {currentScreen === 'Login' && (
-        <LoginScreen onLogin={handleLogin} onGuestPlay={handleGuestPlay} />
-      )}
-      
-      {currentScreen === 'Menu' && (
-        <MenuScreen 
-          onNavigate={handleNavigate} 
-          onLogout={handleLogout}
-          isGuest={isGuest}
-          user={user}
-        />
-      )}
-      
-      {currentScreen === 'Game' && (
-        <GameScreen 
-          onGameComplete={handleGameComplete}
-          onBack={() => handleNavigate('Menu')}
-        />
-      )}
-      
-      {currentScreen === 'Result' && (
-        <ResultScreen 
-          time={gameTime}
-          onNavigate={handleNavigate}
-          isGuest={isGuest}
-        />
-      )}
-      
-      {currentScreen === 'Highscores' && (
-        <HighscoresScreen onBack={() => handleNavigate('Menu')} />
-      )}
-      
-      {currentScreen === 'Settings' && (
-        <SettingsScreen 
-          onBack={() => handleNavigate('Menu')} 
-          isGuest={isGuest}
-          onLogout={handleLogout}
-        />
-      )}
-    </View>
+    <SafeAreaProvider>
+      <View style={styles.container}>
+        <StatusBar style="auto" />
+        
+        {currentScreen === 'Login' && (
+          <LoginScreen onLogin={handleLogin} onGuestPlay={handleGuestPlay} />
+        )}
+        
+        {currentScreen === 'Menu' && (
+          <MenuScreen 
+            onNavigate={handleNavigate} 
+            onLogout={handleLogout}
+            isGuest={isGuest}
+            user={user}
+          />
+        )}
+        
+        {currentScreen === 'Game' && (
+          <GameScreen 
+            onGameComplete={handleGameComplete}
+            onBack={() => handleNavigate('Menu')}
+          />
+        )}
+        
+        {currentScreen === 'Result' && (
+          <ResultScreen 
+            time={gameTime}
+            onNavigate={handleNavigate}
+            isGuest={isGuest}
+          />
+        )}
+        
+        {currentScreen === 'Highscores' && (
+          <HighscoresScreen onBack={() => handleNavigate('Menu')} />
+        )}
+        
+        {currentScreen === 'Settings' && (
+          <SettingsScreen 
+            onBack={() => handleNavigate('Menu')} 
+            isGuest={isGuest}
+            onLogout={handleLogout}
+          />
+        )}
+      </View>
+    </SafeAreaProvider>
   );
 }
 

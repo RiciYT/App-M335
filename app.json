@@ -3,6 +3,7 @@
     "name": "TiltMaze",
     "slug": "app-m335",
     "version": "1.0.0",
+    "scheme": "tiltmaze",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,6 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.riciyt.tiltmaze",
       "infoPlist": {
         "NSMotionUsageDescription": "This app uses motion sensors to control the game ball."
       }
