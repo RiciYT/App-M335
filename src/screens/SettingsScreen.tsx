@@ -299,7 +299,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F0F4F8',
   },
   header: {
     flexDirection: 'row',

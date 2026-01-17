@@ -4,6 +4,12 @@ import { signOut } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 import { auth, database } from '../config/firebase';
 
+// UI Constants
+const BUTTON_ICONS = {
+  SAVE: '✓',
+  CANCEL: '✕',
+} as const;
+
 interface MenuScreenProps {
   onNavigate: (screen: string) => void;
   onLogout: () => void;
@@ -73,73 +79,105 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tilt Maze</Text>
-      <Text style={styles.subtitle}>Guide the ball to the target!</Text>
+      {/* Header Section with modern card */}
+      <View style={styles.headerCard}>
+        <Text style={styles.title}>🎯 Tilt Maze</Text>
+        <Text style={styles.subtitle}>Guide the ball to the target!</Text>
+        
+        <View style={styles.userInfoCard}>
+          <Text style={styles.welcomeLabel}>Welcome back</Text>
+          <Text style={styles.welcomeText}>{getUserDisplayName()}</Text>
+          {isGuest && (
+            <View style={styles.guestBadge}>
+              <Text style={styles.guestBadgeIcon}>⚠️</Text>
+              <Text style={styles.guestBadgeText}>Guest Mode - Scores not saved</Text>
+            </View>
+          )}
+        </View>
 
-      <View style={styles.userInfo}>
-        <Text style={styles.welcomeText}>Welcome, {getUserDisplayName()}!</Text>
-        {isGuest && (
-          <Text style={styles.guestWarning}>
-            ⚠️ Playing as guest - scores won't be saved
-          </Text>
+        {/* Nickname Section - Only for logged-in users */}
+        {!isGuest && user && (
+          <View style={styles.nicknameSection}>
+            {editingNickname ? (
+              <View style={styles.nicknameEdit}>
+                <TextInput
+                  style={styles.nicknameInput}
+                  placeholder="Enter nickname"
+                  value={nickname}
+                  onChangeText={setNickname}
+                  maxLength={20}
+                  placeholderTextColor="#9CA3AF"
+                />
+                <View style={styles.nicknameButtons}>
+                  <TouchableOpacity style={styles.saveButton} onPress={saveNickname}>
+                    <Text style={styles.smallButtonText}>{BUTTON_ICONS.SAVE} Save</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.cancelButton} 
+                    onPress={() => {
+                      setNickname(savedNickname);
+                      setEditingNickname(false);
+                    }}
+                  >
+                    <Text style={styles.smallButtonText}>{BUTTON_ICONS.CANCEL} Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.editNicknameButton} 
+                onPress={() => setEditingNickname(true)}
+              >
+                <Text style={styles.editNicknameIcon}>✏️</Text>
+                <Text style={styles.editNicknameText}>
+                  {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </View>
 
-      {/* Nickname Section - Only for logged-in users */}
-      {!isGuest && user && (
-        <View style={styles.nicknameSection}>
-          {editingNickname ? (
-            <View style={styles.nicknameEdit}>
-              <TextInput
-                style={styles.nicknameInput}
-                placeholder="Enter nickname"
-                value={nickname}
-                onChangeText={setNickname}
-                maxLength={20}
-              />
-              <View style={styles.nicknameButtons}>
-                <TouchableOpacity style={styles.saveButton} onPress={saveNickname}>
-                  <Text style={styles.smallButtonText}>Save</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.cancelButton} 
-                  onPress={() => {
-                    setNickname(savedNickname);
-                    setEditingNickname(false);
-                  }}
-                >
-                  <Text style={styles.smallButtonText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <TouchableOpacity 
-              style={styles.editNicknameButton} 
-              onPress={() => setEditingNickname(true)}
-            >
-              <Text style={styles.editNicknameText}>
-                {savedNickname ? '✏️ Edit Nickname' : '✏️ Set Nickname'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+      {/* Action Buttons with improved styling */}
+      <View style={styles.buttonsContainer}>
+        <TouchableOpacity 
+          style={[styles.button, styles.playButton]} 
+          onPress={() => onNavigate('Game')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonIcon}>🎮</Text>
+          <Text style={styles.buttonText}>Play Game</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => onNavigate('Game')}>
-        <Text style={styles.buttonText}>🎮 Play Game</Text>
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.button, styles.highscoresButton]} 
+          onPress={() => onNavigate('Highscores')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonIcon}>🏆</Text>
+          <Text style={styles.buttonText}>Highscores</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => onNavigate('Highscores')}>
-        <Text style={styles.buttonText}>🏆 Highscores</Text>
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.button, styles.settingsButton]} 
+          onPress={() => onNavigate('Settings')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonIcon}>⚙️</Text>
+          <Text style={styles.buttonText}>Settings</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, styles.settingsMenuButton]} onPress={() => onNavigate('Settings')}>
-        <Text style={styles.buttonText}>⚙️ Settings</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
-        <Text style={styles.buttonText}>{isGuest ? '← Back to Login' : '🚪 Logout'}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.button, styles.logoutButton]} 
+          onPress={handleLogout}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.buttonIcon}>{isGuest ? '←' : '🚪'}</Text>
+          <Text style={styles.buttonText}>
+            {isGuest ? 'Back to Login' : 'Logout'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -147,107 +185,180 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F0F4F8',
     padding: 20,
   },
+  headerCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
   title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
+    fontSize: 42,
+    fontWeight: '800',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 18,
-    marginBottom: 20,
-    color: '#666',
-    textAlign: 'center',
-  },
-  userInfo: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  welcomeText: {
     fontSize: 16,
-    color: '#333',
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500',
+  },
+  userInfoCard: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  welcomeLabel: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
     fontWeight: '600',
   },
-  guestWarning: {
+  welcomeText: {
+    fontSize: 20,
+    color: '#111827',
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  guestBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  guestBadgeIcon: {
     fontSize: 14,
-    color: '#FF9500',
-    marginTop: 5,
-    textAlign: 'center',
+    marginRight: 6,
+  },
+  guestBadgeText: {
+    fontSize: 13,
+    color: '#92400E',
+    fontWeight: '600',
+    flex: 1,
   },
   nicknameSection: {
     width: '100%',
-    marginBottom: 20,
   },
   nicknameEdit: {
     width: '100%',
   },
   nicknameInput: {
     width: '100%',
-    height: 45,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    height: 48,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
     fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    marginBottom: 12,
+    color: '#111827',
   },
   nicknameButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
+    gap: 12,
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#34C759',
-    padding: 10,
-    borderRadius: 8,
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: '#8E8E93',
-    padding: 10,
-    borderRadius: 8,
+    backgroundColor: '#6B7280',
+    paddingVertical: 12,
+    borderRadius: 10,
     alignItems: 'center',
   },
   smallButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   editNicknameButton: {
-    padding: 10,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#EEF2FF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#C7D2FE',
+  },
+  editNicknameIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   editNicknameText: {
-    color: '#007AFF',
-    fontSize: 16,
+    color: '#4F46E5',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  buttonsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 14,
   },
   button: {
-    width: '100%',
-    height: 60,
-    backgroundColor: '#007AFF',
-    borderRadius: 10,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    justifyContent: 'center',
+    height: 64,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+    gap: 12,
   },
-  settingsMenuButton: {
+  buttonIcon: {
+    fontSize: 24,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  playButton: {
+    backgroundColor: '#3B82F6',
+  },
+  highscoresButton: {
+    backgroundColor: '#F59E0B',
+  },
+  settingsButton: {
     backgroundColor: '#6B7280',
   },
   logoutButton: {
-    backgroundColor: '#FF3B30',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
+    backgroundColor: '#EF4444',
+    marginTop: 8,
   },
 });
