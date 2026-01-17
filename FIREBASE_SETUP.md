@@ -45,18 +45,13 @@ This guide will walk you through setting up Firebase for the Tilt Maze app.
 2. Select your Firebase project
 3. Go to "APIs & Services" > "Credentials"
 4. You'll see OAuth 2.0 Client IDs created by Firebase
-5. Copy the Web Client ID
-6. Update `src/screens/LoginScreen.tsx` with your client IDs:
+5. Click on the Web Client ID to edit it
+6. In the **Authorized redirect URIs** section, add: `https://auth.expo.io/@riciyt/app-m335`
+7. Click "Save"
 
-```typescript
-const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-  clientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
-  androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-  iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-});
-```
+**Important**: See [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) for detailed instructions on configuring the redirect URI for Expo Go.
 
-**Note**: For development with Expo Go, you typically only need the Web Client ID.
+**Note**: For development with Expo Go, you only need the Web Client ID. The redirect URI must be configured correctly for Google Sign-In to work.
 
 ## Step 4: Create Realtime Database
 
