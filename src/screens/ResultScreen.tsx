@@ -7,12 +7,14 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ref, set, get } from 'firebase/database';
 import { auth, database } from '../config/firebase';
+import { formatTime, Screen } from '../types';
 
 interface ResultScreenProps {
   time: number;
-  onNavigate: (screen: string) => void;
+  onNavigate: (screen: Screen) => void;
   isGuest: boolean;
 }
 
@@ -61,21 +63,17 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
       }
 
       setSaved(true);
-    } catch (error: any) {
-      Alert.alert('Error', 'Failed to save score: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Error', 'Failed to save score: ' + message);
     } finally {
       setSaving(false);
     }
   };
 
-  const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const milliseconds = Math.floor((ms % 1000) / 10);
-    return `${seconds}.${milliseconds.toString().padStart(2, '0')}s`;
-  };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header with celebration */}
       <View style={styles.headerSection}>
         <Text style={styles.celebrationIcon}>🎉</Text>
@@ -166,14 +164,14 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
           <Text style={styles.buttonText}>Back to Menu</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#F5F7FB',
     padding: 24,
   },
   headerSection: {
@@ -200,16 +198,16 @@ const styles = StyleSheet.create({
   timeCard: {
     backgroundColor: '#FFFFFF',
     padding: 32,
-    borderRadius: 24,
+    borderRadius: 26,
     marginBottom: 24,
     alignItems: 'center',
-    shadowColor: '#3B82F6',
+    shadowColor: '#2EC4C6',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.16,
     shadowRadius: 16,
     elevation: 8,
-    borderWidth: 2,
-    borderColor: '#DBEAFE',
+    borderWidth: 1,
+    borderColor: '#D9F1F0',
   },
   timeLabel: {
     fontSize: 14,
@@ -217,7 +215,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 1,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   timeValueContainer: {
     flexDirection: 'row',
@@ -230,7 +228,7 @@ const styles = StyleSheet.create({
   timeValue: {
     fontSize: 56,
     fontWeight: '800',
-    color: '#3B82F6',
+    color: '#2EC4C6',
     letterSpacing: -2,
   },
   statusSection: {
@@ -240,136 +238,136 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#EEF2FF',
-    padding: 16,
-    borderRadius: 16,
-    gap: 12,
+    backgroundColor: '#EAF6FF',
+    padding: 18,
+    borderRadius: 18,
+    gap: 14,
   },
   savingText: {
-    fontSize: 15,
-    color: '#4F46E5',
+    fontSize: 16,
+    color: '#2EC4C6',
     fontWeight: '600',
   },
   bestCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D1FAE5',
-    padding: 20,
-    borderRadius: 16,
+    backgroundColor: '#E6FAF4',
+    padding: 22,
+    borderRadius: 18,
     borderWidth: 2,
-    borderColor: '#10B981',
-    shadowColor: '#10B981',
+    borderColor: '#56D1B7',
+    shadowColor: '#56D1B7',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   bestIcon: {
-    fontSize: 32,
-    marginRight: 16,
+    fontSize: 36,
+    marginRight: 18,
   },
   bestContent: {
     flex: 1,
   },
   bestTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
-    color: '#065F46',
-    marginBottom: 4,
+    color: '#0F766E',
+    marginBottom: 6,
   },
   bestText: {
-    fontSize: 14,
-    color: '#047857',
+    fontSize: 15,
+    color: '#0F766E',
     fontWeight: '600',
   },
   notBestCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    padding: 20,
-    borderRadius: 16,
+    backgroundColor: '#FFF1E8',
+    padding: 22,
+    borderRadius: 18,
     borderWidth: 2,
-    borderColor: '#F59E0B',
+    borderColor: '#F4C7B4',
   },
   notBestIcon: {
-    fontSize: 32,
-    marginRight: 16,
+    fontSize: 36,
+    marginRight: 18,
   },
   notBestContent: {
     flex: 1,
   },
   notBestTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
-    color: '#92400E',
-    marginBottom: 4,
+    color: '#B4533B',
+    marginBottom: 6,
   },
   notBestText: {
-    fontSize: 14,
-    color: '#B45309',
+    fontSize: 15,
+    color: '#B4533B',
     fontWeight: '600',
   },
   guestCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEE2E2',
-    padding: 20,
-    borderRadius: 16,
+    backgroundColor: '#FFE8EA',
+    padding: 22,
+    borderRadius: 18,
     borderWidth: 2,
-    borderColor: '#F87171',
+    borderColor: '#F4B7BD',
   },
   guestIcon: {
-    fontSize: 32,
-    marginRight: 16,
+    fontSize: 36,
+    marginRight: 18,
   },
   guestContent: {
     flex: 1,
   },
   guestTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '800',
-    color: '#991B1B',
-    marginBottom: 4,
+    color: '#B4234B',
+    marginBottom: 6,
   },
   guestText: {
-    fontSize: 14,
-    color: '#DC2626',
+    fontSize: 15,
+    color: '#B4234B',
     fontWeight: '600',
   },
   buttonsContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    gap: 12,
+    gap: 14,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 56,
-    borderRadius: 16,
-    shadowColor: '#000',
+    height: 60,
+    borderRadius: 24,
+    shadowColor: '#1F2937',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
     elevation: 4,
-    gap: 10,
+    gap: 12,
   },
   buttonIcon: {
-    fontSize: 20,
+    fontSize: 22,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   playAgainButton: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#2EC4C6',
   },
   highscoresButton: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#F59C7A',
   },
   menuButton: {
-    backgroundColor: '#6B7280',
+    backgroundColor: '#7B8AA0',
   },
 });

@@ -185,11 +185,11 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
             <Switch
               value={settings.soundEnabled}
               onValueChange={toggleSound}
-              trackColor={{ false: '#E5E7EB', true: '#10B981' }}
+              trackColor={{ false: '#E3E8F0', true: '#56D1B7' }}
               thumbColor="#fff"
             />
           </View>
-
+ 
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Vibration</Text>
@@ -198,7 +198,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
             <Switch
               value={settings.vibrationEnabled}
               onValueChange={toggleVibration}
-              trackColor={{ false: '#E5E7EB', true: '#10B981' }}
+              trackColor={{ false: '#E3E8F0', true: '#56D1B7' }}
               thumbColor="#fff"
             />
           </View>
@@ -299,186 +299,192 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#F5F7FB',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomColor: '#E3E8F0',
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F3F4F6',
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EEF2F7',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E3E8F0',
   },
   backButtonText: {
-    fontSize: 20,
-    color: '#374151',
+    fontSize: 22,
+    color: '#1F2937',
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: '#1F2937',
   },
   headerSpacer: {
-    width: 44,
+    width: 48,
   },
   content: {
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
+    padding: 24,
   },
   section: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    borderRadius: 22,
+    padding: 20,
+    marginBottom: 24,
+    shadowColor: '#1F2937',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#E3E8F0',
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#6B7280',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 16,
+    letterSpacing: 0.8,
+    marginBottom: 20,
   },
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#E3E8F0',
   },
   settingInfo: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 20,
   },
   settingLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#111827',
+    color: '#1F2937',
   },
   settingHint: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    marginTop: 2,
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
   },
   adjustButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   adjustButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#4F46E5',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2EC4C6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   adjustButtonText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
   },
   sensitivityBar: {
-    marginTop: 16,
-    paddingTop: 12,
+    marginTop: 20,
+    paddingTop: 16,
   },
   sensitivityTrack: {
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
+    height: 10,
+    backgroundColor: '#E3E8F0',
+    borderRadius: 5,
     overflow: 'hidden',
   },
   sensitivityFill: {
     height: '100%',
-    backgroundColor: '#4F46E5',
-    borderRadius: 4,
+    backgroundColor: '#7FB5FF',
+    borderRadius: 5,
   },
   sensitivityLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 10,
   },
   sensitivityLabelText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: 13,
+    color: '#6B7280',
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    paddingVertical: 18,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#E3E8F0',
   },
   destructiveButton: {
     borderBottomWidth: 0,
   },
   actionButtonIcon: {
-    fontSize: 20,
-    marginRight: 12,
+    fontSize: 22,
+    marginRight: 14,
   },
   actionButtonInfo: {
     flex: 1,
   },
   actionButtonLabel: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#111827',
+    color: '#1F2937',
   },
   destructiveText: {
     color: '#DC2626',
   },
   actionButtonHint: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    marginTop: 2,
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 4,
   },
   guestInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
-    backgroundColor: '#FEF3C7',
-    borderRadius: 12,
+    padding: 16,
+    backgroundColor: '#FFF1E8',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F4C7B4',
   },
   guestInfoIcon: {
-    fontSize: 16,
-    marginRight: 10,
+    fontSize: 18,
+    marginRight: 12,
   },
   guestInfoText: {
     flex: 1,
-    fontSize: 14,
-    color: '#92400E',
-    lineHeight: 20,
+    fontSize: 15,
+    color: '#B4533B',
+    lineHeight: 22,
   },
   appInfo: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 28,
   },
   appInfoText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
-    color: '#9CA3AF',
+    color: '#6B7280',
   },
   appInfoSubtext: {
-    fontSize: 12,
-    color: '#D1D5DB',
-    marginTop: 4,
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginTop: 6,
   },
 });

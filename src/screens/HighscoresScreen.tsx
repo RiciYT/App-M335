@@ -7,9 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ref, get } from 'firebase/database';
 import { database } from '../config/firebase';
-import { GameScore } from '../types';
+import { formatTime, GameScore } from '../types';
 
 // Medal constants for top 3 positions
 const MEDALS = {
@@ -52,11 +53,6 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     }
   };
 
-  const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const milliseconds = Math.floor((ms % 1000) / 10);
-    return `${seconds}.${milliseconds.toString().padStart(2, '0')}s`;
-  };
 
   const renderScore = ({ item, index }: { item: GameScore; index: number }) => {
     // Display nickname if available, otherwise email
@@ -109,7 +105,7 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={styles.backButtonText}>←</Text>
@@ -141,14 +137,14 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
           showsVerticalScrollIndicator={false}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#F5F7FB',
   },
   header: {
     flexDirection: 'row',
@@ -158,32 +154,34 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 20,
     backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    shadowColor: '#2EC4C6',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 6,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F3F4F6',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#EEF2F7',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E3E8F0',
   },
   backButtonText: {
     fontSize: 24,
-    color: '#374151',
+    color: '#1F2937',
     fontWeight: '600',
   },
   headerContent: {
     alignItems: 'center',
   },
   headerSpacer: {
-    width: 44,
+    width: 46,
   },
   title: {
     fontSize: 24,
@@ -195,7 +193,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     marginTop: 2,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,
@@ -206,7 +204,7 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#6B7280',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
@@ -221,12 +219,12 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#374151',
+    color: '#1F2937',
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 16,
-    color: '#9CA3AF',
+    color: '#6B7280',
     textAlign: 'center',
     fontWeight: '500',
   },
@@ -239,64 +237,64 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 20,
     marginBottom: 12,
-    shadowColor: '#000',
+    shadowColor: '#1F2937',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 3,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#E3E8F0',
   },
   topThreeItem: {
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 5,
     borderWidth: 2,
   },
   rank1: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#F59E0B',
+    backgroundColor: '#FFF4E6',
+    borderColor: '#F59C7A',
   },
   rank2: {
-    backgroundColor: '#F3F4F6',
-    borderColor: '#9CA3AF',
+    backgroundColor: '#F3F6FB',
+    borderColor: '#7FB5FF',
   },
   rank3: {
-    backgroundColor: '#FED7AA',
-    borderColor: '#EA580C',
+    backgroundColor: '#FCE7E1',
+    borderColor: '#F59C7A',
   },
   rankContainer: {
-    marginRight: 16,
+    marginRight: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 48,
+    width: 52,
   },
   medalIcon: {
-    fontSize: 36,
+    fontSize: 40,
   },
   rankBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EAF3FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   rankNumber: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    color: '#4F46E5',
+    color: '#2EC4C6',
   },
   scoreInfo: {
     flex: 1,
   },
   playerName: {
     fontSize: 17,
-    color: '#374151',
+    color: '#1F2937',
     fontWeight: '600',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   topThreeName: {
     fontSize: 18,
@@ -306,18 +304,18 @@ const styles = StyleSheet.create({
   timeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   timeIcon: {
-    fontSize: 14,
+    fontSize: 15,
   },
   time: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: '700',
-    color: '#3B82F6',
+    color: '#2EC4C6',
   },
   topThreeTime: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
   },
 });

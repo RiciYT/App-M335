@@ -2,7 +2,6 @@ import { initializeApp } from 'firebase/app';
 // @ts-expect-error - getReactNativePersistence is exported from react-native specific bundle
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
-import { Platform } from 'react-native';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase configuration
@@ -26,27 +25,3 @@ export const auth = initializeAuth(app, {
 });
 
 export const database = getDatabase(app);
-
-// Analytics initialization - only on web platform
-// Analytics type is dynamically loaded only on web to avoid bundling on native
-let analytics: unknown = null;
-
-const initAnalytics = async () => {
-  if (Platform.OS === 'web') {
-    try {
-      const { getAnalytics, isSupported } = await import('firebase/analytics');
-      const supported = await isSupported();
-      if (supported) {
-        analytics = getAnalytics(app);
-      }
-    } catch (error) {
-      // Analytics not supported or failed to initialize
-      console.log('Firebase Analytics not available:', error);
-    }
-  }
-};
-
-// Initialize analytics on web only
-initAnalytics();
-
-export { analytics };

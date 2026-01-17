@@ -2,25 +2,23 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
   Dimensions,
-  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-  signInAnonymously,
   GoogleAuthProvider,
   signInWithCredential,
 } from 'firebase/auth';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { LinearGradient } from 'expo-linear-gradient';
 import { auth } from '../config/firebase';
 import { Toast } from '../components/ui';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 // Required for Google Sign-In on web
 WebBrowser.maybeCompleteAuthSession();
@@ -32,7 +30,7 @@ interface LoginScreenProps {
 
 export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
-  const [loadingType, setLoadingType] = useState<'guest' | 'google' | 'apple' | 'anonymous' | null>(null);
+  const [loadingType, setLoadingType] = useState<'guest' | 'google' | null>(null);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'error' | 'success' | 'info' }>({
     visible: false,
     message: '',
@@ -40,16 +38,19 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
   });
 
   // Google Sign-In setup
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    clientId: 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com',
-    androidClientId: 'YOUR_GOOGLE_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-    iosClientId: 'YOUR_GOOGLE_IOS_CLIENT_ID.apps.googleusercontent.com',
-  });
+  const redirectUri = AuthSession.getRedirectUrl('redirect');
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
+    {
+      clientId: '205887865955-eh17efj9j2jhseli4qbjgvosfoj53uua.apps.googleusercontent.com',
+      webClientId: '205887865955-eh17efj9j2jhseli4qbjgvosfoj53uua.apps.googleusercontent.com',
+      redirectUri,
+    }
+  );
 
   useEffect(() => {
     if (response?.type === 'success') {
       const { id_token } = response.params;
-      handleGoogleCredential(id_token);
+      void handleGoogleCredential(id_token);
     }
   }, [response]);
 
@@ -73,21 +74,6 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
     }
   };
 
-  const handleAnonymousLogin = async () => {
-    setLoading(true);
-    setLoadingType('anonymous');
-    try {
-      await signInAnonymously(auth);
-      onLogin();
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      showToast(errorMessage, 'error');
-    } finally {
-      setLoading(false);
-      setLoadingType(null);
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     setLoadingType('google');
     try {
@@ -99,15 +85,6 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
     }
   };
 
-  const handleAppleSignIn = () => {
-    setLoadingType('apple');
-    // Simulate apple sign in
-    setTimeout(() => {
-      showToast('Apple Sign In not configured yet', 'info');
-      setLoadingType(null);
-    }, 1000);
-  };
-
   const handleGuestPlay = () => {
     setLoadingType('guest');
     setTimeout(() => {
@@ -116,26 +93,29 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
   };
 
   const GridBackground = () => (
-    <View style={styles.gridContainer} pointerEvents="none">
-      {[...Array(20)].map((_, i) => (
-        <View key={`v-${i}`} style={[styles.gridLineV, { left: i * (width / 10) }]} />
-      ))}
-      {[...Array(40)].map((_, i) => (
-        <View key={`h-${i}`} style={[styles.gridLineH, { top: i * (width / 10) }]} />
-      ))}
-    </View>
+      <View className="absolute inset-0 z-0" pointerEvents="none">
+        <View className="absolute inset-0 opacity-[0.06]">
+          {[...Array(20)].map((_, i) => (
+            <View key={`v-${i}`} className="absolute top-0 bottom-0 w-[1px] bg-ink" style={{ left: i * (width / 10) }} />
+          ))}
+          {[...Array(40)].map((_, i) => (
+            <View key={`h-${i}`} className="absolute left-0 right-0 h-[1px] bg-ink" style={{ top: i * (width / 10) }} />
+          ))}
+        </View>
+      </View>
   );
 
   return (
-    <View style={styles.mainContainer}>
+    <View className="flex-1 bg-background-light relative overflow-hidden">
       <GridBackground />
       
-      {/* Blur Circles */}
-      <View style={[styles.blurCircle, styles.blurTopLeft]} />
-      <View style={[styles.blurCircle, styles.blurBottomRight]} />
+      {/* Glow effects */}
+      <View className="absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary/20 rounded-full" />
+      <View className="absolute top-[25%] -right-[20%] w-64 h-64 bg-secondary/20 rounded-full" />
+      <View className="absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent/20 rounded-full" />
 
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-6 py-8 justify-between">
           <Toast
             visible={toast.visible}
             message={toast.message}
@@ -144,95 +124,86 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
           />
 
           {/* Header Section */}
-          <View style={styles.header}>
-            <View style={styles.logoOuter}>
+          <View className="flex-1 items-center justify-center mt-12 mb-8">
+            <View className="relative w-24 h-24 mb-6">
               <LinearGradient
-                colors={['#06b6d4', '#2563eb']}
+                colors={['#2EC4C6', '#7FB5FF']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                style={styles.logoGradient}
+                className="absolute inset-0 rounded-2xl opacity-90"
+                style={{ transform: [{ rotate: '6deg' }] }}
               />
-              <View style={styles.logoInner}>
-                <Text style={styles.logoIcon}>🎮</Text>
+              <View className="absolute inset-0 bg-surface-light rounded-2xl items-center justify-center border border-border shadow-xl">
+                <Text className="text-5xl">🎮</Text>
               </View>
-              <View style={styles.logoDot} />
+              <View className="absolute -top-2 -right-2 w-6 h-6 bg-secondary rounded-full border-2 border-surface-light shadow-sm" />
             </View>
 
-            <View style={styles.titleContainer}>
-              <Text style={styles.title}>
-                TILT <Text style={styles.titleHighlight}>MAZE</Text>
+            <View className="items-center">
+              <Text 
+                className="text-5xl font-bold text-ink tracking-tighter"
+                style={{
+                  textShadowColor: 'rgba(46, 196, 198, 0.35)',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 10,
+                }}
+              >
+                TILT <Text className="text-primary">MAZE</Text>
               </Text>
-              <Text style={styles.subtitle}>
+              <Text className="text-ink-muted text-lg text-center mt-2 max-w-[280px] leading-relaxed">
                 Guide the ball through the maze by tilting your device
               </Text>
             </View>
           </View>
 
           {/* Main Content */}
-          <View style={styles.content}>
+          <View className="w-full space-y-8 mb-12">
             <TouchableOpacity 
               activeOpacity={0.8} 
               onPress={handleGuestPlay}
               disabled={loading || loadingType === 'guest'}
+              className="w-full"
             >
               <LinearGradient
-                colors={['#fb923c', '#ea580c']}
-                style={styles.playButton}
+                colors={['#F59C7A', '#F07D62']}
+                className="w-full h-16 rounded-[28px] flex-row items-center justify-center shadow-lg shadow-secondary/40"
               >
                 {loadingType === 'guest' ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
-                    <Text style={styles.playButtonIcon}>▶</Text>
-                    <Text style={styles.playButtonText}>PLAY AS GUEST</Text>
+                    <Text className="text-white mr-2 text-2xl">▶</Text>
+                    <Text className="text-white font-bold text-lg tracking-wide">PLAY AS GUEST</Text>
                   </>
                 )}
               </LinearGradient>
             </TouchableOpacity>
 
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR LOGIN TO SAVE</Text>
-              <View style={styles.dividerLine} />
+            <View className="flex-row items-center my-4">
+              <View className="flex-1 h-[1px] bg-border" />
+              <Text className="mx-4 text-ink-muted text-sm font-medium uppercase tracking-widest">
+                or login to save
+              </Text>
+              <View className="flex-1 h-[1px] bg-border" />
             </View>
 
-            <View style={styles.loginOptions}>
+            <View className="space-y-4">
               <TouchableOpacity 
-                style={styles.socialButton} 
+                className="w-full h-14 bg-surface-light border border-border rounded-[24px] flex-row items-center justify-center shadow-sm"
                 onPress={handleGoogleSignIn}
                 disabled={!request || loading}
               >
-                <View style={styles.socialIconContainer}>
-                  <Text style={styles.socialIcon}>G</Text>
+                <View className="w-8 h-8 items-center justify-center mr-2">
+                  <Text className="text-primary font-bold text-xl">G</Text>
                 </View>
-                <Text style={styles.socialButtonText}>Continue with Google</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.socialButton, styles.appleButton]} 
-                onPress={handleAppleSignIn}
-                disabled={loading}
-              >
-                <View style={styles.socialIconContainer}>
-                  <Text style={[styles.socialIcon, styles.appleIcon]}></Text>
-                </View>
-                <Text style={styles.appleButtonText}>Continue with Apple</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.anonymousButton} 
-                onPress={handleAnonymousLogin}
-                disabled={loading}
-              >
-                <Text style={styles.anonymousIcon}>👤</Text>
-                <Text style={styles.anonymousButtonText}>Anonymous Login</Text>
+                <Text className="text-ink font-semibold">Continue with Google</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
+          <View className="pb-8">
+            <Text className="text-center text-xs text-ink-muted font-medium uppercase tracking-[3px]">
               TILT LEFT/RIGHT TO CONTROL THE BALL
             </Text>
           </View>
@@ -242,237 +213,3 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
   );
 }
 
-const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#f1f5f9',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    justifyContent: 'space-between',
-    paddingVertical: 20,
-  },
-  gridContainer: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.05,
-  },
-  gridLineV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: '#334155',
-  },
-  gridLineH: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: '#334155',
-  },
-  blurCircle: {
-    position: 'absolute',
-    width: 250,
-    height: 250,
-    borderRadius: 125,
-    opacity: 0.2,
-  },
-  blurTopLeft: {
-    top: -50,
-    left: -50,
-    backgroundColor: '#06b6d4',
-  },
-  blurBottomRight: {
-    bottom: -50,
-    right: -50,
-    backgroundColor: '#2563eb',
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  logoOuter: {
-    width: 96,
-    height: 96,
-    marginBottom: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoGradient: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 24,
-    transform: [{ rotate: '6deg' }],
-    opacity: 0.8,
-  },
-  logoInner: {
-    width: 90,
-    height: 90,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#f1f5f9',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  logoIcon: {
-    fontSize: 48,
-  },
-  logoDot: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 24,
-    height: 24,
-    backgroundColor: '#f97316',
-    borderRadius: 12,
-    borderWidth: 3,
-    borderColor: '#fff',
-  },
-  titleContainer: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: '900',
-    color: '#0f172a',
-    letterSpacing: -2,
-  },
-  titleHighlight: {
-    color: '#06b6d4',
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#64748b',
-    textAlign: 'center',
-    maxWidth: 280,
-    lineHeight: 24,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 32,
-    marginBottom: 40,
-  },
-  playButton: {
-    height: 64,
-    borderRadius: 20,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-    shadowColor: '#f97316',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  playButtonIcon: {
-    fontSize: 24,
-    color: '#fff',
-  },
-  playButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#cbd5e1',
-  },
-  dividerText: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 2,
-  },
-  loginOptions: {
-    gap: 16,
-  },
-  socialButton: {
-    height: 56,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  socialIconContainer: {
-    width: 24,
-    height: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  socialIcon: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#4285F4',
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#334155',
-  },
-  appleButton: {
-    backgroundColor: '#000',
-    borderColor: '#000',
-  },
-  appleIcon: {
-    color: '#fff',
-  },
-  appleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  anonymousButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 8,
-  },
-  anonymousIcon: {
-    fontSize: 18,
-    color: '#64748b',
-  },
-  anonymousButtonText: {
-    color: '#64748b',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  footer: {
-    alignItems: 'center',
-    paddingBottom: 20,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#94a3b8',
-    letterSpacing: 2,
-    fontWeight: '600',
-  },
-});

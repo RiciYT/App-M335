@@ -1,8 +1,4 @@
-export interface User {
-  uid: string;
-  email: string | null;
-  isAnonymous?: boolean;
-}
+export type Screen = 'Login' | 'Menu' | 'Game' | 'Result' | 'Highscores' | 'Settings';
 
 export interface GameScore {
   userId: string;
@@ -12,22 +8,8 @@ export interface GameScore {
   timestamp: number;
 }
 
-export interface Ball {
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-}
-
-export interface Target {
-  x: number;
-  y: number;
-  radius: number;
-}
-
-export interface Wall {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
+export const formatTime = (ms: number): string => {
+  const seconds = Math.floor(ms / 1000);
+  const milliseconds = Math.floor((ms % 1000) / 10);
+  return `${seconds}.${milliseconds.toString().padStart(2, '0')}s`;
+};

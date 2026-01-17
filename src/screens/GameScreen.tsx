@@ -1,18 +1,21 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Matter from 'matter-js';
-import { useTiltControl, DEFAULT_TILT_SETTINGS, TiltSettings } from '../hooks/useTiltControl';
-import { TILT_CONTROLS, clamp, roundToDecimals } from '../config/tiltControls';
+import { LinearGradient } from 'expo-linear-gradient';
+import { DEFAULT_TILT_SETTINGS, TiltSettings, useTiltControl } from '../hooks/useTiltControl';
+import { clamp, roundToDecimals, TILT_CONTROLS } from '../config/tiltControls';
+import { formatTime } from '../types';
+
+const { width, height } = Dimensions.get('window');
 
 interface GameScreenProps {
   onGameComplete: (time: number) => void;
   onBack: () => void;
 }
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const GAME_AREA_HEIGHT = SCREEN_HEIGHT - 200; // Subtract header and footer
+const SCREEN_WIDTH = width;
+const GAME_AREA_HEIGHT = height - 220; // Adjusted for new header/footer
 const BALL_RADIUS = 15;
 const TARGET_RADIUS = 30;
 const WALL_THICKNESS = 20;
@@ -21,7 +24,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [ballPosition, setBallPosition] = useState({ x: 50, y: 50 });
   const [targetPosition] = useState({ 
     x: SCREEN_WIDTH - 80, 
-    y: GAME_AREA_HEIGHT - 80 
+    y: GAME_AREA_HEIGHT - 55 
   });
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -195,11 +198,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     }
   }, [gameWon, startTime]);
 
-  const formatTime = (ms: number) => {
-    const seconds = Math.floor(ms / 1000);
-    const milliseconds = Math.floor((ms % 1000) / 10);
-    return `${seconds}.${milliseconds.toString().padStart(2, '0')}s`;
-  };
 
   // Settings adjustment helpers (X-axis only)
   const adjustSetting = useCallback((key: keyof TiltSettings, delta: number, min: number, max: number, decimals: number = 2) => {
@@ -227,89 +225,137 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     { x: SCREEN_WIDTH * 0.3 - (SCREEN_WIDTH * 0.5) / 2, y: GAME_AREA_HEIGHT * 0.7 - 5, width: SCREEN_WIDTH * 0.5, height: 10 },
   ];
 
+  const GridBackground = () => (
+      <View className="absolute inset-0 z-0" pointerEvents="none">
+        <View className="absolute inset-0 opacity-[0.06]">
+          {[...Array(20)].map((_, i) => (
+            <View key={`v-${i}`} className="absolute top-0 bottom-0 w-[1px] bg-ink" style={{ left: i * (width / 10) }} />
+          ))}
+          {[...Array(40)].map((_, i) => (
+            <View key={`h-${i}`} className="absolute left-0 right-0 h-[1px] bg-ink" style={{ top: i * (width / 10) }} />
+          ))}
+        </View>
+      </View>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Modern Header with Timer Pill */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        
-        {/* Timer as prominent pill/chip */}
-        <View style={styles.timerPill}>
-          <Text style={styles.timerIcon}>⏱</Text>
-          <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
-        </View>
-        
-        <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
-          <Text style={styles.settingsButtonText}>⚙️</Text>
-        </TouchableOpacity>
-      </View>
+    <View className="flex-1 bg-background-light relative overflow-hidden">
+      <GridBackground />
+      
+      {/* Glow effects */}
+      <View className="absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
+      <View className="absolute top-[20%] -right-[20%] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
+      <View className="absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
 
-      <View style={[styles.gameArea, { height: GAME_AREA_HEIGHT }]}>
-        {/* Maze Walls */}
-        {mazeWalls.map((wall, index) => (
-          <View
-            key={`wall-${index}`}
-            style={[
-              styles.mazeWall,
-              {
-                left: wall.x,
-                top: wall.y,
-                width: wall.width,
-                height: wall.height,
-              },
-            ]}
-          />
-        ))}
-
-        {/* Target */}
-        <View
-          style={[
-            styles.target,
-            {
-              left: targetPosition.x - TARGET_RADIUS,
-              top: targetPosition.y - TARGET_RADIUS,
-              width: TARGET_RADIUS * 2,
-              height: TARGET_RADIUS * 2,
-              borderRadius: TARGET_RADIUS,
-            },
-          ]}
-        />
-
-        {/* Ball */}
-        <View
-          style={[
-            styles.ball,
-            {
-              left: ballPosition.x - BALL_RADIUS,
-              top: ballPosition.y - BALL_RADIUS,
-              width: BALL_RADIUS * 2,
-              height: BALL_RADIUS * 2,
-              borderRadius: BALL_RADIUS,
-            },
-          ]}
-        />
-
-        {gameWon && (
-          <View style={styles.winMessage}>
-            <Text style={styles.winText}>🎉</Text>
-            <Text style={styles.winSubtext}>You Won!</Text>
+      <SafeAreaView className="flex-1">
+        {/* Header Section */}
+        <View className="flex-row items-center justify-between px-6 py-4">
+          <TouchableOpacity 
+            onPress={onBack}
+            className="w-12 h-12 items-center justify-center bg-surface-light rounded-2xl border border-border shadow-sm"
+          >
+            <Text className="text-ink text-2xl">←</Text>
+          </TouchableOpacity>
+          
+          <View className="flex-row items-center bg-surface-light px-4 py-2 rounded-[24px] border border-border shadow-sm">
+            <Text className="mr-2 text-xl">⏱</Text>
+            <Text className="text-ink font-bold text-lg tabular-nums">
+              {formatTime(elapsedTime)}
+            </Text>
           </View>
-        )}
-      </View>
+          
+          <TouchableOpacity 
+            onPress={() => setShowSettings(true)}
+            className="w-12 h-12 items-center justify-center bg-surface-light rounded-2xl border border-border shadow-sm"
+          >
+            <Text className="text-xl">⚙️</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Modern Help Card */}
-      <View style={styles.helpCard}>
-        <View style={styles.helpRow}>
-          <Text style={styles.helpIcon}>📱</Text>
-          <Text style={styles.helpText}>Tilt left/right to move the ball</Text>
+          <View className="flex-1">
+            <View style={{ height: GAME_AREA_HEIGHT, width: SCREEN_WIDTH, position: 'relative' }}>
+              <View className="absolute bottom-0 left-0 right-0 h-8 bg-slate-200/70" />
+              <View className="absolute bottom-6 left-0 right-0 h-[2px] bg-slate-300/60" />
+
+              {/* Maze Walls */}
+              {mazeWalls.map((wall, index) => (
+                <View
+                  key={`wall-${index}`}
+                  className="absolute bg-slate-300 rounded-full shadow-lg"
+                  style={{
+                    left: wall.x,
+                    top: wall.y,
+                    width: wall.width,
+                    height: wall.height,
+                  }}
+                />
+              ))}
+
+              {/* Target */}
+            <View
+              className="absolute items-center justify-center"
+              style={{
+                left: targetPosition.x - TARGET_RADIUS,
+                top: targetPosition.y - TARGET_RADIUS,
+                width: TARGET_RADIUS * 2,
+                height: TARGET_RADIUS * 2,
+              }}
+            >
+              <View 
+                className="w-full h-full rounded-full bg-mint/20 border-2 border-mint items-center justify-center"
+                style={{
+                  shadowColor: '#56D1B7',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowRadius: 10,
+                  shadowOpacity: 0.5,
+                }}
+              >
+                <View className="w-4 h-4 rounded-full bg-mint" />
+              </View>
+            </View>
+
+            {/* Ball */}
+            <LinearGradient
+              colors={['#2EC4C6', '#7FB5FF']}
+              className="absolute rounded-full shadow-lg shadow-primary/40"
+              style={{
+                left: ballPosition.x - BALL_RADIUS,
+                top: ballPosition.y - BALL_RADIUS,
+                width: BALL_RADIUS * 2,
+                height: BALL_RADIUS * 2,
+              }}
+            />
+
+            {gameWon && (
+              <View 
+                className="absolute inset-0 items-center justify-center bg-black/40"
+              >
+                <View className="bg-surface-light p-8 rounded-3xl items-center shadow-2xl border border-border">
+                  <Text className="text-5xl mb-2">🎉</Text>
+                  <Text className="text-mint text-2xl font-bold">You Won!</Text>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
-        <View style={styles.helpRow}>
-          <Text style={styles.helpIcon}>🎯</Text>
-          <Text style={styles.helpText}>Reach the green target!</Text>
+
+        {/* Footer Info */}
+        <View className="px-6 pb-6">
+          <View className="bg-surface-light p-4 rounded-[24px] border border-border shadow-sm">
+            <View className="flex-row items-center mb-2">
+              <Text className="mr-2 text-primary">📱</Text>
+              <Text className="text-ink-muted text-xs font-medium uppercase tracking-wider">
+                Tilt to move the ball
+              </Text>
+            </View>
+            <View className="flex-row items-center">
+              <Text className="mr-2 text-mint">🎯</Text>
+              <Text className="text-ink-muted text-xs font-medium uppercase tracking-wider">
+                Reach the emerald target
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
 
       {/* Settings Modal - X-axis only */}
       <Modal
@@ -318,332 +364,112 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         transparent={true}
         onRequestClose={() => setShowSettings(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Tilt Settings</Text>
-            <Text style={styles.modalSubtitle}>Adjust horizontal (left/right) controls</Text>
-            
-            <ScrollView style={styles.settingsList}>
-              {/* Inversion Setting - X-axis only */}
-              <View style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Invert Direction</Text>
-                  <Text style={styles.settingHint}>Swap left/right movement</Text>
+          <View className="flex-1 bg-black/50 justify-center items-center">
+            <View className="bg-surface-light rounded-[2rem] p-6 w-[90%] max-h-[70%] border border-border shadow-2xl">
+              <Text className="text-2xl font-bold text-center text-ink mb-1">Tilt Settings</Text>
+              <Text className="text-sm text-ink-muted text-center mb-6">Adjust horizontal controls</Text>
+              
+              <ScrollView className="max-h-[280px]">
+                {/* Inversion Setting */}
+                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-ink">Invert Direction</Text>
+                    <Text className="text-xs text-ink-muted">Swap left/right movement</Text>
+                  </View>
+                  <TouchableOpacity 
+                    onPress={toggleInvertX}
+                    className={`px-5 py-2 rounded-full ${settings.invertX ? 'bg-mint' : 'bg-surface-muted'}`}
+                  >
+                    <Text className="text-white font-bold text-sm">{settings.invertX ? 'ON' : 'OFF'}</Text>
+                  </TouchableOpacity>
                 </View>
+ 
+                {/* Sensitivity */}
+                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-ink">Sensitivity</Text>
+                    <Text className="text-xs text-ink-muted">{settings.sensitivity.toFixed(1)}x</Text>
+                  </View>
+                  <View className="flex-row gap-2">
+                    <TouchableOpacity 
+                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      onPress={() => adjustSetting('sensitivity', -0.1, 0.3, 3.0, 1)}
+                    >
+                      <Text className="text-primary font-bold text-lg">−</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      onPress={() => adjustSetting('sensitivity', 0.1, 0.3, 3.0, 1)}
+                    >
+                      <Text className="text-primary font-bold text-lg">+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+ 
+                {/* Deadzone */}
+                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-ink">Deadzone</Text>
+                    <Text className="text-xs text-ink-muted">{settings.deadzone.toFixed(2)}</Text>
+                  </View>
+                  <View className="flex-row gap-2">
+                    <TouchableOpacity 
+                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      onPress={() => adjustSetting('deadzone', -0.01, 0.01, 0.15, 2)}
+                    >
+                      <Text className="text-primary font-bold text-lg">−</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      onPress={() => adjustSetting('deadzone', 0.01, 0.01, 0.15, 2)}
+                    >
+                      <Text className="text-primary font-bold text-lg">+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+ 
+                {/* Smoothing */}
+                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                  <View className="flex-1">
+                    <Text className="text-base font-semibold text-ink">Smoothing</Text>
+                    <Text className="text-xs text-ink-muted">{settings.smoothingAlpha.toFixed(2)}</Text>
+                  </View>
+                  <View className="flex-row gap-2">
+                    <TouchableOpacity 
+                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      onPress={() => adjustSetting('smoothingAlpha', -0.05, 0.1, 0.8, 2)}
+                    >
+                      <Text className="text-primary font-bold text-lg">−</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      onPress={() => adjustSetting('smoothingAlpha', 0.05, 0.1, 0.8, 2)}
+                    >
+                      <Text className="text-primary font-bold text-lg">+</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </ScrollView>
+ 
+              <View className="flex-row gap-4 mt-6">
                 <TouchableOpacity 
-                  style={[styles.toggleButton, settings.invertX && styles.toggleButtonActive]}
-                  onPress={toggleInvertX}
+                  className="flex-1 py-4 bg-surface-muted rounded-2xl items-center"
+                  onPress={resetSettings}
                 >
-                  <Text style={styles.toggleButtonText}>{settings.invertX ? 'ON' : 'OFF'}</Text>
+                  <Text className="text-ink-muted font-bold">Reset</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  className="flex-1 py-4 bg-primary rounded-2xl items-center shadow-lg shadow-primary/30"
+                  onPress={() => setShowSettings(false)}
+                >
+                  <Text className="text-white font-bold">Done</Text>
                 </TouchableOpacity>
               </View>
-
-              {/* Sensitivity */}
-              <View style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Sensitivity</Text>
-                  <Text style={styles.settingHint}>{settings.sensitivity.toFixed(1)}x</Text>
-                </View>
-                <View style={styles.adjustButtons}>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('sensitivity', -0.1, 0.3, 3.0, 1)}>
-                    <Text style={styles.adjustButtonText}>−</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('sensitivity', 0.1, 0.3, 3.0, 1)}>
-                    <Text style={styles.adjustButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Deadzone */}
-              <View style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Deadzone</Text>
-                  <Text style={styles.settingHint}>{settings.deadzone.toFixed(2)}</Text>
-                </View>
-                <View style={styles.adjustButtons}>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('deadzone', -0.01, 0.01, 0.15, 2)}>
-                    <Text style={styles.adjustButtonText}>−</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('deadzone', 0.01, 0.01, 0.15, 2)}>
-                    <Text style={styles.adjustButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Smoothing */}
-              <View style={styles.settingRow}>
-                <View style={styles.settingInfo}>
-                  <Text style={styles.settingLabel}>Smoothing</Text>
-                  <Text style={styles.settingHint}>{settings.smoothingAlpha.toFixed(2)}</Text>
-                </View>
-                <View style={styles.adjustButtons}>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('smoothingAlpha', -0.05, 0.1, 0.8, 2)}>
-                    <Text style={styles.adjustButtonText}>−</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.adjustButton} onPress={() => adjustSetting('smoothingAlpha', 0.05, 0.1, 0.8, 2)}>
-                    <Text style={styles.adjustButtonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.resetButton} onPress={resetSettings}>
-                <Text style={styles.resetButtonText}>Reset</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.closeButton} onPress={() => setShowSettings(false)}>
-                <Text style={styles.closeButtonText}>Done</Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
       </Modal>
     </SafeAreaView>
+  </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F4F8',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: 20,
-    color: '#374151',
-    fontWeight: '600',
-  },
-  timerPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 24,
-    gap: 6,
-  },
-  timerIcon: {
-    fontSize: 16,
-  },
-  timerText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#4F46E5',
-    fontVariant: ['tabular-nums'],
-  },
-  settingsButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  settingsButtonText: {
-    fontSize: 20,
-  },
-  gameArea: {
-    flex: 1,
-    backgroundColor: '#fff',
-    position: 'relative',
-  },
-  ball: {
-    position: 'absolute',
-    backgroundColor: '#3B82F6',
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  target: {
-    position: 'absolute',
-    backgroundColor: '#10B981',
-    opacity: 0.6,
-    borderWidth: 3,
-    borderColor: '#059669',
-  },
-  mazeWall: {
-    position: 'absolute',
-    backgroundColor: '#1F2937',
-    borderRadius: 4,
-  },
-  winMessage: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -80 }, { translateY: -60 }],
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 20,
-    width: 160,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  winText: {
-    fontSize: 48,
-    marginBottom: 8,
-  },
-  winSubtext: {
-    color: '#10B981',
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  helpCard: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    gap: 8,
-  },
-  helpRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  helpIcon: {
-    fontSize: 16,
-    width: 24,
-    textAlign: 'center',
-  },
-  helpText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 24,
-    width: '90%',
-    maxHeight: '70%',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    color: '#111827',
-    marginBottom: 4,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  settingsList: {
-    maxHeight: 280,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  settingInfo: {
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: 16,
-    color: '#111827',
-    fontWeight: '600',
-  },
-  settingHint: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    marginTop: 2,
-  },
-  toggleButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#E5E7EB',
-    minWidth: 70,
-  },
-  toggleButtonActive: {
-    backgroundColor: '#10B981',
-  },
-  toggleButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    textAlign: 'center',
-    fontSize: 14,
-  },
-  adjustButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  adjustButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#4F46E5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  adjustButtonText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 24,
-    gap: 12,
-  },
-  resetButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#FEF3C7',
-    alignItems: 'center',
-  },
-  resetButtonText: {
-    color: '#D97706',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  closeButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#4F46E5',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-});

@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from './src/config/firebase';
+import { Screen } from './src/types';
 import LoginScreen from './src/screens/LoginScreen';
 import MenuScreen from './src/screens/MenuScreen';
 import GameScreen from './src/screens/GameScreen';
@@ -11,10 +12,8 @@ import ResultScreen from './src/screens/ResultScreen';
 import HighscoresScreen from './src/screens/HighscoresScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 
-type Screen = 'Login' | 'Menu' | 'Game' | 'Result' | 'Highscores' | 'Settings';
-
 export default function App() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<Screen>('Login');
@@ -51,8 +50,8 @@ export default function App() {
     setCurrentScreen('Login');
   };
 
-  const handleNavigate = (screen: string) => {
-    setCurrentScreen(screen as Screen);
+  const handleNavigate = (screen: Screen) => {
+    setCurrentScreen(screen);
   };
 
   const handleGameComplete = (time: number) => {
@@ -63,7 +62,7 @@ export default function App() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#2EC4C6" />
       </View>
     );
   }
@@ -120,6 +119,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F4F8',
+    backgroundColor: '#F5F7FB',
   },
 });

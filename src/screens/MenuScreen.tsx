@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert } from 'react-native';
-import { signOut } from 'firebase/auth';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { signOut, type User } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
+import { LinearGradient } from 'expo-linear-gradient';
 import { auth, database } from '../config/firebase';
+import { Screen } from '../types';
+
+const { width } = Dimensions.get('window');
 
 // UI Constants
 const BUTTON_ICONS = {
@@ -11,10 +23,10 @@ const BUTTON_ICONS = {
 } as const;
 
 interface MenuScreenProps {
-  onNavigate: (screen: string) => void;
+  onNavigate: (screen: Screen) => void;
   onLogout: () => void;
   isGuest: boolean;
-  user: any;
+  user: User | null;
 }
 
 export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: MenuScreenProps) {
@@ -54,8 +66,9 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
       setSavedNickname(nickname.trim());
       setEditingNickname(false);
       Alert.alert('Success', 'Nickname saved!');
-    } catch (error: any) {
-      Alert.alert('Error', 'Failed to save nickname: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      Alert.alert('Error', 'Failed to save nickname: ' + message);
     }
   };
 
@@ -77,288 +90,181 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
     return user?.email || 'Player';
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Header Section with modern card */}
-      <View style={styles.headerCard}>
-        <Text style={styles.title}>🎯 Tilt Maze</Text>
-        <Text style={styles.subtitle}>Guide the ball to the target!</Text>
-        
-        <View style={styles.userInfoCard}>
-          <Text style={styles.welcomeLabel}>Welcome back</Text>
-          <Text style={styles.welcomeText}>{getUserDisplayName()}</Text>
-          {isGuest && (
-            <View style={styles.guestBadge}>
-              <Text style={styles.guestBadgeIcon}>⚠️</Text>
-              <Text style={styles.guestBadgeText}>Guest Mode - Scores not saved</Text>
-            </View>
-          )}
+  const GridBackground = () => (
+      <View className="absolute inset-0 z-0" pointerEvents="none">
+        <View className="absolute inset-0 opacity-[0.06]">
+          {[...Array(20)].map((_, i) => (
+            <View key={`v-${i}`} className="absolute top-0 bottom-0 w-[1px] bg-ink" style={{ left: i * (width / 10) }} />
+          ))}
+          {[...Array(40)].map((_, i) => (
+            <View key={`h-${i}`} className="absolute left-0 right-0 h-[1px] bg-ink" style={{ top: i * (width / 10) }} />
+          ))}
         </View>
+      </View>
+  );
 
-        {/* Nickname Section - Only for logged-in users */}
-        {!isGuest && user && (
-          <View style={styles.nicknameSection}>
-            {editingNickname ? (
-              <View style={styles.nicknameEdit}>
-                <TextInput
-                  style={styles.nicknameInput}
-                  placeholder="Enter nickname"
-                  value={nickname}
-                  onChangeText={setNickname}
-                  maxLength={20}
-                  placeholderTextColor="#9CA3AF"
-                />
-                <View style={styles.nicknameButtons}>
-                  <TouchableOpacity style={styles.saveButton} onPress={saveNickname}>
-                    <Text style={styles.smallButtonText}>{BUTTON_ICONS.SAVE} Save</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.cancelButton} 
-                    onPress={() => {
-                      setNickname(savedNickname);
-                      setEditingNickname(false);
-                    }}
-                  >
-                    <Text style={styles.smallButtonText}>{BUTTON_ICONS.CANCEL} Cancel</Text>
-                  </TouchableOpacity>
-                </View>
+  return (
+    <View className="flex-1 bg-background-light relative overflow-hidden">
+      <GridBackground />
+      
+      {/* Glow effects */}
+      <View className="absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
+      <View className="absolute top-[20%] -right-[20%] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
+      <View className="absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
+
+      <SafeAreaView className="flex-1">
+        <View className="flex-1 px-6 py-8 justify-between">
+          
+          {/* Header Section */}
+          <View className="items-center justify-center mt-4 mb-8">
+            <View className="relative w-24 h-24 mb-6">
+              <LinearGradient
+                colors={['#2EC4C6', '#7FB5FF']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="absolute inset-0 rounded-2xl opacity-90"
+                style={{ transform: [{ rotate: '6deg' }] }}
+              />
+              <View className="absolute inset-0 bg-surface-light rounded-2xl items-center justify-center border border-border shadow-xl">
+                <Text className="text-5xl">🎮</Text>
               </View>
-            ) : (
-              <TouchableOpacity 
-                style={styles.editNicknameButton} 
-                onPress={() => setEditingNickname(true)}
+              <View className="absolute -top-2 -right-2 w-6 h-6 bg-secondary rounded-full border-2 border-surface-light shadow-sm" />
+            </View>
+
+            <View className="items-center">
+              <Text 
+                className="text-5xl font-bold text-ink tracking-tighter"
+                style={{
+                  textShadowColor: 'rgba(46, 196, 198, 0.35)',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 10,
+                }}
               >
-                <Text style={styles.editNicknameIcon}>✏️</Text>
-                <Text style={styles.editNicknameText}>
-                  {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
+                TILT <Text className="text-primary">MAZE</Text>
+              </Text>
+               
+              <View className="mt-6 items-center">
+                <Text className="text-ink-muted text-xs font-bold uppercase tracking-[3px] mb-1">
+                  Welcome back
                 </Text>
-              </TouchableOpacity>
+                <Text className="text-ink text-2xl font-bold tracking-tight">
+                  {getUserDisplayName()}
+                </Text>
+                
+                {isGuest && (
+                  <View className="mt-2 bg-secondary/15 border border-secondary/30 px-3 py-1 rounded-full flex-row items-center">
+                    <Text className="text-secondary text-[10px] font-bold mr-1">⚠️</Text>
+                    <Text className="text-secondary text-[10px] font-bold uppercase tracking-wider">
+                      Guest Mode - Scores not saved
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            {/* Nickname Section - Only for logged-in users */}
+            {!isGuest && user && (
+              <View className="mt-6 w-full max-w-[280px]">
+                {editingNickname ? (
+                  <View className="flex-row items-center space-x-2 bg-surface-light border border-border rounded-xl px-3 py-2 shadow-sm">
+                    <TextInput
+                      className="flex-1 text-ink text-sm py-1"
+                      placeholder="Enter nickname"
+                      value={nickname}
+                      onChangeText={setNickname}
+                      maxLength={20}
+                      placeholderTextColor="#9CA3AF"
+                    />
+                    <View className="flex-row space-x-1">
+                      <TouchableOpacity 
+                        onPress={saveNickname}
+                        className="w-8 h-8 items-center justify-center bg-primary/10 rounded-lg"
+                      >
+                        <Text className="text-primary font-bold">{BUTTON_ICONS.SAVE}</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        onPress={() => {
+                          setNickname(savedNickname);
+                          setEditingNickname(false);
+                        }}
+                        className="w-8 h-8 items-center justify-center bg-surface-muted rounded-lg"
+                      >
+                        <Text className="text-ink-muted">{BUTTON_ICONS.CANCEL}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity 
+                    className="flex-row items-center justify-center py-2"
+                    onPress={() => setEditingNickname(true)}
+                  >
+                    <Text className="text-primary text-xs mr-2">✏️</Text>
+                    <Text className="text-primary text-xs font-semibold uppercase tracking-widest">
+                      {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </View>
-        )}
-      </View>
 
-      {/* Action Buttons with improved styling */}
-      <View style={styles.buttonsContainer}>
-        <TouchableOpacity 
-          style={[styles.button, styles.playButton]} 
-          onPress={() => onNavigate('Game')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonIcon}>🎮</Text>
-          <Text style={styles.buttonText}>Play Game</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.button, styles.highscoresButton]} 
-          onPress={() => onNavigate('Highscores')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonIcon}>🏆</Text>
-          <Text style={styles.buttonText}>Highscores</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.button, styles.settingsButton]} 
-          onPress={() => onNavigate('Settings')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonIcon}>⚙️</Text>
-          <Text style={styles.buttonText}>Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.button, styles.logoutButton]} 
-          onPress={handleLogout}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonIcon}>{isGuest ? '←' : '🚪'}</Text>
-          <Text style={styles.buttonText}>
-            {isGuest ? 'Back to Login' : 'Logout'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          {/* Action Buttons */}
+          <View className="w-full space-y-6 mb-12">
+            <TouchableOpacity 
+              activeOpacity={0.8} 
+              onPress={() => onNavigate('Game')}
+              className="w-full"
+            >
+              <LinearGradient
+                colors={['#F59C7A', '#F07D62']}
+                className="w-full h-16 rounded-[28px] flex-row items-center justify-center shadow-lg shadow-secondary/40"
+              >
+                <Text className="text-white mr-2 text-2xl">▶</Text>
+                <Text className="text-white font-bold text-lg tracking-wide uppercase">Play Game</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+ 
+            <View className="flex-row space-x-5 mt-3">
+              <TouchableOpacity 
+                className="flex-1 h-14 bg-surface-light border border-border rounded-[24px] flex-row items-center justify-center shadow-sm"
+                onPress={() => onNavigate('Highscores')}
+                activeOpacity={0.7}
+              >
+                <Text className="mr-2 text-xl">🏆</Text>
+                <Text className="text-ink font-semibold">Highscores</Text>
+              </TouchableOpacity>
+ 
+              <TouchableOpacity 
+                className="flex-1 h-14 bg-surface-light border border-border rounded-[24px] flex-row items-center justify-center shadow-sm"
+                onPress={() => onNavigate('Settings')}
+                activeOpacity={0.7}
+              >
+                <Text className="mr-2 text-xl">⚙️</Text>
+                <Text className="text-ink font-semibold">Settings</Text>
+              </TouchableOpacity>
+            </View>
+ 
+            <TouchableOpacity 
+              className="w-full py-4 flex-row items-center justify-center"
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <Text className="text-ink-muted text-sm font-bold uppercase tracking-widest">
+                {isGuest ? 'Back to Login' : 'Logout'}
+              </Text>
+              <Text className="ml-2 text-ink-muted">{isGuest ? '←' : '🚪'}</Text>
+            </TouchableOpacity>
+          </View>
+ 
+          {/* Footer */}
+          <View className="pb-6">
+            <Text className="text-center text-xs text-ink-muted font-bold uppercase tracking-[3px]">
+              Tilt left/right to control the ball
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F4F8',
-    padding: 20,
-  },
-  headerCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  title: {
-    fontSize: 42,
-    fontWeight: '800',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 8,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontWeight: '500',
-  },
-  userInfoCard: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  welcomeLabel: {
-    fontSize: 12,
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-    fontWeight: '600',
-  },
-  welcomeText: {
-    fontSize: 20,
-    color: '#111827',
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  guestBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  guestBadgeIcon: {
-    fontSize: 14,
-    marginRight: 6,
-  },
-  guestBadgeText: {
-    fontSize: 13,
-    color: '#92400E',
-    fontWeight: '600',
-    flex: 1,
-  },
-  nicknameSection: {
-    width: '100%',
-  },
-  nicknameEdit: {
-    width: '100%',
-  },
-  nicknameInput: {
-    width: '100%',
-    height: 48,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    marginBottom: 12,
-    color: '#111827',
-  },
-  nicknameButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: '#10B981',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#10B981',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: '#6B7280',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  smallButtonText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  editNicknameButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#EEF2FF',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
-  },
-  editNicknameIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  editNicknameText: {
-    color: '#4F46E5',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  buttonsContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 14,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 64,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-    gap: 12,
-  },
-  buttonIcon: {
-    fontSize: 24,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  playButton: {
-    backgroundColor: '#3B82F6',
-  },
-  highscoresButton: {
-    backgroundColor: '#F59E0B',
-  },
-  settingsButton: {
-    backgroundColor: '#6B7280',
-  },
-  logoutButton: {
-    backgroundColor: '#EF4444',
-    marginTop: 8,
-  },
-});
