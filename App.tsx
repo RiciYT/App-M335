@@ -20,7 +20,7 @@ export default function App() {
   const [gameTime, setGameTime] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    return onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
       if (user) {
@@ -30,9 +30,8 @@ export default function App() {
         setCurrentScreen('Login');
       }
     });
-
-    return unsubscribe;
   }, [isGuest]);
+
 
   const handleLogin = () => {
     setIsGuest(false);

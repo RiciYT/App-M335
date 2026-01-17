@@ -39,7 +39,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsScreenProps) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitializedRef = useRef(false);
 
@@ -86,12 +86,11 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
   const saveSettings = async () => {
     try {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      setSaveError(false);
     } catch (error) {
       console.error('Error saving settings:', error);
-      setSaveError(true);
       Alert.alert('Error', 'Failed to save settings. Please try again.');
     }
+
   };
 
   const toggleSound = useCallback(() => {
