@@ -38,7 +38,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
   });
 
   // Google Sign-In setup
-  const redirectUri = AuthSession.getRedirectUrl('redirect');
+  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
     {
       clientId: '205887865955-eh17efj9j2jhseli4qbjgvosfoj53uua.apps.googleusercontent.com',
@@ -77,7 +77,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
   const handleGoogleSignIn = async () => {
     setLoadingType('google');
     try {
-      await promptAsync();
+      await promptAsync({ useProxy: true });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       showToast(errorMessage, 'error');
