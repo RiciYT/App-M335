@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from './src/config/firebase';
 import { Screen } from './src/types';
+import { ThemeProvider, useTheme } from './src/theme';
 import LoginScreen from './src/screens/LoginScreen';
 import MenuScreen from './src/screens/MenuScreen';
 import GameScreen from './src/screens/GameScreen';
@@ -12,7 +13,8 @@ import ResultScreen from './src/screens/ResultScreen';
 import HighscoresScreen from './src/screens/HighscoresScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 
-export default function App() {
+function AppContent() {
+  const { isDark } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,6 @@ export default function App() {
       }
     });
   }, [isGuest]);
-
 
   const handleLogin = () => {
     setIsGuest(false);
@@ -60,64 +61,65 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View className={`flex-1 items-center justify-center ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
         <ActivityIndicator size="large" color="#2EC4C6" />
       </View>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <View style={styles.container}>
-        <StatusBar style="auto" />
-        
-        {currentScreen === 'Login' && (
-          <LoginScreen onLogin={handleLogin} onGuestPlay={handleGuestPlay} />
-        )}
-        
-        {currentScreen === 'Menu' && (
-          <MenuScreen 
-            onNavigate={handleNavigate} 
-            onLogout={handleLogout}
-            isGuest={isGuest}
-            user={user}
-          />
-        )}
-        
-        {currentScreen === 'Game' && (
-          <GameScreen 
-            onGameComplete={handleGameComplete}
-            onBack={() => handleNavigate('Menu')}
-          />
-        )}
-        
-        {currentScreen === 'Result' && (
-          <ResultScreen 
-            time={gameTime}
-            onNavigate={handleNavigate}
-            isGuest={isGuest}
-          />
-        )}
-        
-        {currentScreen === 'Highscores' && (
-          <HighscoresScreen onBack={() => handleNavigate('Menu')} />
-        )}
-        
-        {currentScreen === 'Settings' && (
-          <SettingsScreen 
-            onBack={() => handleNavigate('Menu')} 
-            isGuest={isGuest}
-            onLogout={handleLogout}
-          />
-        )}
-      </View>
-    </SafeAreaProvider>
+    <View className={`flex-1 ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      
+      {currentScreen === 'Login' && (
+        <LoginScreen onLogin={handleLogin} onGuestPlay={handleGuestPlay} />
+      )}
+      
+      {currentScreen === 'Menu' && (
+        <MenuScreen 
+          onNavigate={handleNavigate} 
+          onLogout={handleLogout}
+          isGuest={isGuest}
+          user={user}
+        />
+      )}
+      
+      {currentScreen === 'Game' && (
+        <GameScreen 
+          onGameComplete={handleGameComplete}
+          onBack={() => handleNavigate('Menu')}
+        />
+      )}
+      
+      {currentScreen === 'Result' && (
+        <ResultScreen 
+          time={gameTime}
+          onNavigate={handleNavigate}
+          isGuest={isGuest}
+        />
+      )}
+      
+      {currentScreen === 'Highscores' && (
+        <HighscoresScreen onBack={() => handleNavigate('Menu')} />
+      )}
+      
+      {currentScreen === 'Settings' && (
+        <SettingsScreen 
+          onBack={() => handleNavigate('Menu')} 
+          isGuest={isGuest}
+          onLogout={handleLogout}
+        />
+      )}
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FB',
-  },
-});
+export default function App() {
+  return (
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <AppContent />
+      </SafeAreaProvider>
+    </ThemeProvider>
+  );
+}
