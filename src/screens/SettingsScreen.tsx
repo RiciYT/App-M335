@@ -32,7 +32,6 @@ const DEFAULT_SETTINGS: AppSettings = {
 export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsScreenProps) {
   const { isDark, themeMode, setThemeMode } = useTheme();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [loading, setLoading] = useState(false);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitializedRef = useRef(false);
@@ -108,14 +107,11 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
             const user = auth.currentUser;
             if (user) {
               try {
-                setLoading(true);
                 const scoreRef = ref(database, `scores/${user.uid}`);
                 await remove(scoreRef);
                 Alert.alert('Success', 'Your best time has been reset.');
               } catch (error) {
                 Alert.alert('Error', 'Failed to reset best time.');
-              } finally {
-                setLoading(false);
               }
             } else {
               Alert.alert('Info', 'No score to reset.');
