@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { ref, get } from 'firebase/database';
 import { database } from '../config/firebase';
 import { formatTime, GameScore } from '../types';
+import { ScreenContainer, Header, Card } from '../components/ui';
+import { useTheme } from '../theme';
 
-// Medal constants for top 3 positions
 const MEDALS = {
   FIRST: '🥇',
   SECOND: '🥈',
@@ -24,6 +17,7 @@ interface HighscoresScreenProps {
 }
 
 export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
+  const { isDark } = useTheme();
   const [scores, setScores] = useState<GameScore[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,11 +33,7 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
       if (snapshot.exists()) {
         const scoresData = snapshot.val();
         const scoresArray: GameScore[] = Object.values(scoresData);
-        
-        // Sort by time (ascending - lower is better)
         scoresArray.sort((a, b) => a.time - b.time);
-        
-        // Take top 10
         setScores(scoresArray.slice(0, 10));
       }
     } catch (error) {
@@ -53,12 +43,9 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     }
   };
 
-
   const renderScore = ({ item, index }: { item: GameScore; index: number }) => {
-    // Display nickname if available, otherwise email
     const displayName = item.nickname || item.email || 'Anonymous';
     
-    // Medal emojis for top 3
     const getMedalIcon = (rank: number): string | null => {
       switch (rank) {
         case 0: return MEDALS.FIRST;
@@ -71,251 +58,91 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     const medal = getMedalIcon(index);
     const isTopThree = index < 3;
 
+    const getRankBgColor = () => {
+      if (index === 0) return isDark ? 'bg-amber-900/30 border-amber-500/50' : 'bg-amber-50 border-secondary';
+      if (index === 1) return isDark ? 'bg-slate-700/50 border-slate-500' : 'bg-slate-100 border-accent';
+      if (index === 2) return isDark ? 'bg-orange-900/30 border-orange-500/50' : 'bg-orange-50 border-secondary';
+      return '';
+    };
+
     return (
-      <View style={[
-        styles.scoreItem, 
-        isTopThree && styles.topThreeItem,
-        index === 0 && styles.rank1,
-        index === 1 && styles.rank2,
-        index === 2 && styles.rank3,
-      ]}>
-        <View style={styles.rankContainer}>
+      <Card 
+        variant={isTopThree ? 'elevated' : 'default'} 
+        className={`mb-3 flex-row items-center ${isTopThree ? `border-2 ${getRankBgColor()}` : ''}`}
+      >
+        <View className="mr-4 items-center justify-center w-14">
           {medal ? (
-            <Text style={styles.medalIcon}>{medal}</Text>
+            <Text className="text-4xl">{medal}</Text>
           ) : (
-            <View style={styles.rankBadge}>
-              <Text style={styles.rankNumber}>#{index + 1}</Text>
+            <View className={`w-11 h-11 rounded-full items-center justify-center ${
+              isDark ? 'bg-primary/20' : 'bg-primary-muted'
+            }`}>
+              <Text className="text-lg font-bold text-primary">#{index + 1}</Text>
             </View>
           )}
         </View>
         
-        <View style={styles.scoreInfo}>
-          <Text style={[styles.playerName, isTopThree && styles.topThreeName]} numberOfLines={1}>
+        <View className="flex-1">
+          <Text 
+            className={`font-semibold mb-1.5 ${
+              isTopThree ? 'text-lg font-bold' : 'text-base'
+            } ${isDark ? 'text-ink-light' : 'text-ink'}`} 
+            numberOfLines={1}
+          >
             {displayName}
           </Text>
-          <View style={styles.timeContainer}>
-            <Text style={styles.timeIcon}>⏱</Text>
-            <Text style={[styles.time, isTopThree && styles.topThreeTime]}>
+          <View className="flex-row items-center">
+            <Text className="text-sm mr-2">⏱</Text>
+            <Text className={`font-bold text-primary ${isTopThree ? 'text-xl' : 'text-lg'}`}>
               {formatTime(item.time)}
             </Text>
           </View>
         </View>
-      </View>
+      </Card>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Text style={styles.title}>🏆 Highscores</Text>
-          <Text style={styles.headerSubtitle}>Top 10 Players</Text>
-        </View>
-        <View style={styles.headerSpacer} />
+    <ScreenContainer showGlowEffects={false}>
+      {/* Header */}
+      <View className={`px-5 pt-3 pb-5 ${
+        isDark ? 'bg-surface-dark border-b border-border-dark' : 'bg-surface-light border-b border-border'
+      } rounded-b-3xl shadow-lg`}>
+        <Header
+          title="🏆 Highscores"
+          subtitle="Top 10 Players"
+          leftIcon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
+          onLeftPress={onBack}
+          variant="transparent"
+        />
       </View>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text style={styles.loadingText}>Loading highscores...</Text>
+        <View className="flex-1 justify-center items-center">
+          <ActivityIndicator size="large" color="#2EC4C6" />
+          <Text className={`mt-4 font-semibold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+            Loading highscores...
+          </Text>
         </View>
       ) : scores.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>🎯</Text>
-          <Text style={styles.emptyText}>No scores yet!</Text>
-          <Text style={styles.emptySubtext}>Be the first to complete the game!</Text>
+        <View className="flex-1 justify-center items-center px-10">
+          <Text className="text-7xl mb-4">🎯</Text>
+          <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+            No scores yet!
+          </Text>
+          <Text className={`text-center ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+            Be the first to complete the game!
+          </Text>
         </View>
       ) : (
         <FlatList
           data={scores}
           renderItem={renderScore}
           keyExtractor={(item, index) => `${item.userId}-${index}`}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         />
       )}
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FB',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    shadowColor: '#2EC4C6',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    elevation: 6,
-  },
-  backButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#EEF2F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E3E8F0',
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#1F2937',
-    fontWeight: '600',
-  },
-  headerContent: {
-    alignItems: 'center',
-  },
-  headerSpacer: {
-    width: 46,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#1F2937',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    color: '#6B7280',
-    marginTop: 2,
-    fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 16,
-    color: '#6B7280',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  list: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  scoreItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 20,
-    marginBottom: 12,
-    shadowColor: '#1F2937',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#E3E8F0',
-  },
-  topThreeItem: {
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 5,
-    borderWidth: 2,
-  },
-  rank1: {
-    backgroundColor: '#FFF4E6',
-    borderColor: '#F59C7A',
-  },
-  rank2: {
-    backgroundColor: '#F3F6FB',
-    borderColor: '#7FB5FF',
-  },
-  rank3: {
-    backgroundColor: '#FCE7E1',
-    borderColor: '#F59C7A',
-  },
-  rankContainer: {
-    marginRight: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 52,
-  },
-  medalIcon: {
-    fontSize: 40,
-  },
-  rankBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#EAF3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rankNumber: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#2EC4C6',
-  },
-  scoreInfo: {
-    flex: 1,
-  },
-  playerName: {
-    fontSize: 17,
-    color: '#1F2937',
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  topThreeName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  timeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  timeIcon: {
-    fontSize: 15,
-  },
-  time: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: '#2EC4C6',
-  },
-  topThreeTime: {
-    fontSize: 21,
-    fontWeight: '800',
-  },
-});

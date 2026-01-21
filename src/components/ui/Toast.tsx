@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text } from 'react-native';
+import { useTheme } from '../../theme';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -12,12 +13,6 @@ interface ToastProps {
   className?: string;
 }
 
-const toastClasses: Record<ToastType, string> = {
-  success: 'bg-mint',
-  error: 'bg-red-500',
-  info: 'bg-primary',
-};
-
 export function Toast({
   message,
   type = 'info',
@@ -28,6 +23,12 @@ export function Toast({
 }: ToastProps) {
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+
+  const toastClasses: Record<ToastType, string> = {
+    success: 'bg-mint',
+    error: 'bg-error',
+    info: 'bg-primary',
+  };
 
   useEffect(() => {
     if (visible) {
@@ -74,7 +75,7 @@ export function Toast({
   return (
     <Animated.View
       style={[{ transform: [{ translateY }], opacity }]}
-      className={`absolute top-16 left-6 right-6 p-5 rounded-2xl items-center shadow-lg shadow-black/20 z-[1000] ${toastClasses[type]} ${className}`}
+      className={`absolute top-16 left-5 right-5 p-5 rounded-2xl items-center shadow-lg z-[1000] ${toastClasses[type]} ${className}`}
     >
       <Text className="text-white text-base font-bold text-center">{message}</Text>
     </Animated.View>

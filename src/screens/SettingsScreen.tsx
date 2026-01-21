@@ -1,19 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  Switch,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOut } from 'firebase/auth';
 import { ref, remove } from 'firebase/database';
 import { auth, database } from '../config/firebase';
 import { TILT_CONTROLS, clamp, roundToDecimals } from '../config/tiltControls';
+import { ScreenContainer, Header, Card, ListItem } from '../components/ui';
+import { useTheme } from '../theme';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -37,30 +30,24 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsScreenProps) {
+  const { isDark, themeMode, setThemeMode } = useTheme();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const [loading, setLoading] = useState(false);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitializedRef = useRef(false);
 
-  // Load settings on mount
   useEffect(() => {
     loadSettings();
     return () => {
-      // Clean up timeout on unmount
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
   }, []);
 
-  // Debounced save settings whenever they change (after initial load)
   useEffect(() => {
-    if (!isInitializedRef.current) {
-      return;
-    }
+    if (!isInitializedRef.current) return;
     
-    // Debounce saves to avoid excessive AsyncStorage writes
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -90,7 +77,6 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
       console.error('Error saving settings:', error);
       Alert.alert('Error', 'Failed to save settings. Please try again.');
     }
-
   };
 
   const toggleSound = useCallback(() => {
@@ -121,14 +107,11 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
             const user = auth.currentUser;
             if (user) {
               try {
-                setLoading(true);
                 const scoreRef = ref(database, `scores/${user.uid}`);
                 await remove(scoreRef);
                 Alert.alert('Success', 'Your best time has been reset.');
               } catch (error) {
                 Alert.alert('Error', 'Failed to reset best time.');
-              } finally {
-                setLoading(false);
               }
             } else {
               Alert.alert('Info', 'No score to reset.');
@@ -161,329 +144,194 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
     );
   };
 
+  const cycleTheme = () => {
+    const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
+    const currentIndex = themes.indexOf(themeMode);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setThemeMode(themes[nextIndex]);
+  };
+
+  const getThemeLabel = () => {
+    switch (themeMode) {
+      case 'light': return '☀️ Light';
+      case 'dark': return '🌙 Dark';
+      case 'system': return '🔄 System';
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={styles.headerSpacer} />
+    <ScreenContainer showGlowEffects={false}>
+      {/* Header */}
+      <View className={`${isDark ? 'bg-surface-dark border-b border-border-dark' : 'bg-surface-light border-b border-border'}`}>
+        <Header
+          title="Settings"
+          leftIcon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
+          onLeftPress={onBack}
+          variant="transparent"
+        />
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Game Settings Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Game</Text>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+        {/* Appearance Section */}
+        <Card variant="default" className="mb-5">
+          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+          }`}>
+            Appearance
+          </Text>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Sound Effects</Text>
-              <Text style={styles.settingHint}>Play sounds during gameplay</Text>
-            </View>
-            <Switch
-              value={settings.soundEnabled}
-              onValueChange={toggleSound}
-              trackColor={{ false: '#E3E8F0', true: '#56D1B7' }}
-              thumbColor="#fff"
-            />
-          </View>
- 
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Vibration</Text>
-              <Text style={styles.settingHint}>Haptic feedback on collisions</Text>
-            </View>
-            <Switch
-              value={settings.vibrationEnabled}
-              onValueChange={toggleVibration}
-              trackColor={{ false: '#E3E8F0', true: '#56D1B7' }}
-              thumbColor="#fff"
-            />
-          </View>
-        </View>
+          <ListItem
+            icon="🎨"
+            title="Theme"
+            subtitle={`Current: ${getThemeLabel()}`}
+            onPress={cycleTheme}
+            rightContent={
+              <TouchableOpacity 
+                onPress={cycleTheme}
+                className={`px-4 py-2 rounded-full ${isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}
+              >
+                <Text className={`font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                  {getThemeLabel()}
+                </Text>
+              </TouchableOpacity>
+            }
+            showBorder={false}
+          />
+        </Card>
+
+        {/* Game Settings Section */}
+        <Card variant="default" className="mb-5">
+          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+          }`}>
+            Game
+          </Text>
+          
+          <ListItem
+            icon="🔊"
+            title="Sound Effects"
+            subtitle="Play sounds during gameplay"
+            rightContent={
+              <Switch
+                value={settings.soundEnabled}
+                onValueChange={toggleSound}
+                trackColor={{ false: isDark ? '#475569' : '#E3E8F0', true: '#56D1B7' }}
+                thumbColor="#fff"
+              />
+            }
+          />
+
+          <ListItem
+            icon="📳"
+            title="Vibration"
+            subtitle="Haptic feedback on collisions"
+            rightContent={
+              <Switch
+                value={settings.vibrationEnabled}
+                onValueChange={toggleVibration}
+                trackColor={{ false: isDark ? '#475569' : '#E3E8F0', true: '#56D1B7' }}
+                thumbColor="#fff"
+              />
+            }
+            showBorder={false}
+          />
+        </Card>
 
         {/* Controls Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Controls</Text>
+        <Card variant="default" className="mb-5">
+          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+          }`}>
+            Controls
+          </Text>
           
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Tilt Sensitivity</Text>
-              <Text style={styles.settingHint}>Left/right movement speed: {settings.sensitivity.toFixed(1)}x</Text>
-            </View>
-            <View style={styles.adjustButtons}>
-              <TouchableOpacity 
-                style={styles.adjustButton} 
-                onPress={() => adjustSensitivity(-0.1)}
-              >
-                <Text style={styles.adjustButtonText}>−</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.adjustButton} 
-                onPress={() => adjustSensitivity(0.1)}
-              >
-                <Text style={styles.adjustButtonText}>+</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          <ListItem
+            icon="📱"
+            title="Tilt Sensitivity"
+            subtitle={`Movement speed: ${settings.sensitivity.toFixed(1)}x`}
+            rightContent={
+              <View className="flex-row gap-2">
+                <TouchableOpacity 
+                  className="w-10 h-10 rounded-full bg-primary items-center justify-center"
+                  onPress={() => adjustSensitivity(-0.1)}
+                >
+                  <Text className="text-white font-bold text-lg">−</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  className="w-10 h-10 rounded-full bg-primary items-center justify-center"
+                  onPress={() => adjustSensitivity(0.1)}
+                >
+                  <Text className="text-white font-bold text-lg">+</Text>
+                </TouchableOpacity>
+              </View>
+            }
+            showBorder={false}
+          />
 
-          <View style={styles.sensitivityBar}>
-            <View style={styles.sensitivityTrack}>
+          {/* Sensitivity Bar */}
+          <View className="mt-4 pt-4">
+            <View className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}>
               <View 
-                style={[
-                  styles.sensitivityFill, 
-                  { width: `${((settings.sensitivity - 0.3) / 2.7) * 100}%` }
-                ]} 
+                className="h-full rounded-full bg-accent"
+                style={{ width: `${((settings.sensitivity - 0.3) / 2.7) * 100}%` }}
               />
             </View>
-            <View style={styles.sensitivityLabels}>
-              <Text style={styles.sensitivityLabelText}>Slow</Text>
-              <Text style={styles.sensitivityLabelText}>Fast</Text>
+            <View className="flex-row justify-between mt-2">
+              <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Slow</Text>
+              <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Fast</Text>
             </View>
           </View>
-        </View>
+        </Card>
 
         {/* Account Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+        <Card variant="default" className="mb-5">
+          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+          }`}>
+            Account
+          </Text>
           
           {!isGuest && (
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={handleResetBestTime}
-              disabled={loading}
-            >
-              <Text style={styles.actionButtonIcon}>🗑️</Text>
-              <View style={styles.actionButtonInfo}>
-                <Text style={styles.actionButtonLabel}>Reset Best Time</Text>
-                <Text style={styles.actionButtonHint}>Remove your highscore from leaderboard</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+            <>
+              <ListItem
+                icon="🗑️"
+                title="Reset Best Time"
+                subtitle="Remove your highscore from leaderboard"
+                onPress={handleResetBestTime}
+              />
 
-          {!isGuest && (
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.destructiveButton]}
-              onPress={handleSignOut}
-            >
-              <Text style={styles.actionButtonIcon}>🚪</Text>
-              <View style={styles.actionButtonInfo}>
-                <Text style={[styles.actionButtonLabel, styles.destructiveText]}>Sign Out</Text>
-                <Text style={styles.actionButtonHint}>Log out of your account</Text>
-              </View>
-            </TouchableOpacity>
+              <ListItem
+                icon="🚪"
+                title="Sign Out"
+                subtitle="Log out of your account"
+                onPress={handleSignOut}
+                showBorder={false}
+              />
+            </>
           )}
 
           {isGuest && (
-            <View style={styles.guestInfo}>
-              <Text style={styles.guestInfoIcon}>ℹ️</Text>
-              <Text style={styles.guestInfoText}>
+            <View className={`flex-row items-center p-4 rounded-2xl ${
+              isDark ? 'bg-secondary/20 border border-secondary/40' : 'bg-secondary/10 border border-secondary/30'
+            }`}>
+              <Text className="text-lg mr-3">ℹ️</Text>
+              <Text className={`flex-1 text-sm leading-5 ${isDark ? 'text-secondary-light' : 'text-secondary-dark'}`}>
                 Playing as guest. Sign in to save your scores!
               </Text>
             </View>
           )}
-        </View>
+        </Card>
 
         {/* App Info */}
-        <View style={styles.appInfo}>
-          <Text style={styles.appInfoText}>Tilt Maze v{APP_VERSION}</Text>
-          <Text style={styles.appInfoSubtext}>Tilt left/right only • Gravity pulls down</Text>
+        <View className="items-center py-6">
+          <Text className={`text-sm font-semibold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+            Tilt Maze v{APP_VERSION}
+          </Text>
+          <Text className={`text-xs mt-1 ${isDark ? 'text-ink-muted-light/60' : 'text-ink-muted/60'}`}>
+            Tilt left/right only • Gravity pulls down
+          </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </ScreenContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F5F7FB',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E3E8F0',
-  },
-  backButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#EEF2F7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E3E8F0',
-  },
-  backButtonText: {
-    fontSize: 22,
-    color: '#1F2937',
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  headerSpacer: {
-    width: 48,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 24,
-  },
-  section: {
-    backgroundColor: '#fff',
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#1F2937',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#E3E8F0',
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 20,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E3E8F0',
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: 20,
-  },
-  settingLabel: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  settingHint: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  adjustButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  adjustButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#2EC4C6',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  adjustButtonText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '600',
-  },
-  sensitivityBar: {
-    marginTop: 20,
-    paddingTop: 16,
-  },
-  sensitivityTrack: {
-    height: 10,
-    backgroundColor: '#E3E8F0',
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  sensitivityFill: {
-    height: '100%',
-    backgroundColor: '#7FB5FF',
-    borderRadius: 5,
-  },
-  sensitivityLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  sensitivityLabelText: {
-    fontSize: 13,
-    color: '#6B7280',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E3E8F0',
-  },
-  destructiveButton: {
-    borderBottomWidth: 0,
-  },
-  actionButtonIcon: {
-    fontSize: 22,
-    marginRight: 14,
-  },
-  actionButtonInfo: {
-    flex: 1,
-  },
-  actionButtonLabel: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  destructiveText: {
-    color: '#DC2626',
-  },
-  actionButtonHint: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  guestInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FFF1E8',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#F4C7B4',
-  },
-  guestInfoIcon: {
-    fontSize: 18,
-    marginRight: 12,
-  },
-  guestInfoText: {
-    flex: 1,
-    fontSize: 15,
-    color: '#B4533B',
-    lineHeight: 22,
-  },
-  appInfo: {
-    alignItems: 'center',
-    paddingVertical: 28,
-  },
-  appInfoText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
-  appInfoSubtext: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    marginTop: 6,
-  },
-});

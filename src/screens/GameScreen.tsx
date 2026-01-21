@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import Matter from 'matter-js';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DEFAULT_TILT_SETTINGS, TiltSettings, useTiltControl } from '../hooks/useTiltControl';
 import { clamp, roundToDecimals, TILT_CONTROLS } from '../config/tiltControls';
 import { formatTime } from '../types';
+import { IconButton, Card, Button } from '../components/ui';
+import { useTheme } from '../theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,6 +24,7 @@ const TARGET_RADIUS = 30;
 const WALL_THICKNESS = 20;
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
+  const { isDark } = useTheme();
   const [ballPosition, setBallPosition] = useState({ x: 50, y: 50 });
   const [targetPosition] = useState({ 
     x: SCREEN_WIDTH - 80, 
@@ -32,7 +36,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [showSettings, setShowSettings] = useState(false);
   const [engine, setEngine] = useState<Matter.Engine | null>(null);
   
-  // Tilt control settings (X-axis only)
   const [settings, setSettings] = useState<TiltSettings>({
     ...DEFAULT_TILT_SETTINGS,
   });
@@ -41,7 +44,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const targetRef = useRef<Matter.Body | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
 
-  // Use the tilt control hook (X-axis only)
   useTiltControl({
     engine,
     enabled: !gameWon && engine !== null,
@@ -226,72 +228,83 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   ];
 
   const GridBackground = () => (
-      <View className="absolute inset-0 z-0" pointerEvents="none">
-        <View className="absolute inset-0 opacity-[0.06]">
-          {[...Array(20)].map((_, i) => (
-            <View key={`v-${i}`} className="absolute top-0 bottom-0 w-[1px] bg-ink" style={{ left: i * (width / 10) }} />
-          ))}
-          {[...Array(40)].map((_, i) => (
-            <View key={`h-${i}`} className="absolute left-0 right-0 h-[1px] bg-ink" style={{ top: i * (width / 10) }} />
-          ))}
-        </View>
+    <View className="absolute inset-0 z-0" pointerEvents="none">
+      <View className={`absolute inset-0 ${isDark ? 'opacity-[0.03]' : 'opacity-[0.05]'}`}>
+        {[...Array(20)].map((_, i) => (
+          <View 
+            key={`v-${i}`} 
+            className={`absolute top-0 bottom-0 w-[1px] ${isDark ? 'bg-ink-light' : 'bg-ink'}`} 
+            style={{ left: i * (width / 10) }} 
+          />
+        ))}
+        {[...Array(40)].map((_, i) => (
+          <View 
+            key={`h-${i}`} 
+            className={`absolute left-0 right-0 h-[1px] ${isDark ? 'bg-ink-light' : 'bg-ink'}`} 
+            style={{ top: i * (width / 10) }} 
+          />
+        ))}
       </View>
+    </View>
   );
 
+  const glowOpacity = isDark ? 'opacity-10' : 'opacity-20';
+
   return (
-    <View className="flex-1 bg-background-light relative overflow-hidden">
+    <View className={`flex-1 relative overflow-hidden ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <GridBackground />
       
       {/* Glow effects */}
-      <View className="absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-      <View className="absolute top-[20%] -right-[20%] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-      <View className="absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
+      <View className={`absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary ${glowOpacity} rounded-full`} />
+      <View className={`absolute top-[20%] -right-[20%] w-64 h-64 bg-secondary ${glowOpacity} rounded-full`} />
+      <View className={`absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent ${glowOpacity} rounded-full`} />
 
       <SafeAreaView className="flex-1">
         {/* Header Section */}
-        <View className="flex-row items-center justify-between px-6 py-4">
-          <TouchableOpacity 
+        <View className="flex-row items-center justify-between px-5 py-3">
+          <IconButton
+            icon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
             onPress={onBack}
-            className="w-12 h-12 items-center justify-center bg-surface-light rounded-2xl border border-border shadow-sm"
-          >
-            <Text className="text-ink text-2xl">←</Text>
-          </TouchableOpacity>
+            size="md"
+          />
           
-          <View className="flex-row items-center bg-surface-light px-4 py-2 rounded-[24px] border border-border shadow-sm">
-            <Text className="mr-2 text-xl">⏱</Text>
-            <Text className="text-ink font-bold text-lg tabular-nums">
-              {formatTime(elapsedTime)}
-            </Text>
-          </View>
+          <Card variant="default" className="px-4 py-2 rounded-3xl">
+            <View className="flex-row items-center">
+              <Text className="mr-2 text-lg">⏱</Text>
+              <Text className={`font-bold text-lg ${isDark ? 'text-ink-light' : 'text-ink'}`} style={{ fontVariant: ['tabular-nums'] }}>
+                {formatTime(elapsedTime)}
+              </Text>
+            </View>
+          </Card>
           
-          <TouchableOpacity 
+          <IconButton
+            icon={<Text className="text-xl">⚙️</Text>}
             onPress={() => setShowSettings(true)}
-            className="w-12 h-12 items-center justify-center bg-surface-light rounded-2xl border border-border shadow-sm"
-          >
-            <Text className="text-xl">⚙️</Text>
-          </TouchableOpacity>
+            size="md"
+          />
         </View>
 
-          <View className="flex-1">
-            <View style={{ height: GAME_AREA_HEIGHT, width: SCREEN_WIDTH, position: 'relative' }}>
-              <View className="absolute bottom-0 left-0 right-0 h-8 bg-slate-200/70" />
-              <View className="absolute bottom-6 left-0 right-0 h-[2px] bg-slate-300/60" />
+        <View className="flex-1">
+          <View style={{ height: GAME_AREA_HEIGHT, width: SCREEN_WIDTH, position: 'relative' }}>
+            <View className={`absolute bottom-0 left-0 right-0 h-8 ${isDark ? 'bg-slate-700/70' : 'bg-slate-200/70'}`} />
+            <View className={`absolute bottom-6 left-0 right-0 h-[2px] ${isDark ? 'bg-slate-600/60' : 'bg-slate-300/60'}`} />
 
-              {/* Maze Walls */}
-              {mazeWalls.map((wall, index) => (
-                <View
-                  key={`wall-${index}`}
-                  className="absolute bg-slate-300 rounded-full shadow-lg"
-                  style={{
-                    left: wall.x,
-                    top: wall.y,
-                    width: wall.width,
-                    height: wall.height,
-                  }}
-                />
-              ))}
+            {/* Maze Walls */}
+            {mazeWalls.map((wall, index) => (
+              <View
+                key={`wall-${index}`}
+                className={`absolute rounded-full shadow-lg ${isDark ? 'bg-slate-500' : 'bg-slate-300'}`}
+                style={{
+                  left: wall.x,
+                  top: wall.y,
+                  width: wall.width,
+                  height: wall.height,
+                }}
+              />
+            ))}
 
-              {/* Target */}
+            {/* Target */}
             <View
               className="absolute items-center justify-center"
               style={{
@@ -306,8 +319,8 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                 style={{
                   shadowColor: '#56D1B7',
                   shadowOffset: { width: 0, height: 0 },
-                  shadowRadius: 10,
-                  shadowOpacity: 0.5,
+                  shadowRadius: 12,
+                  shadowOpacity: 0.6,
                 }}
               >
                 <View className="w-4 h-4 rounded-full bg-mint" />
@@ -317,132 +330,170 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
             {/* Ball */}
             <LinearGradient
               colors={['#2EC4C6', '#7FB5FF']}
-              className="absolute rounded-full shadow-lg shadow-primary/40"
+              className="absolute rounded-full shadow-lg"
               style={{
                 left: ballPosition.x - BALL_RADIUS,
                 top: ballPosition.y - BALL_RADIUS,
                 width: BALL_RADIUS * 2,
                 height: BALL_RADIUS * 2,
+                shadowColor: '#2EC4C6',
+                shadowOpacity: 0.5,
+                shadowOffset: { width: 0, height: 2 },
+                shadowRadius: 8,
               }}
             />
 
             {gameWon && (
-              <View 
-                className="absolute inset-0 items-center justify-center bg-black/40"
-              >
-                <View className="bg-surface-light p-8 rounded-3xl items-center shadow-2xl border border-border">
-                  <Text className="text-5xl mb-2">🎉</Text>
-                  <Text className="text-mint text-2xl font-bold">You Won!</Text>
-                </View>
+              <View className="absolute inset-0 items-center justify-center bg-black/50">
+                <Card variant="elevated" className="items-center p-8">
+                  <Text className="text-6xl mb-3">🎉</Text>
+                  <Text className="text-mint text-2xl font-black">You Won!</Text>
+                </Card>
               </View>
             )}
           </View>
         </View>
 
         {/* Footer Info */}
-        <View className="px-6 pb-6">
-          <View className="bg-surface-light p-4 rounded-[24px] border border-border shadow-sm">
+        <View className="px-5 pb-5">
+          <Card variant="default" className="p-4">
             <View className="flex-row items-center mb-2">
               <Text className="mr-2 text-primary">📱</Text>
-              <Text className="text-ink-muted text-xs font-medium uppercase tracking-wider">
+              <Text className={`text-xs font-medium uppercase tracking-wider ${
+                isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+              }`}>
                 Tilt to move the ball
               </Text>
             </View>
             <View className="flex-row items-center">
               <Text className="mr-2 text-mint">🎯</Text>
-              <Text className="text-ink-muted text-xs font-medium uppercase tracking-wider">
+              <Text className={`text-xs font-medium uppercase tracking-wider ${
+                isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+              }`}>
                 Reach the emerald target
               </Text>
             </View>
-          </View>
+          </Card>
         </View>
 
-      {/* Settings Modal - X-axis only */}
-      <Modal
-        visible={showSettings}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowSettings(false)}
-      >
-          <View className="flex-1 bg-black/50 justify-center items-center">
-            <View className="bg-surface-light rounded-[2rem] p-6 w-[90%] max-h-[70%] border border-border shadow-2xl">
-              <Text className="text-2xl font-bold text-center text-ink mb-1">Tilt Settings</Text>
-              <Text className="text-sm text-ink-muted text-center mb-6">Adjust horizontal controls</Text>
+        {/* Settings Modal */}
+        <Modal
+          visible={showSettings}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowSettings(false)}
+        >
+          <View className="flex-1 bg-black/50 justify-center items-center px-5">
+            <View className={`rounded-4xl p-6 w-full max-h-[75%] shadow-2xl ${
+              isDark ? 'bg-surface-dark border border-border-dark' : 'bg-surface-light border border-border'
+            }`}>
+              <Text className={`text-2xl font-black text-center mb-1 ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                Tilt Settings
+              </Text>
+              <Text className={`text-sm text-center mb-6 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                Adjust horizontal controls
+              </Text>
               
-              <ScrollView className="max-h-[280px]">
+              <ScrollView className="max-h-[280px]" showsVerticalScrollIndicator={false}>
                 {/* Inversion Setting */}
-                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                <View className={`flex-row justify-between items-center py-4 border-b ${
+                  isDark ? 'border-border-dark' : 'border-border'
+                }`}>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-ink">Invert Direction</Text>
-                    <Text className="text-xs text-ink-muted">Swap left/right movement</Text>
+                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                      Invert Direction
+                    </Text>
+                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                      Swap left/right movement
+                    </Text>
                   </View>
                   <TouchableOpacity 
                     onPress={toggleInvertX}
-                    className={`px-5 py-2 rounded-full ${settings.invertX ? 'bg-mint' : 'bg-surface-muted'}`}
+                    className={`px-5 py-2.5 rounded-full ${settings.invertX ? 'bg-mint' : isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}
                   >
-                    <Text className="text-white font-bold text-sm">{settings.invertX ? 'ON' : 'OFF'}</Text>
+                    <Text className={`font-bold text-sm ${settings.invertX ? 'text-white' : isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                      {settings.invertX ? 'ON' : 'OFF'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
- 
+
                 {/* Sensitivity */}
-                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                <View className={`flex-row justify-between items-center py-4 border-b ${
+                  isDark ? 'border-border-dark' : 'border-border'
+                }`}>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-ink">Sensitivity</Text>
-                    <Text className="text-xs text-ink-muted">{settings.sensitivity.toFixed(1)}x</Text>
+                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                      Sensitivity
+                    </Text>
+                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                      {settings.sensitivity.toFixed(1)}x
+                    </Text>
                   </View>
                   <View className="flex-row gap-2">
                     <TouchableOpacity 
-                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
                       onPress={() => adjustSetting('sensitivity', -0.1, 0.3, 3.0, 1)}
                     >
                       <Text className="text-primary font-bold text-lg">−</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
                       onPress={() => adjustSetting('sensitivity', 0.1, 0.3, 3.0, 1)}
                     >
                       <Text className="text-primary font-bold text-lg">+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
- 
+
                 {/* Deadzone */}
-                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                <View className={`flex-row justify-between items-center py-4 border-b ${
+                  isDark ? 'border-border-dark' : 'border-border'
+                }`}>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-ink">Deadzone</Text>
-                    <Text className="text-xs text-ink-muted">{settings.deadzone.toFixed(2)}</Text>
+                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                      Deadzone
+                    </Text>
+                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                      {settings.deadzone.toFixed(2)}
+                    </Text>
                   </View>
                   <View className="flex-row gap-2">
                     <TouchableOpacity 
-                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
                       onPress={() => adjustSetting('deadzone', -0.01, 0.01, 0.15, 2)}
                     >
                       <Text className="text-primary font-bold text-lg">−</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
                       onPress={() => adjustSetting('deadzone', 0.01, 0.01, 0.15, 2)}
                     >
                       <Text className="text-primary font-bold text-lg">+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
- 
+
                 {/* Smoothing */}
-                <View className="flex-row justify-between items-center py-4 border-b border-border">
+                <View className={`flex-row justify-between items-center py-4 ${
+                  isDark ? 'border-border-dark' : 'border-border'
+                }`}>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-ink">Smoothing</Text>
-                    <Text className="text-xs text-ink-muted">{settings.smoothingAlpha.toFixed(2)}</Text>
+                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                      Smoothing
+                    </Text>
+                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                      {settings.smoothingAlpha.toFixed(2)}
+                    </Text>
                   </View>
                   <View className="flex-row gap-2">
                     <TouchableOpacity 
-                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
                       onPress={() => adjustSetting('smoothingAlpha', -0.05, 0.1, 0.8, 2)}
                     >
                       <Text className="text-primary font-bold text-lg">−</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center"
+                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
                       onPress={() => adjustSetting('smoothingAlpha', 0.05, 0.1, 0.8, 2)}
                     >
                       <Text className="text-primary font-bold text-lg">+</Text>
@@ -450,26 +501,32 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                   </View>
                 </View>
               </ScrollView>
- 
+
               <View className="flex-row gap-4 mt-6">
-                <TouchableOpacity 
-                  className="flex-1 py-4 bg-surface-muted rounded-2xl items-center"
-                  onPress={resetSettings}
-                >
-                  <Text className="text-ink-muted font-bold">Reset</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  className="flex-1 py-4 bg-primary rounded-2xl items-center shadow-lg shadow-primary/30"
-                  onPress={() => setShowSettings(false)}
-                >
-                  <Text className="text-white font-bold">Done</Text>
-                </TouchableOpacity>
+                <View className="flex-1">
+                  <Button
+                    variant="outline"
+                    size="md"
+                    onPress={resetSettings}
+                  >
+                    Reset
+                  </Button>
+                </View>
+                <View className="flex-1">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    onPress={() => setShowSettings(false)}
+                  >
+                    Done
+                  </Button>
+                </View>
               </View>
             </View>
           </View>
-      </Modal>
-    </SafeAreaView>
-  </View>
+        </Modal>
+      </SafeAreaView>
+    </View>
   );
 }
 

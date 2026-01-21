@@ -1,22 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  Dimensions,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { signOut, type User } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 import { LinearGradient } from 'expo-linear-gradient';
 import { auth, database } from '../config/firebase';
 import { Screen } from '../types';
+import { Button, ScreenContainer, Badge, Card } from '../components/ui';
+import { useTheme } from '../theme';
 
-const { width } = Dimensions.get('window');
-
-// UI Constants
 const BUTTON_ICONS = {
   SAVE: '✓',
   CANCEL: '✕',
@@ -30,6 +21,7 @@ interface MenuScreenProps {
 }
 
 export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: MenuScreenProps) {
+  const { isDark } = useTheme();
   const [nickname, setNickname] = useState('');
   const [editingNickname, setEditingNickname] = useState(false);
   const [savedNickname, setSavedNickname] = useState('');
@@ -90,181 +82,165 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
     return user?.email || 'Player';
   };
 
-  const GridBackground = () => (
-      <View className="absolute inset-0 z-0" pointerEvents="none">
-        <View className="absolute inset-0 opacity-[0.06]">
-          {[...Array(20)].map((_, i) => (
-            <View key={`v-${i}`} className="absolute top-0 bottom-0 w-[1px] bg-ink" style={{ left: i * (width / 10) }} />
-          ))}
-          {[...Array(40)].map((_, i) => (
-            <View key={`h-${i}`} className="absolute left-0 right-0 h-[1px] bg-ink" style={{ top: i * (width / 10) }} />
-          ))}
+  return (
+    <ScreenContainer>
+      <View className="flex-1 px-6 py-6 justify-between">
+        {/* Header Section */}
+        <View className="items-center justify-center mt-2 mb-6">
+          {/* Logo */}
+          <View className="relative w-24 h-24 mb-5">
+            <LinearGradient
+              colors={['#2EC4C6', '#7FB5FF']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="absolute inset-0 rounded-2xl opacity-90"
+              style={{ transform: [{ rotate: '6deg' }] }}
+            />
+            <View className={`absolute inset-0 rounded-2xl items-center justify-center border shadow-xl ${
+              isDark ? 'bg-surface-dark border-border-dark' : 'bg-surface-light border-border'
+            }`}>
+              <Text className="text-5xl">🎮</Text>
+            </View>
+            <View className="absolute -top-2 -right-2 w-6 h-6 bg-secondary rounded-full border-2 border-white shadow-sm" />
+          </View>
+
+          {/* Title */}
+          <View className="items-center">
+            <Text 
+              className={`text-4xl font-black tracking-tighter ${isDark ? 'text-ink-light' : 'text-ink'}`}
+              style={{
+                textShadowColor: 'rgba(46, 196, 198, 0.35)',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 10,
+              }}
+            >
+              TILT <Text className="text-primary">MAZE</Text>
+            </Text>
+             
+            {/* Welcome */}
+            <View className="mt-5 items-center">
+              <Text className={`text-xs font-bold uppercase tracking-[3px] mb-1 ${
+                isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+              }`}>
+                Welcome back
+              </Text>
+              <Text className={`text-2xl font-bold tracking-tight ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                {getUserDisplayName()}
+              </Text>
+              
+              {isGuest && (
+                <View className="mt-3">
+                  <Badge variant="warning" icon="⚠️" text="Guest Mode - Scores not saved" />
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Nickname Section */}
+          {!isGuest && user && (
+            <View className="mt-5 w-full max-w-[280px]">
+              {editingNickname ? (
+                <Card variant="default" className="flex-row items-center p-3">
+                  <TextInput
+                    className={`flex-1 text-sm py-1 ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                    placeholder="Enter nickname"
+                    value={nickname}
+                    onChangeText={setNickname}
+                    maxLength={20}
+                    placeholderTextColor={isDark ? '#64748B' : '#9CA3AF'}
+                  />
+                  <View className="flex-row gap-1">
+                    <TouchableOpacity 
+                      onPress={saveNickname}
+                      className="w-8 h-8 items-center justify-center bg-primary/10 rounded-lg"
+                    >
+                      <Text className="text-primary font-bold">{BUTTON_ICONS.SAVE}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={() => {
+                        setNickname(savedNickname);
+                        setEditingNickname(false);
+                      }}
+                      className={`w-8 h-8 items-center justify-center rounded-lg ${
+                        isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'
+                      }`}
+                    >
+                      <Text className={isDark ? 'text-ink-muted-light' : 'text-ink-muted'}>{BUTTON_ICONS.CANCEL}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </Card>
+              ) : (
+                <TouchableOpacity 
+                  className="flex-row items-center justify-center py-2"
+                  onPress={() => setEditingNickname(true)}
+                >
+                  <Text className="text-primary text-xs mr-2">✏️</Text>
+                  <Text className="text-primary text-xs font-semibold uppercase tracking-widest">
+                    {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Action Buttons */}
+        <View className="w-full space-y-5 mb-10">
+          <Button
+            variant="secondary"
+            size="lg"
+            onPress={() => onNavigate('Game')}
+            icon={<Text className="text-white text-2xl">▶</Text>}
+          >
+            PLAY GAME
+          </Button>
+
+          <View className="flex-row gap-4 mt-2">
+            <View className="flex-1">
+              <Button
+                variant="outline"
+                size="md"
+                onPress={() => onNavigate('Highscores')}
+                icon={<Text className="text-xl">🏆</Text>}
+              >
+                Highscores
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button
+                variant="outline"
+                size="md"
+                onPress={() => onNavigate('Settings')}
+                icon={<Text className="text-xl">⚙️</Text>}
+              >
+                Settings
+              </Button>
+            </View>
+          </View>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onPress={handleLogout}
+          >
+            <Text className={`text-sm font-bold uppercase tracking-widest ${
+              isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+            }`}>
+              {isGuest ? 'Back to Login ←' : 'Logout 🚪'}
+            </Text>
+          </Button>
+        </View>
+
+        {/* Footer */}
+        <View className="pb-4">
+          <Text className={`text-center text-xs font-bold uppercase tracking-[3px] ${
+            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+          }`}>
+            Tilt left/right to control the ball
+          </Text>
         </View>
       </View>
-  );
-
-  return (
-    <View className="flex-1 bg-background-light relative overflow-hidden">
-      <GridBackground />
-      
-      {/* Glow effects */}
-      <View className="absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-      <View className="absolute top-[20%] -right-[20%] w-64 h-64 bg-secondary/20 rounded-full blur-3xl" />
-      <View className="absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
-
-      <SafeAreaView className="flex-1">
-        <View className="flex-1 px-6 py-8 justify-between">
-          
-          {/* Header Section */}
-          <View className="items-center justify-center mt-4 mb-8">
-            <View className="relative w-24 h-24 mb-6">
-              <LinearGradient
-                colors={['#2EC4C6', '#7FB5FF']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="absolute inset-0 rounded-2xl opacity-90"
-                style={{ transform: [{ rotate: '6deg' }] }}
-              />
-              <View className="absolute inset-0 bg-surface-light rounded-2xl items-center justify-center border border-border shadow-xl">
-                <Text className="text-5xl">🎮</Text>
-              </View>
-              <View className="absolute -top-2 -right-2 w-6 h-6 bg-secondary rounded-full border-2 border-surface-light shadow-sm" />
-            </View>
-
-            <View className="items-center">
-              <Text 
-                className="text-5xl font-bold text-ink tracking-tighter"
-                style={{
-                  textShadowColor: 'rgba(46, 196, 198, 0.35)',
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 10,
-                }}
-              >
-                TILT <Text className="text-primary">MAZE</Text>
-              </Text>
-               
-              <View className="mt-6 items-center">
-                <Text className="text-ink-muted text-xs font-bold uppercase tracking-[3px] mb-1">
-                  Welcome back
-                </Text>
-                <Text className="text-ink text-2xl font-bold tracking-tight">
-                  {getUserDisplayName()}
-                </Text>
-                
-                {isGuest && (
-                  <View className="mt-2 bg-secondary/15 border border-secondary/30 px-3 py-1 rounded-full flex-row items-center">
-                    <Text className="text-secondary text-[10px] font-bold mr-1">⚠️</Text>
-                    <Text className="text-secondary text-[10px] font-bold uppercase tracking-wider">
-                      Guest Mode - Scores not saved
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-
-            {/* Nickname Section - Only for logged-in users */}
-            {!isGuest && user && (
-              <View className="mt-6 w-full max-w-[280px]">
-                {editingNickname ? (
-                  <View className="flex-row items-center space-x-2 bg-surface-light border border-border rounded-xl px-3 py-2 shadow-sm">
-                    <TextInput
-                      className="flex-1 text-ink text-sm py-1"
-                      placeholder="Enter nickname"
-                      value={nickname}
-                      onChangeText={setNickname}
-                      maxLength={20}
-                      placeholderTextColor="#9CA3AF"
-                    />
-                    <View className="flex-row space-x-1">
-                      <TouchableOpacity 
-                        onPress={saveNickname}
-                        className="w-8 h-8 items-center justify-center bg-primary/10 rounded-lg"
-                      >
-                        <Text className="text-primary font-bold">{BUTTON_ICONS.SAVE}</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity 
-                        onPress={() => {
-                          setNickname(savedNickname);
-                          setEditingNickname(false);
-                        }}
-                        className="w-8 h-8 items-center justify-center bg-surface-muted rounded-lg"
-                      >
-                        <Text className="text-ink-muted">{BUTTON_ICONS.CANCEL}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ) : (
-                  <TouchableOpacity 
-                    className="flex-row items-center justify-center py-2"
-                    onPress={() => setEditingNickname(true)}
-                  >
-                    <Text className="text-primary text-xs mr-2">✏️</Text>
-                    <Text className="text-primary text-xs font-semibold uppercase tracking-widest">
-                      {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </View>
-
-          {/* Action Buttons */}
-          <View className="w-full space-y-6 mb-12">
-            <TouchableOpacity 
-              activeOpacity={0.8} 
-              onPress={() => onNavigate('Game')}
-              className="w-full"
-            >
-              <LinearGradient
-                colors={['#F59C7A', '#F07D62']}
-                className="w-full h-16 rounded-[28px] flex-row items-center justify-center shadow-lg shadow-secondary/40"
-              >
-                <Text className="text-white mr-2 text-2xl">▶</Text>
-                <Text className="text-white font-bold text-lg tracking-wide uppercase">Play Game</Text>
-              </LinearGradient>
-            </TouchableOpacity>
- 
-            <View className="flex-row space-x-5 mt-3">
-              <TouchableOpacity 
-                className="flex-1 h-14 bg-surface-light border border-border rounded-[24px] flex-row items-center justify-center shadow-sm"
-                onPress={() => onNavigate('Highscores')}
-                activeOpacity={0.7}
-              >
-                <Text className="mr-2 text-xl">🏆</Text>
-                <Text className="text-ink font-semibold">Highscores</Text>
-              </TouchableOpacity>
- 
-              <TouchableOpacity 
-                className="flex-1 h-14 bg-surface-light border border-border rounded-[24px] flex-row items-center justify-center shadow-sm"
-                onPress={() => onNavigate('Settings')}
-                activeOpacity={0.7}
-              >
-                <Text className="mr-2 text-xl">⚙️</Text>
-                <Text className="text-ink font-semibold">Settings</Text>
-              </TouchableOpacity>
-            </View>
- 
-            <TouchableOpacity 
-              className="w-full py-4 flex-row items-center justify-center"
-              onPress={handleLogout}
-              activeOpacity={0.7}
-            >
-              <Text className="text-ink-muted text-sm font-bold uppercase tracking-widest">
-                {isGuest ? 'Back to Login' : 'Logout'}
-              </Text>
-              <Text className="ml-2 text-ink-muted">{isGuest ? '←' : '🚪'}</Text>
-            </TouchableOpacity>
-          </View>
- 
-          {/* Footer */}
-          <View className="pb-6">
-            <Text className="text-center text-xs text-ink-muted font-bold uppercase tracking-[3px]">
-              Tilt left/right to control the ball
-            </Text>
-          </View>
-        </View>
-      </SafeAreaView>
-    </View>
+    </ScreenContainer>
   );
 }
 
