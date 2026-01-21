@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,22 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from 'firebase/auth';
-import * as Google from 'expo-auth-session/providers/google';
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
+import {
+  GoogleSignin,
+  isSuccessResponse,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
 import { auth } from '../config/firebase';
 import { Toast } from '../components/ui';
 
 const { width } = Dimensions.get('window');
 
-// Required for Google Sign-In on web
-WebBrowser.maybeCompleteAuthSession();
+// Google Sign-In konfigurieren
+GoogleSignin.configure({
+  webClientId: '205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com',
+});
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -37,50 +42,50 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
     type: 'info',
   });
 
-  // Google Sign-In setup
-  const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
-  const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
-    {
-      clientId: '205887865955-eh17efj9j2jhseli4qbjgvosfoj53uua.apps.googleusercontent.com',
-      webClientId: '205887865955-eh17efj9j2jhseli4qbjgvosfoj53uua.apps.googleusercontent.com',
-      redirectUri,
-    }
-  );
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { id_token } = response.params;
-      void handleGoogleCredential(id_token);
-    }
-  }, [response]);
-
   const showToast = (message: string, type: 'error' | 'success' | 'info' = 'error') => {
     setToast({ visible: true, message, type });
   };
 
-  const handleGoogleCredential = async (idToken: string) => {
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     setLoadingType('google');
     try {
-      const credential = GoogleAuthProvider.credential(idToken);
-      await signInWithCredential(auth, credential);
-      onLogin();
+      // Prüfe ob Google Play Services verfügbar sind
+      await GoogleSignin.hasPlayServices();
+
+      // Google Sign-In durchführen
+      const response = await GoogleSignin.signIn();
+
+      if (isSuccessResponse(response)) {
+        const { idToken } = response.data;
+
+        if (idToken) {
+          // Firebase Authentifizierung mit dem Google ID Token
+          const credential = GoogleAuthProvider.credential(idToken);
+          await signInWithCredential(auth, credential);
+          onLogin();
+        } else {
+          showToast('No ID token received from Google', 'error');
+        }
+      }
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      showToast(errorMessage, 'error');
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.IN_PROGRESS:
+            showToast('Sign in is already in progress', 'info');
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            showToast('Google Play Services not available', 'error');
+            break;
+          default:
+            showToast(error.message || 'An error occurred during sign in', 'error');
+        }
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+        showToast(errorMessage, 'error');
+      }
     } finally {
       setLoading(false);
-      setLoadingType(null);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setLoadingType('google');
-    try {
-      await promptAsync({ useProxy: true });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
-      showToast(errorMessage, 'error');
       setLoadingType(null);
     }
   };
@@ -191,7 +196,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
               <TouchableOpacity 
                 className="w-full h-14 bg-surface-light border border-border rounded-[24px] flex-row items-center justify-center shadow-sm"
                 onPress={handleGoogleSignIn}
-                disabled={!request || loading}
+                disabled={loading}
               >
                 <View className="w-8 h-8 items-center justify-center mr-2">
                   <Text className="text-primary font-bold text-xl">G</Text>

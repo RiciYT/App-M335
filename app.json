@@ -30,7 +30,8 @@
       "permissions": [
         "android.permission.SENSORS"
       ],
-      "package": "com.riciyt.tiltmaze"
+      "package": "com.riciyt.tiltmaze",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,6 +42,9 @@
       }
     },
     "owner": "riciyt",
-    "originalFullName": "@riciyt/app-m335"
+    "originalFullName": "@riciyt/app-m335",
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ]
   }
 }

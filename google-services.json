@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "205887865955",
+    "firebase_url": "https://expo-app-m335-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "expo-app-m335",
+    "storage_bucket": "expo-app-m335.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205887865955:android:8293f23866d7393ba6e456",
+        "android_client_info": {
+          "package_name": "com.riciyt.tiltmaze"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "205887865955-pa2ke2ha77gq8nmsr1nihhicji94vekf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.riciyt.tiltmaze",
+            "certificate_hash": "a5487593fb35794c1b7d907c5e349e5906f774fe"
+          }
+        },
+        {
+          "client_id": "205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBFAqDF-nwmuJmFdL7sq_Dmw0OeypT58kM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
