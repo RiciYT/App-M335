@@ -8,6 +8,12 @@ export interface GameScore {
   timestamp: number;
 }
 
+export interface AppSettings {
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  sensitivity: number;
+}
+
 export const formatTime = (ms: number): string => {
   const seconds = Math.floor(ms / 1000);
   const milliseconds = Math.floor((ms % 1000) / 10);

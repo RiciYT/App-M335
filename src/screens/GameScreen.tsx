@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_TILT_SETTINGS, TiltSettings, useTiltControl } from '../hooks/useTiltControl';
 import { clamp, roundToDecimals, TILT_CONTROLS } from '../config/tiltControls';
-import { formatTime } from '../types';
+import { formatTime, AppSettings } from '../types';
 import { IconButton, Card, Button } from '../components/ui';
 import { useTheme } from '../theme';
 
@@ -26,12 +26,6 @@ const WALL_THICKNESS = 20;
 const FALL_THRESHOLD = 120; // Distance below GAME_AREA_HEIGHT before treating the ball as fallen
 const FALL_RESET_DELAY_MS = 700;
 const SETTINGS_KEY = '@tiltmaze_settings';
-
-interface AppSettings {
-  soundEnabled: boolean;
-  vibrationEnabled: boolean;
-  sensitivity: number;
-}
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
   const { isDark } = useTheme();
