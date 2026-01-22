@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, View, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Matter from 'matter-js';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_TILT_SETTINGS, TiltSettings, useTiltControl } from '../hooks/useTiltControl';
 import { clamp, roundToDecimals, TILT_CONTROLS } from '../config/tiltControls';
 import { formatTime } from '../types';
@@ -22,6 +23,9 @@ const GAME_AREA_HEIGHT = height - 220; // Adjusted for new header/footer
 const BALL_RADIUS = 15;
 const TARGET_RADIUS = 30;
 const WALL_THICKNESS = 20;
+const FALL_THRESHOLD = 60;
+const FALL_RESET_DELAY_MS = 700;
+const SETTINGS_KEY = '@tiltmaze_settings';
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
   const { isDark } = useTheme();
@@ -33,8 +37,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [gameWon, setGameWon] = useState(false);
+  const [ballFell, setBallFell] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [engine, setEngine] = useState<Matter.Engine | null>(null);
+  const [vibrationEnabled, setVibrationEnabled] = useState(true);
   
   const [settings, setSettings] = useState<TiltSettings>({
     ...DEFAULT_TILT_SETTINGS,
@@ -43,12 +49,35 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const ballRef = useRef<Matter.Body | null>(null);
   const targetRef = useRef<Matter.Body | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
+  const fallHandledRef = useRef(false);
+
+  const resetBall = useCallback(() => {
+    if (!ballRef.current) return;
+    Matter.Body.setPosition(ballRef.current, { x: 50, y: 50 });
+    Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
+    Matter.Body.setAngularVelocity(ballRef.current, 0);
+  }, []);
 
   useTiltControl({
     engine,
     enabled: !gameWon && engine !== null,
     settings,
   });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const storedSettings = await AsyncStorage.getItem(SETTINGS_KEY);
+        if (storedSettings) {
+          const parsed = JSON.parse(storedSettings) as { vibrationEnabled?: boolean };
+          setVibrationEnabled(parsed.vibrationEnabled ?? true);
+        }
+      } catch (error) {
+        console.error('Error loading settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
 
   useEffect(() => {
     // Create matter-js engine with constant downward gravity
@@ -84,14 +113,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       Matter.Bodies.rectangle(
         SCREEN_WIDTH / 2,
         -WALL_THICKNESS / 2,
-        SCREEN_WIDTH + WALL_THICKNESS * 2,
-        WALL_THICKNESS,
-        { isStatic: true, label: 'wall' }
-      ),
-      // Bottom wall
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH / 2,
-        GAME_AREA_HEIGHT + WALL_THICKNESS / 2,
         SCREEN_WIDTH + WALL_THICKNESS * 2,
         WALL_THICKNESS,
         { isStatic: true, label: 'wall' }
@@ -158,6 +179,25 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       });
     });
 
+    const handleAfterUpdate = () => {
+      if (!ballRef.current || gameWon || ballFell) return;
+      if (ballRef.current.position.y > GAME_AREA_HEIGHT + FALL_THRESHOLD) {
+        if (fallHandledRef.current) return;
+        fallHandledRef.current = true;
+        setBallFell(true);
+        if (vibrationEnabled) {
+          Vibration.vibrate(100);
+        }
+        setTimeout(() => {
+          resetBall();
+          setBallFell(false);
+          fallHandledRef.current = false;
+        }, FALL_RESET_DELAY_MS);
+      }
+    };
+
+    Matter.Events.on(newEngine, 'afterUpdate', handleAfterUpdate);
+
     // Start the physics engine
     const runner = Matter.Runner.create();
     runnerRef.current = runner;
@@ -184,10 +224,11 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       if (runnerRef.current) {
         Matter.Runner.stop(runnerRef.current);
       }
+      Matter.Events.off(newEngine, 'afterUpdate', handleAfterUpdate);
       Matter.Engine.clear(newEngine);
       setEngine(null);
     };
-  }, [gameWon, onGameComplete, startTime]);
+  }, [ballFell, gameWon, onGameComplete, resetBall, startTime, vibrationEnabled]);
 
   // Timer update
   useEffect(() => {
@@ -348,6 +389,15 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                 <Card variant="elevated" className="items-center p-8">
                   <Text className="text-6xl mb-3">🎉</Text>
                   <Text className="text-mint text-2xl font-black">You Won!</Text>
+                </Card>
+              </View>
+            )}
+
+            {ballFell && !gameWon && (
+              <View className="absolute inset-0 items-center justify-center bg-black/40">
+                <Card variant="elevated" className="items-center p-6">
+                  <Text className="text-5xl mb-2">💥</Text>
+                  <Text className="text-primary text-xl font-black">You Fell!</Text>
                 </Card>
               </View>
             )}
