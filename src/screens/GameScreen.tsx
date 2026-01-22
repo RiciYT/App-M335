@@ -23,6 +23,9 @@ const GAME_AREA_HEIGHT = height - 220; // Adjusted for new header/footer
 const BALL_RADIUS = 15;
 const TARGET_RADIUS = 30;
 const WALL_THICKNESS = 20;
+const FALL_THRESHOLD = 120; // Distance below GAME_AREA_HEIGHT before treating the ball as fallen
+const FALL_RESET_DELAY_MS = 700;
+const SETTINGS_KEY = '@tiltmaze_settings';
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
   const { isDark } = useTheme();
@@ -95,14 +98,6 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         WALL_THICKNESS,
         { isStatic: true, label: 'wall' }
       ),
-      // Bottom wall
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH / 2,
-        GAME_AREA_HEIGHT + WALL_THICKNESS / 2,
-        SCREEN_WIDTH + WALL_THICKNESS * 2,
-        WALL_THICKNESS,
-        { isStatic: true, label: 'wall' }
-      ),
       // Left wall
       Matter.Bodies.rectangle(
         -WALL_THICKNESS / 2,
@@ -168,6 +163,25 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       });
     });
 
+    const handleAfterUpdate = () => {
+      if (!ballRef.current || gameWonRef.current || ballFellRef.current) return;
+      if (ballRef.current.position.y > GAME_AREA_HEIGHT + FALL_THRESHOLD) {
+        if (fallHandledRef.current) return;
+        fallHandledRef.current = true;
+        setBallFell(true);
+        if (vibrationEnabledRef.current) {
+          Vibration.vibrate(100);
+        }
+        fallTimeoutRef.current = setTimeout(() => {
+          resetBall();
+          setBallFell(false);
+          fallHandledRef.current = false;
+        }, FALL_RESET_DELAY_MS);
+      }
+    };
+
+    Matter.Events.on(newEngine, 'afterUpdate', handleAfterUpdate);
+
     // Start the physics engine
     const runner = Matter.Runner.create();
     runnerRef.current = runner;
@@ -194,10 +208,14 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       if (runnerRef.current) {
         Matter.Runner.stop(runnerRef.current);
       }
+      if (fallTimeoutRef.current) {
+        clearTimeout(fallTimeoutRef.current);
+      }
+      Matter.Events.off(newEngine, 'afterUpdate', handleAfterUpdate);
       Matter.Engine.clear(newEngine);
       setEngine(null);
     };
-  }, [gameWon, onGameComplete, startTime]);
+  }, [onGameComplete, resetBall, startTime]);
 
   // Timer update
   useEffect(() => {
@@ -358,6 +376,15 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                 <Card variant="elevated" className="items-center p-8">
                   <Text className="text-6xl mb-3">🎉</Text>
                   <Text className="text-mint text-2xl font-black">You Won!</Text>
+                </Card>
+              </View>
+            )}
+
+            {ballFell && !gameWon && (
+              <View className="absolute inset-0 items-center justify-center bg-black/40">
+                <Card variant="elevated" className="items-center p-6">
+                  <Text className="text-5xl mb-2">💥</Text>
+                  <Text className="text-primary text-xl font-black">You Fell!</Text>
                 </Card>
               </View>
             )}
