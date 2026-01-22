@@ -34,9 +34,9 @@ export const TILT_CONTROLS = {
    * Lower values = more smoothing (smoother but less responsive).
    * Higher values = less smoothing (more responsive but more jittery).
    * Range: 0.1 - 0.5 recommended.
-   * Default: 0.3
+   * Default: 0.25
    */
-  SMOOTHING_ALPHA: 0.3,
+  SMOOTHING_ALPHA: 0.25,
 
   /**
    * Constant Gravity (Y-axis)
@@ -50,10 +50,10 @@ export const TILT_CONTROLS = {
    * Update Interval (milliseconds)
    * How often the accelerometer sends updates.
    * Lower values = more frequent updates but more CPU usage.
-   * Range: 30 - 100 recommended.
-   * Default: 50 (20 updates per second)
+   * Range: 16 - 100 recommended.
+   * Default: 16 (~60 updates per second)
    */
-  UPDATE_INTERVAL: 50,
+  UPDATE_INTERVAL: 16,
 };
 
 /**
