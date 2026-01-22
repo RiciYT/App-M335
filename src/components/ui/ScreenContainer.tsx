@@ -2,9 +2,10 @@ import React, { ReactNode } from 'react';
 import { View, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 interface ScreenContainerProps {
   children: ReactNode;
@@ -13,37 +14,106 @@ interface ScreenContainerProps {
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }
 
-function GridBackground({ isDark }: { isDark: boolean }) {
+// Geometric grid with neon arcade aesthetic
+function ArcadeGrid({ isDark }: { isDark: boolean }) {
+  const lineColor = isDark ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.05)';
+  const dotColor = isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)';
+  
   return (
     <View className="absolute inset-0 z-0" pointerEvents="none">
-      <View className={`absolute inset-0 ${isDark ? 'opacity-[0.03]' : 'opacity-[0.05]'}`}>
-        {[...Array(20)].map((_, i) => (
-          <View
-            key={`v-${i}`}
-            className={`absolute top-0 bottom-0 w-[1px] ${isDark ? 'bg-ink-light' : 'bg-ink'}`}
-            style={{ left: i * (width / 10) }}
-          />
-        ))}
+      {/* Diagonal scanlines effect */}
+      <View className="absolute inset-0" style={{ opacity: isDark ? 0.03 : 0.02 }}>
         {[...Array(40)].map((_, i) => (
           <View
-            key={`h-${i}`}
-            className={`absolute left-0 right-0 h-[1px] ${isDark ? 'bg-ink-light' : 'bg-ink'}`}
-            style={{ top: i * (width / 10) }}
+            key={`scan-${i}`}
+            className="absolute left-0 right-0 h-[1px]"
+            style={{
+              top: i * 20,
+              backgroundColor: isDark ? '#A855F7' : '#7C3AED',
+            }}
           />
+        ))}
+      </View>
+      
+      {/* Dot matrix pattern */}
+      <View className="absolute inset-0">
+        {[...Array(12)].map((_, row) => (
+          [...Array(8)].map((_, col) => (
+            <View
+              key={`dot-${row}-${col}`}
+              className="absolute w-1 h-1 rounded-full"
+              style={{
+                left: col * (width / 7) + 20,
+                top: row * 60 + 30,
+                backgroundColor: dotColor,
+              }}
+            />
+          ))
         ))}
       </View>
     </View>
   );
 }
 
-function GlowEffects({ isDark }: { isDark: boolean }) {
-  const opacity = isDark ? 'opacity-10' : 'opacity-20';
+// Dramatic neon glow orbs
+function NeonGlows({ isDark }: { isDark: boolean }) {
   return (
     <>
-      <View className={`absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary ${opacity} rounded-full`} />
-      <View className={`absolute top-[20%] -right-[20%] w-64 h-64 bg-secondary ${opacity} rounded-full`} />
-      <View className={`absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent ${opacity} rounded-full`} />
+      {/* Primary violet glow - top left */}
+      <View
+        className="absolute w-80 h-80 rounded-full"
+        style={{
+          top: -100,
+          left: -80,
+          backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+          transform: [{ scale: 1.2 }],
+        }}
+      />
+      
+      {/* Secondary pink glow - top right */}
+      <View
+        className="absolute w-72 h-72 rounded-full"
+        style={{
+          top: height * 0.15,
+          right: -100,
+          backgroundColor: isDark ? 'rgba(244, 114, 182, 0.12)' : 'rgba(244, 114, 182, 0.08)',
+        }}
+      />
+      
+      {/* Accent cyan glow - bottom */}
+      <View
+        className="absolute w-96 h-96 rounded-full"
+        style={{
+          bottom: -150,
+          right: -50,
+          backgroundColor: isDark ? 'rgba(34, 211, 238, 0.1)' : 'rgba(34, 211, 238, 0.06)',
+        }}
+      />
+      
+      {/* Yellow accent spark - center left */}
+      <View
+        className="absolute w-48 h-48 rounded-full"
+        style={{
+          top: height * 0.4,
+          left: -60,
+          backgroundColor: isDark ? 'rgba(250, 204, 21, 0.08)' : 'rgba(250, 204, 21, 0.05)',
+        }}
+      />
     </>
+  );
+}
+
+// Noise texture overlay for depth
+function NoiseOverlay({ isDark }: { isDark: boolean }) {
+  return (
+    <View
+      className="absolute inset-0 z-10"
+      pointerEvents="none"
+      style={{
+        opacity: isDark ? 0.02 : 0.015,
+        backgroundColor: 'transparent',
+      }}
+    />
   );
 }
 
@@ -58,8 +128,21 @@ export function ScreenContainer({
   return (
     <View className={`flex-1 relative overflow-hidden ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      {showGrid && <GridBackground isDark={isDark} />}
-      {showGlowEffects && <GlowEffects isDark={isDark} />}
+      
+      {/* Subtle gradient base */}
+      <LinearGradient
+        colors={isDark 
+          ? ['#0C0118', '#150726', '#0C0118'] 
+          : ['#FAF5FF', '#F3E8FF', '#FAF5FF']
+        }
+        locations={[0, 0.5, 1]}
+        className="absolute inset-0"
+      />
+      
+      {showGlowEffects && <NeonGlows isDark={isDark} />}
+      {showGrid && <ArcadeGrid isDark={isDark} />}
+      <NoiseOverlay isDark={isDark} />
+      
       <SafeAreaView className="flex-1" edges={edges}>
         {children}
       </SafeAreaView>

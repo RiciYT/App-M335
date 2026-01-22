@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { ref, get } from 'firebase/database';
+import { LinearGradient } from 'expo-linear-gradient';
 import { database } from '../config/firebase';
 import { formatTime, GameScore } from '../types';
 import { ScreenContainer, Header, Card } from '../components/ui';
@@ -58,34 +59,52 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     const medal = getMedalIcon(index);
     const isTopThree = index < 3;
 
-    const getRankBgColor = () => {
-      if (index === 0) return isDark ? 'bg-amber-900/30 border-amber-500/50' : 'bg-amber-50 border-secondary';
-      if (index === 1) return isDark ? 'bg-slate-700/50 border-slate-500' : 'bg-slate-100 border-accent';
-      if (index === 2) return isDark ? 'bg-orange-900/30 border-orange-500/50' : 'bg-orange-50 border-secondary';
-      return '';
+    const getBorderColor = () => {
+      if (index === 0) return '#FACC15'; // Gold/Yellow
+      if (index === 1) return '#A78BFA'; // Silver/Violet
+      if (index === 2) return '#F472B6'; // Bronze/Pink
+      return 'transparent';
+    };
+
+    const getGlowColor = () => {
+      if (index === 0) return '#FACC15';
+      if (index === 1) return '#A78BFA';
+      if (index === 2) return '#F472B6';
+      return '#A855F7';
     };
 
     return (
-      <Card 
-        variant={isTopThree ? 'elevated' : 'default'} 
-        className={`mb-3 flex-row items-center ${isTopThree ? `border-2 ${getRankBgColor()}` : ''}`}
+      <View 
+        className={`mb-3 flex-row items-center p-4 rounded-2xl ${
+          isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'
+        }`}
+        style={{
+          borderWidth: isTopThree ? 2 : 1,
+          borderColor: isTopThree ? getBorderColor() : isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
+          shadowColor: isTopThree ? getGlowColor() : 'transparent',
+          shadowOpacity: isTopThree ? (isDark ? 0.4 : 0.25) : 0,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: isTopThree ? 12 : 0,
+        }}
       >
+        {/* Rank indicator */}
         <View className="mr-4 items-center justify-center w-14">
           {medal ? (
             <Text className="text-4xl">{medal}</Text>
           ) : (
-            <View className={`w-11 h-11 rounded-full items-center justify-center ${
+            <View className={`w-11 h-11 rounded-xl items-center justify-center ${
               isDark ? 'bg-primary/20' : 'bg-primary-muted'
             }`}>
-              <Text className="text-lg font-bold text-primary">#{index + 1}</Text>
+              <Text className="text-lg font-black text-primary">#{index + 1}</Text>
             </View>
           )}
         </View>
         
+        {/* Player info */}
         <View className="flex-1">
           <Text 
-            className={`font-semibold mb-1.5 ${
-              isTopThree ? 'text-lg font-bold' : 'text-base'
+            className={`mb-1 ${
+              isTopThree ? 'text-lg font-black' : 'text-base font-bold'
             } ${isDark ? 'text-ink-light' : 'text-ink'}`} 
             numberOfLines={1}
           >
@@ -93,23 +112,38 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
           </Text>
           <View className="flex-row items-center">
             <Text className="text-sm mr-2">⏱</Text>
-            <Text className={`font-bold text-primary ${isTopThree ? 'text-xl' : 'text-lg'}`}>
+            <Text 
+              className={`font-black ${isTopThree ? 'text-xl' : 'text-lg'}`}
+              style={{
+                color: isTopThree ? getGlowColor() : isDark ? '#C084FC' : '#A855F7',
+              }}
+            >
               {formatTime(item.time)}
             </Text>
           </View>
         </View>
-      </Card>
+      </View>
     );
   };
 
   return (
-    <ScreenContainer showGlowEffects={false}>
+    <ScreenContainer showGlowEffects={true}>
       {/* Header */}
-      <View className={`px-5 pt-3 pb-5 ${
-        isDark ? 'bg-surface-dark border-b border-border-dark' : 'bg-surface-light border-b border-border'
-      } rounded-b-3xl shadow-lg`}>
+      <View 
+        className={`mx-4 mt-2 rounded-3xl overflow-hidden ${
+          isDark ? 'bg-surface-dark/80' : 'bg-surface-light/90'
+        }`}
+        style={{
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(76, 29, 149, 0.4)' : 'rgba(168, 85, 247, 0.2)',
+          shadowColor: '#A855F7',
+          shadowOpacity: isDark ? 0.3 : 0.15,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 16,
+        }}
+      >
         <Header
-          title="🏆 Highscores"
+          title="🏆 Leaderboard"
           subtitle="Top 10 Players"
           leftIcon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
           onLeftPress={onBack}
@@ -119,19 +153,33 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
 
       {loading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#2EC4C6" />
-          <Text className={`mt-4 font-semibold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
-            Loading highscores...
+          <View 
+            className="w-20 h-20 rounded-full items-center justify-center"
+            style={{
+              backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+            }}
+          >
+            <ActivityIndicator size="large" color="#A855F7" />
+          </View>
+          <Text className={`mt-4 font-bold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+            Loading...
           </Text>
         </View>
       ) : scores.length === 0 ? (
         <View className="flex-1 justify-center items-center px-10">
-          <Text className="text-7xl mb-4">🎯</Text>
-          <Text className={`text-2xl font-bold mb-2 ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+          <View 
+            className="w-24 h-24 rounded-full items-center justify-center mb-6"
+            style={{
+              backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+            }}
+          >
+            <Text className="text-5xl">🎯</Text>
+          </View>
+          <Text className={`text-2xl font-black mb-2 ${isDark ? 'text-ink-light' : 'text-ink'}`}>
             No scores yet!
           </Text>
-          <Text className={`text-center ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
-            Be the first to complete the game!
+          <Text className={`text-center font-medium ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+            Be the first to complete the maze!
           </Text>
         </View>
       ) : (
@@ -139,7 +187,7 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
           data={scores}
           renderItem={renderScore}
           keyExtractor={(item, index) => `${item.userId}-${index}`}
-          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         />
       )}

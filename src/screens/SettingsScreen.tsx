@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert, Switch } from 'react-n
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOut } from 'firebase/auth';
 import { ref, remove } from 'firebase/database';
+import { LinearGradient } from 'expo-linear-gradient';
 import { auth, database } from '../config/firebase';
 import { clamp, roundToDecimals } from '../config/tiltControls';
 import { ScreenContainer, Header, Card, ListItem } from '../components/ui';
@@ -143,26 +144,44 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
     switch (themeMode) {
       case 'light': return '☀️ Light';
       case 'dark': return '🌙 Dark';
-      case 'system': return '🔄 System';
+      case 'system': return '🔄 Auto';
     }
   };
 
   return (
-    <ScreenContainer showGlowEffects={false}>
+    <ScreenContainer showGlowEffects={true}>
       {/* Header */}
-      <View className={`${isDark ? 'bg-surface-dark border-b border-border-dark' : 'bg-surface-light border-b border-border'}`}>
+      <View 
+        className={`mx-4 mt-2 rounded-3xl overflow-hidden ${
+          isDark ? 'bg-surface-dark/80' : 'bg-surface-light/90'
+        }`}
+        style={{
+          borderWidth: 1,
+          borderColor: isDark ? 'rgba(76, 29, 149, 0.4)' : 'rgba(168, 85, 247, 0.2)',
+          shadowColor: '#A855F7',
+          shadowOpacity: isDark ? 0.3 : 0.15,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 16,
+        }}
+      >
         <Header
-          title="Settings"
+          title="⚙️ Settings"
           leftIcon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
           onLeftPress={onBack}
           variant="transparent"
         />
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Appearance Section */}
-        <Card variant="default" className="mb-5">
-          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+        <View 
+          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
+          style={{
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
+          }}
+        >
+          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
           }`}>
             Appearance
@@ -176,20 +195,30 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
             rightContent={
               <TouchableOpacity 
                 onPress={cycleTheme}
-                className={`px-4 py-2 rounded-full ${isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}
+                className={`px-4 py-2 rounded-xl ${isDark ? 'bg-primary/20' : 'bg-primary-muted'}`}
+                style={{
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                }}
               >
-                <Text className={`font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                <Text className={`font-black text-sm ${isDark ? 'text-primary-light' : 'text-primary-dark'}`}>
                   {getThemeLabel()}
                 </Text>
               </TouchableOpacity>
             }
             showBorder={false}
           />
-        </Card>
+        </View>
 
         {/* Game Settings Section */}
-        <Card variant="default" className="mb-5">
-          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+        <View 
+          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
+          style={{
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
+          }}
+        >
+          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
           }`}>
             Game
@@ -198,12 +227,12 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           <ListItem
             icon="🔊"
             title="Sound Effects"
-            subtitle="Play sounds during gameplay"
+            subtitle="Audio feedback"
             rightContent={
               <Switch
                 value={settings.soundEnabled}
                 onValueChange={toggleSound}
-                trackColor={{ false: isDark ? '#475569' : '#E3E8F0', true: '#56D1B7' }}
+                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#22D3EE' }}
                 thumbColor="#fff"
               />
             }
@@ -212,22 +241,28 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           <ListItem
             icon="📳"
             title="Vibration"
-            subtitle="Haptic feedback on collisions"
+            subtitle="Haptic feedback"
             rightContent={
               <Switch
                 value={settings.vibrationEnabled}
                 onValueChange={toggleVibration}
-                trackColor={{ false: isDark ? '#475569' : '#E3E8F0', true: '#56D1B7' }}
+                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#22D3EE' }}
                 thumbColor="#fff"
               />
             }
             showBorder={false}
           />
-        </Card>
+        </View>
 
         {/* Controls Section */}
-        <Card variant="default" className="mb-5">
-          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+        <View 
+          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
+          style={{
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
+          }}
+        >
+          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
           }`}>
             Controls
@@ -236,20 +271,30 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           <ListItem
             icon="📱"
             title="Tilt Sensitivity"
-            subtitle={`Movement speed: ${settings.sensitivity.toFixed(1)}x`}
+            subtitle={`Speed: ${settings.sensitivity.toFixed(1)}x`}
             rightContent={
               <View className="flex-row gap-2">
                 <TouchableOpacity 
-                  className="w-10 h-10 rounded-full bg-primary items-center justify-center"
+                  className="w-10 h-10 rounded-xl items-center justify-center"
                   onPress={() => adjustSensitivity(-0.1)}
+                  style={{
+                    backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.1)',
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
+                  }}
                 >
-                  <Text className="text-white font-bold text-lg">−</Text>
+                  <Text className="text-primary font-black text-lg">−</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  className="w-10 h-10 rounded-full bg-primary items-center justify-center"
+                  className="w-10 h-10 rounded-xl items-center justify-center"
                   onPress={() => adjustSensitivity(0.1)}
+                  style={{
+                    backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.1)',
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
+                  }}
                 >
-                  <Text className="text-white font-bold text-lg">+</Text>
+                  <Text className="text-primary font-black text-lg">+</Text>
                 </TouchableOpacity>
               </View>
             }
@@ -258,22 +303,36 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
 
           {/* Sensitivity Bar */}
           <View className="mt-4 pt-4">
-            <View className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}>
-              <View 
-                className="h-full rounded-full bg-accent"
+            <View 
+              className="h-3 rounded-full overflow-hidden"
+              style={{
+                backgroundColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
+              }}
+            >
+              <LinearGradient
+                colors={['#A855F7', '#F472B6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="h-full rounded-full"
                 style={{ width: `${((settings.sensitivity - 0.3) / 2.7) * 100}%` }}
               />
             </View>
             <View className="flex-row justify-between mt-2">
-              <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Slow</Text>
-              <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Fast</Text>
+              <Text className={`text-xs font-bold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Slow</Text>
+              <Text className={`text-xs font-bold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Fast</Text>
             </View>
           </View>
-        </Card>
+        </View>
 
         {/* Account Section */}
-        <Card variant="default" className="mb-5">
-          <Text className={`text-sm font-bold uppercase tracking-wider mb-4 ${
+        <View 
+          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
+          style={{
+            borderWidth: 1,
+            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
+          }}
+        >
+          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
           }`}>
             Account
@@ -284,14 +343,14 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
               <ListItem
                 icon="🗑️"
                 title="Reset Best Time"
-                subtitle="Remove your highscore from leaderboard"
+                subtitle="Clear your record"
                 onPress={handleResetBestTime}
               />
 
               <ListItem
                 icon="🚪"
                 title="Sign Out"
-                subtitle="Log out of your account"
+                subtitle="Log out of account"
                 onPress={handleSignOut}
                 showBorder={false}
               />
@@ -299,25 +358,35 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           )}
 
           {isGuest && (
-            <View className={`flex-row items-center p-4 rounded-2xl ${
-              isDark ? 'bg-secondary/20 border border-secondary/40' : 'bg-secondary/10 border border-secondary/30'
-            }`}>
+            <View 
+              className={`flex-row items-center p-4 rounded-2xl ${
+                isDark ? 'bg-warning/15' : 'bg-warning/10'
+              }`}
+              style={{
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(251, 146, 60, 0.3)' : 'rgba(251, 146, 60, 0.2)',
+              }}
+            >
               <Text className="text-lg mr-3">ℹ️</Text>
-              <Text className={`flex-1 text-sm leading-5 ${isDark ? 'text-secondary-light' : 'text-secondary-dark'}`}>
-                Playing as guest. Sign in to save your scores!
+              <Text className={`flex-1 text-sm font-medium leading-5 ${isDark ? 'text-warning' : 'text-warning'}`}>
+                Sign in to save scores
               </Text>
             </View>
           )}
-        </Card>
+        </View>
 
         {/* App Info */}
         <View className="items-center py-6">
-          <Text className={`text-sm font-semibold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+          <Text className={`text-sm font-black tracking-wide ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
             Tilt Maze v{APP_VERSION}
           </Text>
-          <Text className={`text-xs mt-1 ${isDark ? 'text-ink-muted-light/60' : 'text-ink-muted/60'}`}>
-            Tilt left/right only • Gravity pulls down
-          </Text>
+          <View className="flex-row items-center mt-2">
+            <View className="w-4 h-[1px] bg-primary/30 mr-2" />
+            <Text className={`text-xs font-medium ${isDark ? 'text-ink-muted-light/60' : 'text-ink-muted/60'}`}>
+              Tilt · Navigate · Win
+            </Text>
+            <View className="w-4 h-[1px] bg-primary/30 ml-2" />
+          </View>
         </View>
       </ScrollView>
     </ScreenContainer>

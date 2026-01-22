@@ -6,59 +6,75 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Primary brand colors
+        // NEON ARCADE BRUTALISM PALETTE
+        // Primary: Electric Violet - the signature arcade glow
         primary: {
-          DEFAULT: "#2EC4C6",
-          light: "#5DD3D5",
-          dark: "#1FA8AA",
-          muted: "#D4F4F4",
+          DEFAULT: "#A855F7",
+          light: "#C084FC",
+          dark: "#7C3AED",
+          muted: "#F3E8FF",
+          glow: "rgba(168, 85, 247, 0.5)",
         },
+        // Secondary: Hot Cyber Pink - energy and excitement
         secondary: {
-          DEFAULT: "#F59C7A",
-          light: "#F7B499",
-          dark: "#E87A52",
-          muted: "#FDEDE7",
+          DEFAULT: "#F472B6",
+          light: "#F9A8D4",
+          dark: "#DB2777",
+          muted: "#FCE7F3",
+          glow: "rgba(244, 114, 182, 0.5)",
         },
+        // Accent: Cyber Yellow - highlights and CTAs
         accent: {
-          DEFAULT: "#7FB5FF",
-          light: "#A3CBFF",
-          dark: "#5A9AEF",
-          muted: "#E8F2FF",
+          DEFAULT: "#FACC15",
+          light: "#FDE047",
+          dark: "#EAB308",
+          muted: "#FEF9C3",
+          glow: "rgba(250, 204, 21, 0.5)",
         },
+        // Mint: Neon Cyan - success states and targets
         mint: {
-          DEFAULT: "#56D1B7",
-          light: "#7EDCC9",
-          dark: "#3BB89D",
-          muted: "#E0F7F1",
+          DEFAULT: "#22D3EE",
+          light: "#67E8F9",
+          dark: "#06B6D4",
+          muted: "#CFFAFE",
+          glow: "rgba(34, 211, 238, 0.5)",
         },
-        // Semantic colors
-        success: "#22C55E",
-        warning: "#F59E0B",
-        error: "#EF4444",
-        info: "#3B82F6",
-        // Background colors
+        // Semantic colors with arcade feel
+        success: "#4ADE80",
+        warning: "#FB923C",
+        error: "#F87171",
+        info: "#60A5FA",
+        // Background: Deep space black with subtle purple tint
         background: {
-          light: "#F5F7FB",
-          dark: "#0F172A",
+          light: "#FAF5FF",
+          dark: "#0C0118",
         },
-        // Surface colors (cards, modals)
+        // Surface colors with glassmorphism
         surface: {
           light: "#FFFFFF",
-          dark: "#1E293B",
-          muted: "#EEF2F7",
-          "muted-dark": "#334155",
+          dark: "#1A0A2E",
+          muted: "#F3E8FF",
+          "muted-dark": "#2D1B4E",
         },
         // Text colors
         ink: {
-          DEFAULT: "#1F2937",
+          DEFAULT: "#1E1B4B",
           muted: "#6B7280",
-          light: "#F8FAFC",
-          "muted-light": "#94A3B8",
+          light: "#FAF5FF",
+          "muted-light": "#A78BFA",
         },
-        // Border colors
+        // Border colors with glow potential
         border: {
-          DEFAULT: "#E3E8F0",
-          dark: "#334155",
+          DEFAULT: "#DDD6FE",
+          dark: "#4C1D95",
+          glow: "rgba(168, 85, 247, 0.3)",
+        },
+        // Special neon effects
+        neon: {
+          violet: "#8B5CF6",
+          pink: "#EC4899",
+          cyan: "#06B6D4",
+          yellow: "#EAB308",
         },
       },
       fontFamily: {
@@ -75,6 +91,8 @@ module.exports = {
         "3xl": ["30px", { lineHeight: "36px" }],
         "4xl": ["36px", { lineHeight: "40px" }],
         "5xl": ["48px", { lineHeight: "52px" }],
+        "6xl": ["60px", { lineHeight: "64px" }],
+        "7xl": ["72px", { lineHeight: "76px" }],
       },
       spacing: {
         "safe-top": "env(safe-area-inset-top)",
@@ -84,6 +102,7 @@ module.exports = {
         "2xl": "16px",
         "3xl": "24px",
         "4xl": "32px",
+        "5xl": "40px",
       },
     },
   },

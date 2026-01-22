@@ -1,9 +1,10 @@
 import React, { ReactNode } from 'react';
-import { TouchableOpacity, Text } from 'react-native';
+import { TouchableOpacity, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme';
 
 type IconButtonSize = 'sm' | 'md' | 'lg';
-type IconButtonVariant = 'default' | 'primary' | 'ghost';
+type IconButtonVariant = 'default' | 'primary' | 'ghost' | 'glow';
 
 interface IconButtonProps {
   icon: ReactNode;
@@ -33,27 +34,59 @@ export function IconButton({
   const { isDark } = useTheme();
   const sizeStyle = sizeStyles[size];
 
-  const getVariantClasses = () => {
+  const getVariantStyle = () => {
     switch (variant) {
       case 'primary':
-        return 'bg-primary';
+        return {
+          className: 'bg-primary',
+          style: {
+            shadowColor: '#A855F7',
+            shadowOpacity: 0.4,
+            shadowOffset: { width: 0, height: 4 },
+            shadowRadius: 12,
+          },
+        };
+      case 'glow':
+        return {
+          className: isDark ? 'bg-surface-dark/80 border border-primary/50' : 'bg-surface-light border border-primary/30',
+          style: {
+            shadowColor: '#A855F7',
+            shadowOpacity: isDark ? 0.4 : 0.2,
+            shadowOffset: { width: 0, height: 0 },
+            shadowRadius: 12,
+          },
+        };
       case 'ghost':
-        return 'bg-transparent';
+        return {
+          className: 'bg-transparent',
+          style: {},
+        };
       default:
-        return isDark 
-          ? 'bg-surface-dark border border-border-dark' 
-          : 'bg-surface-light border border-border';
+        return {
+          className: isDark 
+            ? 'bg-surface-dark/70 border border-border-dark/50' 
+            : 'bg-surface-light/90 border border-border/50',
+          style: {
+            shadowColor: isDark ? '#A855F7' : '#000',
+            shadowOpacity: isDark ? 0.15 : 0.05,
+            shadowOffset: { width: 0, height: 2 },
+            shadowRadius: 8,
+          },
+        };
     }
   };
+
+  const variantStyle = getVariantStyle();
 
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.7}
-      className={`${sizeStyle.container} ${getVariantClasses()} items-center justify-center shadow-sm ${
+      activeOpacity={0.75}
+      className={`${sizeStyle.container} ${variantStyle.className} items-center justify-center ${
         disabled ? 'opacity-50' : ''
       } ${className}`}
+      style={variantStyle.style}
       accessibilityLabel={label}
     >
       {typeof icon === 'string' ? (

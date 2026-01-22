@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { View, Text } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { IconButton } from './IconButton';
 import { useTheme } from '../../theme';
 
@@ -11,7 +12,7 @@ interface HeaderProps {
   onLeftPress?: () => void;
   onRightPress?: () => void;
   centerContent?: ReactNode;
-  variant?: 'transparent' | 'surface';
+  variant?: 'transparent' | 'surface' | 'gradient';
 }
 
 export function Header({
@@ -26,14 +27,21 @@ export function Header({
 }: HeaderProps) {
   const { isDark } = useTheme();
 
-  const bgClass = variant === 'surface' 
-    ? isDark 
-      ? 'bg-surface-dark border-b border-border-dark' 
-      : 'bg-surface-light border-b border-border'
-    : 'bg-transparent';
+  const getBgClass = () => {
+    switch (variant) {
+      case 'surface':
+        return isDark 
+          ? 'bg-surface-dark/80 border-b border-border-dark/30' 
+          : 'bg-surface-light/90 border-b border-border/30';
+      case 'gradient':
+        return '';
+      default:
+        return 'bg-transparent';
+    }
+  };
 
-  return (
-    <View className={`flex-row items-center justify-between px-5 py-3 ${bgClass}`}>
+  const content = (
+    <View className={`flex-row items-center justify-between px-5 py-4 ${getBgClass()}`}>
       {/* Left section */}
       <View className="w-12">
         {leftIcon && onLeftPress && (
@@ -41,6 +49,7 @@ export function Header({
             icon={leftIcon}
             onPress={onLeftPress}
             size="md"
+            variant="default"
           />
         )}
       </View>
@@ -50,12 +59,21 @@ export function Header({
         {centerContent || (
           <>
             {title && (
-              <Text className={`text-xl font-bold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+              <Text 
+                className={`text-xl font-black tracking-tight ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                style={{
+                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'transparent',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: isDark ? 8 : 0,
+                }}
+              >
                 {title}
               </Text>
             )}
             {subtitle && (
-              <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'} mt-0.5`}>
+              <Text className={`text-xs font-medium uppercase tracking-[2px] mt-1 ${
+                isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+              }`}>
                 {subtitle}
               </Text>
             )}
@@ -70,9 +88,26 @@ export function Header({
             icon={rightIcon}
             onPress={onRightPress}
             size="md"
+            variant="default"
           />
         )}
       </View>
     </View>
   );
+
+  if (variant === 'gradient') {
+    return (
+      <LinearGradient
+        colors={isDark 
+          ? ['rgba(168, 85, 247, 0.15)', 'transparent'] 
+          : ['rgba(168, 85, 247, 0.08)', 'transparent']
+        }
+        className="pb-2"
+      >
+        {content}
+      </LinearGradient>
+    );
+  }
+
+  return content;
 }

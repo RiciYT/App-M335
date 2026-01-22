@@ -86,51 +86,73 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
     <ScreenContainer>
       <View className="flex-1 px-6 py-6 justify-between">
         {/* Header Section */}
-        <View className="items-center justify-center mt-2 mb-6">
-          {/* Logo */}
-          <View className="relative w-24 h-24 mb-5">
+        <View className="items-center justify-center mt-2 mb-4">
+          {/* Compact Logo */}
+          <View className="relative w-20 h-20 mb-4">
             <LinearGradient
-              colors={['#2EC4C6', '#7FB5FF']}
+              colors={['#A855F7', '#F472B6']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              className="absolute inset-0 rounded-2xl opacity-90"
-              style={{ transform: [{ rotate: '6deg' }] }}
+              className="absolute inset-0 rounded-2xl"
+              style={{ 
+                transform: [{ rotate: '6deg' }],
+                opacity: 0.9,
+              }}
             />
-            <View className={`absolute inset-0 rounded-2xl items-center justify-center border shadow-xl ${
-              isDark ? 'bg-surface-dark border-border-dark' : 'bg-surface-light border-border'
-            }`}>
-              <Text className="text-5xl">🎮</Text>
+            <View 
+              className={`absolute inset-0 rounded-2xl items-center justify-center ${
+                isDark ? 'bg-surface-dark' : 'bg-surface-light'
+              }`}
+              style={{
+                shadowColor: '#A855F7',
+                shadowOpacity: isDark ? 0.4 : 0.25,
+                shadowOffset: { width: 0, height: 4 },
+                shadowRadius: 16,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+              }}
+            >
+              <Text className="text-4xl">🎮</Text>
             </View>
-            <View className="absolute -top-2 -right-2 w-6 h-6 bg-secondary rounded-full border-2 border-white shadow-sm" />
           </View>
 
           {/* Title */}
           <View className="items-center">
-            <Text 
-              className={`text-4xl font-black tracking-tighter ${isDark ? 'text-ink-light' : 'text-ink'}`}
-              style={{
-                textShadowColor: 'rgba(46, 196, 198, 0.35)',
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 10,
-              }}
-            >
-              TILT <Text className="text-primary">MAZE</Text>
-            </Text>
+            <View className="flex-row items-center">
+              <Text 
+                className={`text-3xl font-black tracking-tighter ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                style={{
+                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'transparent',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 8,
+                }}
+              >
+                TILT
+              </Text>
+              <Text className="text-3xl font-black tracking-tighter text-primary ml-2">MAZE</Text>
+            </View>
              
             {/* Welcome */}
-            <View className="mt-5 items-center">
-              <Text className={`text-xs font-bold uppercase tracking-[3px] mb-1 ${
+            <View className="mt-4 items-center">
+              <Text className={`text-xs font-black uppercase tracking-[4px] mb-2 ${
                 isDark ? 'text-ink-muted-light' : 'text-ink-muted'
               }`}>
                 Welcome back
               </Text>
-              <Text className={`text-2xl font-bold tracking-tight ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+              <Text 
+                className={`text-2xl font-black tracking-tight ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                style={{
+                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 4,
+                }}
+              >
                 {getUserDisplayName()}
               </Text>
               
               {isGuest && (
                 <View className="mt-3">
-                  <Badge variant="warning" icon="⚠️" text="Guest Mode - Scores not saved" />
+                  <Badge variant="warning" icon="⚠️" text="Guest Mode" />
                 </View>
               )}
             </View>
@@ -138,30 +160,30 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
 
           {/* Nickname Section */}
           {!isGuest && user && (
-            <View className="mt-5 w-full max-w-[280px]">
+            <View className="mt-4 w-full max-w-[280px]">
               {editingNickname ? (
                 <Card variant="default" className="flex-row items-center p-3">
                   <TextInput
-                    className={`flex-1 text-sm py-1 ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                    className={`flex-1 text-sm py-1 font-medium ${isDark ? 'text-ink-light' : 'text-ink'}`}
                     placeholder="Enter nickname"
                     value={nickname}
                     onChangeText={setNickname}
                     maxLength={20}
-                    placeholderTextColor={isDark ? '#64748B' : '#9CA3AF'}
+                    placeholderTextColor={isDark ? '#A78BFA' : '#9CA3AF'}
                   />
-                  <View className="flex-row gap-1">
+                  <View className="flex-row gap-2">
                     <TouchableOpacity 
                       onPress={saveNickname}
-                      className="w-8 h-8 items-center justify-center bg-primary/10 rounded-lg"
+                      className="w-9 h-9 items-center justify-center bg-primary/20 rounded-xl"
                     >
-                      <Text className="text-primary font-bold">{BUTTON_ICONS.SAVE}</Text>
+                      <Text className="text-primary font-black">{BUTTON_ICONS.SAVE}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       onPress={() => {
                         setNickname(savedNickname);
                         setEditingNickname(false);
                       }}
-                      className={`w-8 h-8 items-center justify-center rounded-lg ${
+                      className={`w-9 h-9 items-center justify-center rounded-xl ${
                         isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'
                       }`}
                     >
@@ -171,11 +193,15 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
                 </Card>
               ) : (
                 <TouchableOpacity 
-                  className="flex-row items-center justify-center py-2"
+                  className="flex-row items-center justify-center py-2 px-4 rounded-full bg-primary/10"
                   onPress={() => setEditingNickname(true)}
+                  style={{
+                    borderWidth: 1,
+                    borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                  }}
                 >
-                  <Text className="text-primary text-xs mr-2">✏️</Text>
-                  <Text className="text-primary text-xs font-semibold uppercase tracking-widest">
+                  <Text className="text-primary text-sm mr-2">✏️</Text>
+                  <Text className="text-primary text-xs font-black uppercase tracking-[2px]">
                     {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
                   </Text>
                 </TouchableOpacity>
@@ -185,25 +211,25 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
         </View>
 
         {/* Action Buttons */}
-        <View className="w-full space-y-5 mb-10">
+        <View className="w-full space-y-4 mb-8">
           <Button
             variant="secondary"
-            size="lg"
+            size="xl"
             onPress={() => onNavigate('Game')}
-            icon={<Text className="text-white text-2xl">▶</Text>}
+            icon={<Text className="text-white text-3xl">▶</Text>}
           >
-            PLAY GAME
+            PLAY
           </Button>
 
-          <View className="flex-row gap-4 mt-2">
+          <View className="flex-row gap-3 mt-2">
             <View className="flex-1">
               <Button
                 variant="outline"
                 size="md"
                 onPress={() => onNavigate('Highscores')}
-                icon={<Text className="text-xl">🏆</Text>}
+                icon={<Text className="text-2xl">🏆</Text>}
               >
-                Highscores
+                Scores
               </Button>
             </View>
             <View className="flex-1">
@@ -211,33 +237,36 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
                 variant="outline"
                 size="md"
                 onPress={() => onNavigate('Settings')}
-                icon={<Text className="text-xl">⚙️</Text>}
+                icon={<Text className="text-2xl">⚙️</Text>}
               >
                 Settings
               </Button>
             </View>
           </View>
 
-          <Button
-            variant="ghost"
-            size="sm"
+          <TouchableOpacity 
             onPress={handleLogout}
+            className="py-4 items-center"
           >
-            <Text className={`text-sm font-bold uppercase tracking-widest ${
+            <Text className={`text-sm font-black uppercase tracking-[3px] ${
               isDark ? 'text-ink-muted-light' : 'text-ink-muted'
             }`}>
-              {isGuest ? 'Back to Login ←' : 'Logout 🚪'}
+              {isGuest ? '← Back' : 'Logout →'}
             </Text>
-          </Button>
+          </TouchableOpacity>
         </View>
 
         {/* Footer */}
-        <View className="pb-4">
-          <Text className={`text-center text-xs font-bold uppercase tracking-[3px] ${
-            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-          }`}>
-            Tilt left/right to control the ball
-          </Text>
+        <View className="pb-3">
+          <View className="flex-row items-center justify-center">
+            <View className="w-6 h-[1px] bg-primary/30 mr-3" />
+            <Text className={`text-center text-xs font-black uppercase tracking-[2px] ${
+              isDark ? 'text-ink-muted-light/60' : 'text-ink-muted/60'
+            }`}>
+              Tilt · Navigate · Win
+            </Text>
+            <View className="w-6 h-[1px] bg-primary/30 ml-3" />
+          </View>
         </View>
       </View>
     </ScreenContainer>

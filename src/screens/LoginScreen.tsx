@@ -96,37 +96,91 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
         />
 
         {/* Header Section */}
-        <View className="flex-1 items-center justify-center mt-12 mb-8">
-          {/* Logo */}
-          <View className="relative w-28 h-28 mb-8">
+        <View className="flex-1 items-center justify-center mt-8 mb-6">
+          {/* Logo with neon glow */}
+          <View className="relative w-32 h-32 mb-10">
+            {/* Outer glow ring */}
+            <View 
+              className="absolute inset-[-8px] rounded-[32px]"
+              style={{
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+              }}
+            />
+            
+            {/* Gradient background rotated */}
             <LinearGradient
-              colors={['#2EC4C6', '#7FB5FF']}
+              colors={['#A855F7', '#F472B6', '#22D3EE']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              className="absolute inset-0 rounded-3xl opacity-90"
-              style={{ transform: [{ rotate: '6deg' }] }}
+              className="absolute inset-0 rounded-[28px]"
+              style={{ 
+                transform: [{ rotate: '6deg' }],
+                opacity: 0.9,
+              }}
             />
-            <View className={`absolute inset-0 rounded-3xl items-center justify-center border shadow-2xl ${
-              isDark ? 'bg-surface-dark border-border-dark' : 'bg-surface-light border-border'
-            }`}>
-              <Text className="text-6xl">🎮</Text>
-            </View>
-            <View className="absolute -top-2 -right-2 w-7 h-7 bg-secondary rounded-full border-2 border-white shadow-lg" />
-          </View>
-
-          {/* Title */}
-          <View className="items-center">
-            <Text 
-              className={`text-5xl font-black tracking-tighter ${isDark ? 'text-ink-light' : 'text-ink'}`}
+            
+            {/* Main logo container */}
+            <View 
+              className={`absolute inset-0 rounded-[28px] items-center justify-center ${
+                isDark ? 'bg-surface-dark' : 'bg-surface-light'
+              }`}
               style={{
-                textShadowColor: 'rgba(46, 196, 198, 0.35)',
-                textShadowOffset: { width: 0, height: 0 },
-                textShadowRadius: 12,
+                shadowColor: '#A855F7',
+                shadowOpacity: isDark ? 0.5 : 0.3,
+                shadowOffset: { width: 0, height: 8 },
+                shadowRadius: 24,
+                borderWidth: 1,
+                borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
               }}
             >
-              TILT <Text className="text-primary">MAZE</Text>
-            </Text>
-            <Text className={`text-lg text-center mt-3 max-w-[300px] leading-relaxed ${
+              <Text className="text-6xl">🎮</Text>
+            </View>
+            
+            {/* Accent dot */}
+            <View 
+              className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-secondary items-center justify-center"
+              style={{
+                shadowColor: '#F472B6',
+                shadowOpacity: 0.6,
+                shadowOffset: { width: 0, height: 2 },
+                shadowRadius: 8,
+              }}
+            >
+              <View className="w-2 h-2 rounded-full bg-white" />
+            </View>
+          </View>
+
+          {/* Title with dramatic typography */}
+          <View className="items-center">
+            <View className="flex-row items-baseline">
+              <Text 
+                className={`text-6xl font-black tracking-tighter ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                style={{
+                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 16,
+                }}
+              >
+                TILT
+              </Text>
+            </View>
+            <LinearGradient
+              colors={['#A855F7', '#F472B6']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              className="px-4 py-1 rounded-lg mt-1"
+            >
+              <Text 
+                className="text-5xl font-black tracking-tight text-white"
+                style={{ letterSpacing: -2 }}
+              >
+                MAZE
+              </Text>
+            </LinearGradient>
+            
+            <Text className={`text-base text-center mt-6 max-w-[280px] leading-relaxed font-medium ${
               isDark ? 'text-ink-muted-light' : 'text-ink-muted'
             }`}>
               Guide the ball through the maze by tilting your device
@@ -135,7 +189,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
         </View>
 
         {/* Action Buttons */}
-        <View className="w-full space-y-6 mb-12">
+        <View className="w-full space-y-5 mb-10">
           <Button
             variant="secondary"
             size="lg"
@@ -144,10 +198,10 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
             disabled={loading}
             icon={<Text className="text-white text-2xl">▶</Text>}
           >
-            PLAY AS GUEST
+            PLAY NOW
           </Button>
 
-          <Divider text="or login to save" />
+          <Divider text="or sign in" />
 
           <Button
             variant="outline"
@@ -155,19 +209,27 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
             onPress={handleGoogleSignIn}
             loading={loadingType === 'google'}
             disabled={loading}
-            icon={<Text className="text-primary font-bold text-xl">G</Text>}
+            icon={
+              <View className="w-6 h-6 rounded-full bg-white items-center justify-center">
+                <Text className="text-primary-dark font-black text-sm">G</Text>
+              </View>
+            }
           >
-            Continue with Google
+            Google
           </Button>
         </View>
 
         {/* Footer */}
-        <View className="pb-6">
-          <Text className={`text-center text-xs font-bold uppercase tracking-[3px] ${
-            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-          }`}>
-            TILT LEFT/RIGHT TO CONTROL THE BALL
-          </Text>
+        <View className="pb-4">
+          <View className="flex-row items-center justify-center">
+            <View className="w-8 h-[1px] bg-primary/30 mr-3" />
+            <Text className={`text-center text-xs font-black uppercase tracking-[3px] ${
+              isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+            }`}>
+              Tilt to Play
+            </Text>
+            <View className="w-8 h-[1px] bg-primary/30 ml-3" />
+          </View>
         </View>
       </View>
     </ScreenContainer>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from './src/config/firebase';
 import { Screen } from './src/types';
@@ -62,7 +63,49 @@ function AppContent() {
   if (loading) {
     return (
       <View className={`flex-1 items-center justify-center ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
-        <ActivityIndicator size="large" color="#2EC4C6" />
+        <LinearGradient
+          colors={isDark 
+            ? ['#0C0118', '#150726', '#0C0118'] 
+            : ['#FAF5FF', '#F3E8FF', '#FAF5FF']
+          }
+          className="absolute inset-0"
+        />
+        {/* Glow effects */}
+        <View 
+          className="absolute w-72 h-72 rounded-full"
+          style={{
+            top: '20%',
+            left: -60,
+            backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+          }}
+        />
+        <View 
+          className="absolute w-64 h-64 rounded-full"
+          style={{
+            bottom: '20%',
+            right: -50,
+            backgroundColor: isDark ? 'rgba(244, 114, 182, 0.1)' : 'rgba(244, 114, 182, 0.06)',
+          }}
+        />
+        
+        {/* Loading indicator */}
+        <View 
+          className="w-20 h-20 rounded-full items-center justify-center"
+          style={{
+            backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+            shadowColor: '#A855F7',
+            shadowOpacity: isDark ? 0.5 : 0.3,
+            shadowOffset: { width: 0, height: 0 },
+            shadowRadius: 20,
+          }}
+        >
+          <ActivityIndicator size="large" color="#A855F7" />
+        </View>
+        <Text className={`mt-4 font-black text-sm tracking-[2px] uppercase ${
+          isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+        }`}>
+          Loading
+        </Text>
       </View>
     );
   }
