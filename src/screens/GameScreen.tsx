@@ -26,10 +26,11 @@ const WALL_THICKNESS = 20;
 const FALL_THRESHOLD = 120; // Distance below GAME_AREA_HEIGHT before treating the ball as fallen
 const FALL_RESET_DELAY_MS = 700;
 const SETTINGS_KEY = '@tiltmaze_settings';
+const BALL_INITIAL_POSITION = { x: 50, y: 50 };
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
   const { isDark } = useTheme();
-  const [ballPosition, setBallPosition] = useState({ x: 50, y: 50 });
+  const [ballPosition, setBallPosition] = useState(BALL_INITIAL_POSITION);
   const [targetPosition] = useState({ 
     x: SCREEN_WIDTH - 80, 
     y: GAME_AREA_HEIGHT - 55 
@@ -37,6 +38,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [gameWon, setGameWon] = useState(false);
+  const [ballFell, setBallFell] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [engine, setEngine] = useState<Matter.Engine | null>(null);
   const { vibrationEnabled } = useAppSettings();
@@ -49,6 +51,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const ballRef = useRef<Matter.Body | null>(null);
   const targetRef = useRef<Matter.Body | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
+  const gameWonRef = useRef(false);
+  const ballFellRef = useRef(false);
+  const fallHandledRef = useRef(false);
+  const fallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useTiltControl({
     engine,
@@ -60,6 +66,23 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     vibrationEnabledRef.current = vibrationEnabled;
   }, [vibrationEnabled]);
 
+  // Keep refs in sync with state
+  useEffect(() => {
+    gameWonRef.current = gameWon;
+  }, [gameWon]);
+
+  useEffect(() => {
+    ballFellRef.current = ballFell;
+  }, [ballFell]);
+
+  // Function to reset ball position
+  const resetBall = useCallback(() => {
+    if (ballRef.current) {
+      Matter.Body.setPosition(ballRef.current, BALL_INITIAL_POSITION);
+      Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
+    }
+  }, []);
+
   useEffect(() => {
     // Create matter-js engine with constant downward gravity
     const newEngine = Matter.Engine.create({
@@ -67,7 +90,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     });
 
     // Create the ball
-    const ball = Matter.Bodies.circle(50, 50, BALL_RADIUS, {
+    const ball = Matter.Bodies.circle(BALL_INITIAL_POSITION.x, BALL_INITIAL_POSITION.y, BALL_RADIUS, {
       restitution: 0.7, // Bounciness
       friction: 0.05,
       frictionAir: 0.02,
