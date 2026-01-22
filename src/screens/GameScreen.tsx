@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, View, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Matter from 'matter-js';
@@ -9,6 +9,7 @@ import { clamp, roundToDecimals, TILT_CONTROLS } from '../config/tiltControls';
 import { formatTime } from '../types';
 import { IconButton, Card, Button } from '../components/ui';
 import { useTheme } from '../theme';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 const { width, height } = Dimensions.get('window');
 
@@ -35,6 +36,8 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [gameWon, setGameWon] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [engine, setEngine] = useState<Matter.Engine | null>(null);
+  const { vibrationEnabled } = useAppSettings();
+  const vibrationEnabledRef = useRef(vibrationEnabled);
   
   const [settings, setSettings] = useState<TiltSettings>({
     ...DEFAULT_TILT_SETTINGS,
@@ -49,6 +52,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     enabled: !gameWon && engine !== null,
     settings,
   });
+
+  useEffect(() => {
+    vibrationEnabledRef.current = vibrationEnabled;
+  }, [vibrationEnabled]);
 
   useEffect(() => {
     // Create matter-js engine with constant downward gravity
@@ -149,6 +156,9 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         ) {
           if (!gameWon) {
             setGameWon(true);
+            if (vibrationEnabledRef.current) {
+              Vibration.vibrate(150);
+            }
             const finalTime = Date.now() - startTime;
             setTimeout(() => {
               onGameComplete(finalTime);
