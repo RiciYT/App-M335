@@ -4,9 +4,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOut } from 'firebase/auth';
 import { ref, remove } from 'firebase/database';
 import { auth, database } from '../config/firebase';
-import { TILT_CONTROLS, clamp, roundToDecimals } from '../config/tiltControls';
+import { clamp, roundToDecimals } from '../config/tiltControls';
 import { ScreenContainer, Header, Card, ListItem } from '../components/ui';
 import { useTheme } from '../theme';
+import { AppSettings, SETTINGS_KEY, DEFAULT_SETTINGS } from '../types';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -14,20 +15,7 @@ interface SettingsScreenProps {
   onLogout: () => void;
 }
 
-interface AppSettings {
-  soundEnabled: boolean;
-  vibrationEnabled: boolean;
-  sensitivity: number;
-}
-
-const SETTINGS_KEY = '@tiltmaze_settings';
 const APP_VERSION = '1.0.0';
-
-const DEFAULT_SETTINGS: AppSettings = {
-  soundEnabled: true,
-  vibrationEnabled: true,
-  sensitivity: TILT_CONTROLS.SENSITIVITY,
-};
 
 export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsScreenProps) {
   const { isDark, themeMode, setThemeMode } = useTheme();

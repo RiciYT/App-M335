@@ -1,20 +1,6 @@
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TILT_CONTROLS } from '../config/tiltControls';
-
-export interface AppSettings {
-  soundEnabled: boolean;
-  vibrationEnabled: boolean;
-  sensitivity: number;
-}
-
-const SETTINGS_KEY = '@tiltmaze_settings';
-
-const DEFAULT_SETTINGS: AppSettings = {
-  soundEnabled: true,
-  vibrationEnabled: true,
-  sensitivity: TILT_CONTROLS.SENSITIVITY,
-};
+import { AppSettings, SETTINGS_KEY, DEFAULT_SETTINGS } from '../types';
 
 export function useAppSettings() {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
