@@ -4,12 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Matter from 'matter-js';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_TILT_SETTINGS, TiltSettings, useTiltControl } from '../hooks/useTiltControl';
 import { clamp, roundToDecimals, TILT_CONTROLS } from '../config/tiltControls';
-import { formatTime, AppSettings } from '../types';
+import { formatTime } from '../types';
 import { IconButton, Card, Button } from '../components/ui';
 import { useTheme } from '../theme';
+import { useAppSettings } from '../hooks/useAppSettings';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,10 +37,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
   const [gameWon, setGameWon] = useState(false);
-  const [ballFell, setBallFell] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [engine, setEngine] = useState<Matter.Engine | null>(null);
-  const [vibrationEnabled, setVibrationEnabled] = useState(true);
+  const { vibrationEnabled } = useAppSettings();
+  const vibrationEnabledRef = useRef(vibrationEnabled);
   
   const [settings, setSettings] = useState<TiltSettings>({
     ...DEFAULT_TILT_SETTINGS,
@@ -49,49 +49,12 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const ballRef = useRef<Matter.Body | null>(null);
   const targetRef = useRef<Matter.Body | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
-  const fallHandledRef = useRef(false);
-  const gameWonRef = useRef(false);
-  const ballFellRef = useRef(false);
-  const vibrationEnabledRef = useRef(true);
-  const fallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const resetBall = useCallback(() => {
-    if (!ballRef.current) return;
-    Matter.Body.setPosition(ballRef.current, { x: 50, y: 50 });
-    Matter.Body.setVelocity(ballRef.current, { x: 0, y: 0 });
-    Matter.Body.setAngularVelocity(ballRef.current, 0);
-  }, []);
 
   useTiltControl({
     engine,
-    enabled: !gameWon && !ballFell && engine !== null,
+    enabled: !gameWon && engine !== null,
     settings,
   });
-
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const storedSettings = await AsyncStorage.getItem(SETTINGS_KEY);
-        if (storedSettings) {
-          const parsed = JSON.parse(storedSettings) as AppSettings;
-          const enabled = parsed.vibrationEnabled ?? true;
-          setVibrationEnabled(enabled);
-          vibrationEnabledRef.current = enabled;
-        }
-      } catch (error) {
-        console.error('Error loading settings:', error);
-      }
-    };
-    loadSettings();
-  }, []);
-
-  useEffect(() => {
-    gameWonRef.current = gameWon;
-  }, [gameWon]);
-
-  useEffect(() => {
-    ballFellRef.current = ballFell;
-  }, [ballFell]);
 
   useEffect(() => {
     vibrationEnabledRef.current = vibrationEnabled;
@@ -188,6 +151,9 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         ) {
           if (!gameWon) {
             setGameWon(true);
+            if (vibrationEnabledRef.current) {
+              Vibration.vibrate(150);
+            }
             const finalTime = Date.now() - startTime;
             setTimeout(() => {
               onGameComplete(finalTime);

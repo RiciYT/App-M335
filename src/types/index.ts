@@ -1,3 +1,5 @@
+import { TILT_CONTROLS } from '../config/tiltControls';
+
 export type Screen = 'Login' | 'Menu' | 'Game' | 'Result' | 'Highscores' | 'Settings';
 
 export interface GameScore {
@@ -13,6 +15,14 @@ export interface AppSettings {
   vibrationEnabled: boolean;
   sensitivity: number;
 }
+
+export const SETTINGS_KEY = '@tiltmaze_settings';
+
+export const DEFAULT_SETTINGS: AppSettings = {
+  soundEnabled: true,
+  vibrationEnabled: true,
+  sensitivity: TILT_CONTROLS.SENSITIVITY,
+};
 
 export const formatTime = (ms: number): string => {
   const seconds = Math.floor(ms / 1000);
