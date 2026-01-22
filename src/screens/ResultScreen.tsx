@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { ref, set, get } from 'firebase/database';
 import { auth, database } from '../config/firebase';
 import { formatTime, Screen } from '../types';
@@ -67,7 +67,8 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
 
   return (
     <ScreenContainer>
-      <View className="flex-1 px-6 py-8">
+      <ScrollView className="px-6 py-8" contentContainerStyle={{ flexGrow: 1 }}>
+        <View className="flex-1">
         {/* Header with celebration */}
         <View className="items-center mt-8 mb-8">
           <Text className="text-7xl mb-4">🎉</Text>
@@ -158,7 +159,7 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
         </View>
 
         {/* Action Buttons */}
-        <View className="flex-1 justify-end space-y-4">
+        <View className="mt-auto gap-4 pb-6">
           <Button
             variant="primary"
             size="lg"
@@ -189,7 +190,8 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
             Back to Menu
           </Button>
         </View>
-      </View>
+        </View>
+      </ScrollView>
     </ScreenContainer>
   );
 }
