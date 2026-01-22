@@ -23,9 +23,15 @@ const GAME_AREA_HEIGHT = height - 220; // Adjusted for new header/footer
 const BALL_RADIUS = 15;
 const TARGET_RADIUS = 30;
 const WALL_THICKNESS = 20;
-const FALL_THRESHOLD = 60;
+const FALL_THRESHOLD = 120; // Distance below GAME_AREA_HEIGHT before treating the ball as fallen
 const FALL_RESET_DELAY_MS = 700;
 const SETTINGS_KEY = '@tiltmaze_settings';
+
+interface AppSettings {
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+  sensitivity: number;
+}
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
   const { isDark } = useTheme();
@@ -50,6 +56,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const targetRef = useRef<Matter.Body | null>(null);
   const runnerRef = useRef<Matter.Runner | null>(null);
   const fallHandledRef = useRef(false);
+  const gameWonRef = useRef(false);
+  const ballFellRef = useRef(false);
+  const vibrationEnabledRef = useRef(true);
+  const fallTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const resetBall = useCallback(() => {
     if (!ballRef.current) return;
@@ -60,7 +70,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
   useTiltControl({
     engine,
-    enabled: !gameWon && engine !== null,
+    enabled: !gameWon && !ballFell && engine !== null,
     settings,
   });
 
@@ -69,8 +79,10 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       try {
         const storedSettings = await AsyncStorage.getItem(SETTINGS_KEY);
         if (storedSettings) {
-          const parsed = JSON.parse(storedSettings) as { vibrationEnabled?: boolean };
-          setVibrationEnabled(parsed.vibrationEnabled ?? true);
+          const parsed = JSON.parse(storedSettings) as AppSettings;
+          const enabled = parsed.vibrationEnabled ?? true;
+          setVibrationEnabled(enabled);
+          vibrationEnabledRef.current = enabled;
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -78,6 +90,18 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     };
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    gameWonRef.current = gameWon;
+  }, [gameWon]);
+
+  useEffect(() => {
+    ballFellRef.current = ballFell;
+  }, [ballFell]);
+
+  useEffect(() => {
+    vibrationEnabledRef.current = vibrationEnabled;
+  }, [vibrationEnabled]);
 
   useEffect(() => {
     // Create matter-js engine with constant downward gravity
@@ -180,15 +204,15 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     });
 
     const handleAfterUpdate = () => {
-      if (!ballRef.current || gameWon || ballFell) return;
+      if (!ballRef.current || gameWonRef.current || ballFellRef.current) return;
       if (ballRef.current.position.y > GAME_AREA_HEIGHT + FALL_THRESHOLD) {
         if (fallHandledRef.current) return;
         fallHandledRef.current = true;
         setBallFell(true);
-        if (vibrationEnabled) {
+        if (vibrationEnabledRef.current) {
           Vibration.vibrate(100);
         }
-        setTimeout(() => {
+        fallTimeoutRef.current = setTimeout(() => {
           resetBall();
           setBallFell(false);
           fallHandledRef.current = false;
@@ -224,11 +248,14 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       if (runnerRef.current) {
         Matter.Runner.stop(runnerRef.current);
       }
+      if (fallTimeoutRef.current) {
+        clearTimeout(fallTimeoutRef.current);
+      }
       Matter.Events.off(newEngine, 'afterUpdate', handleAfterUpdate);
       Matter.Engine.clear(newEngine);
       setEngine(null);
     };
-  }, [ballFell, gameWon, onGameComplete, resetBall, startTime, vibrationEnabled]);
+  }, [onGameComplete, resetBall, startTime]);
 
   // Timer update
   useEffect(() => {
