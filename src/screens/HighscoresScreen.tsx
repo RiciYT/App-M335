@@ -143,7 +143,7 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
         }}
       >
         <Header
-          title="🏆 Leaderboard"
+          title="Leaderboard"
           subtitle="Top 10 Players"
           leftIcon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
           onLeftPress={onBack}

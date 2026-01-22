@@ -28,6 +28,16 @@ const FALL_RESET_DELAY_MS = 700;
 const SETTINGS_KEY = '@tiltmaze_settings';
 const BALL_INITIAL_POSITION = { x: 50, y: 50 };
 
+// Maze wall configuration - defines horizontal obstacle positions
+const MAZE_WALL_CONFIG = {
+  WALL_HEIGHT: 12,
+  WALLS: [
+    { xRatio: 0.25, yRatio: 0.3, widthRatio: 0.4 },  // Top-left wall
+    { xRatio: 0.75, yRatio: 0.5, widthRatio: 0.4 },  // Middle-right wall
+    { xRatio: 0.3, yRatio: 0.7, widthRatio: 0.5 },   // Bottom-left wall
+  ],
+};
+
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
   const { isDark } = useTheme();
   const [ballPosition, setBallPosition] = useState(BALL_INITIAL_POSITION);
@@ -137,27 +147,15 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         GAME_AREA_HEIGHT + WALL_THICKNESS * 2,
         { isStatic: true, label: 'wall' }
       ),
-      // Inner maze walls - horizontal
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH * 0.25,
-        GAME_AREA_HEIGHT * 0.3,
-        SCREEN_WIDTH * 0.4,
-        10,
-        { isStatic: true, label: 'maze-wall' }
-      ),
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH * 0.75,
-        GAME_AREA_HEIGHT * 0.5,
-        SCREEN_WIDTH * 0.4,
-        10,
-        { isStatic: true, label: 'maze-wall' }
-      ),
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH * 0.3,
-        GAME_AREA_HEIGHT * 0.7,
-        SCREEN_WIDTH * 0.5,
-        10,
-        { isStatic: true, label: 'maze-wall' }
+      // Inner maze walls - generated from config
+      ...MAZE_WALL_CONFIG.WALLS.map(wall => 
+        Matter.Bodies.rectangle(
+          SCREEN_WIDTH * wall.xRatio,
+          GAME_AREA_HEIGHT * wall.yRatio,
+          SCREEN_WIDTH * wall.widthRatio,
+          10,
+          { isStatic: true, label: 'maze-wall' }
+        )
       ),
     ];
 
@@ -271,12 +269,13 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     setSettings({ ...DEFAULT_TILT_SETTINGS });
   }, []);
 
-  // Get maze wall positions for rendering
-  const mazeWalls = [
-    { x: SCREEN_WIDTH * 0.25 - (SCREEN_WIDTH * 0.4) / 2, y: GAME_AREA_HEIGHT * 0.3 - 5, width: SCREEN_WIDTH * 0.4, height: 12 },
-    { x: SCREEN_WIDTH * 0.75 - (SCREEN_WIDTH * 0.4) / 2, y: GAME_AREA_HEIGHT * 0.5 - 5, width: SCREEN_WIDTH * 0.4, height: 12 },
-    { x: SCREEN_WIDTH * 0.3 - (SCREEN_WIDTH * 0.5) / 2, y: GAME_AREA_HEIGHT * 0.7 - 5, width: SCREEN_WIDTH * 0.5, height: 12 },
-  ];
+  // Calculate maze wall positions for rendering using config
+  const mazeWalls = MAZE_WALL_CONFIG.WALLS.map(wall => ({
+    x: SCREEN_WIDTH * wall.xRatio - (SCREEN_WIDTH * wall.widthRatio) / 2,
+    y: GAME_AREA_HEIGHT * wall.yRatio - MAZE_WALL_CONFIG.WALL_HEIGHT / 2,
+    width: SCREEN_WIDTH * wall.widthRatio,
+    height: MAZE_WALL_CONFIG.WALL_HEIGHT,
+  }));
 
   // Neon arcade grid for game area
   const GameGrid = () => (

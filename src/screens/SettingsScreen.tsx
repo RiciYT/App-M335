@@ -165,7 +165,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
         }}
       >
         <Header
-          title="⚙️ Settings"
+          title="Settings"
           leftIcon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
           onLeftPress={onBack}
           variant="transparent"

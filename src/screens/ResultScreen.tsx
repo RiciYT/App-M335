@@ -97,7 +97,7 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
               Complete!
             </Text>
             <Text className={`font-medium ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
-              Great run! 🏃‍♂️
+              Great run!
             </Text>
           </View>
           
