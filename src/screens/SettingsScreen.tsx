@@ -7,17 +7,12 @@ import { auth, database } from '../config/firebase';
 import { TILT_CONTROLS, clamp, roundToDecimals } from '../config/tiltControls';
 import { ScreenContainer, Header, Card, ListItem } from '../components/ui';
 import { useTheme } from '../theme';
+import { AppSettings } from '../types';
 
 interface SettingsScreenProps {
   onBack: () => void;
   isGuest: boolean;
   onLogout: () => void;
-}
-
-interface AppSettings {
-  soundEnabled: boolean;
-  vibrationEnabled: boolean;
-  sensitivity: number;
 }
 
 const SETTINGS_KEY = '@tiltmaze_settings';
