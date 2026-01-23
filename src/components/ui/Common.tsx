@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme';
 
 interface DividerProps {
@@ -9,27 +10,53 @@ interface DividerProps {
 
 export function Divider({ text, className = '' }: DividerProps) {
   const { isDark } = useTheme();
-  const lineColor = isDark ? 'bg-border-dark' : 'bg-border';
-  const textColor = isDark ? 'text-ink-muted-light' : 'text-ink-muted';
-
+  
   if (!text) {
-    return <View className={`h-[1px] ${lineColor} ${className}`} />;
+    return (
+      <LinearGradient
+        colors={isDark 
+          ? ['transparent', '#4C1D95', 'transparent'] 
+          : ['transparent', '#DDD6FE', 'transparent']
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        className={`h-[1px] ${className}`}
+      />
+    );
   }
 
   return (
-    <View className={`flex-row items-center my-4 ${className}`}>
-      <View className={`flex-1 h-[1px] ${lineColor}`} />
-      <Text className={`mx-4 text-xs font-semibold uppercase tracking-widest ${textColor}`}>
+    <View className={`flex-row items-center my-5 ${className}`}>
+      <LinearGradient
+        colors={isDark 
+          ? ['transparent', '#4C1D95'] 
+          : ['transparent', '#DDD6FE']
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        className="flex-1 h-[1px]"
+      />
+      <Text className={`mx-4 text-xs font-bold uppercase tracking-[3px] ${
+        isDark ? 'text-ink-muted-light' : 'text-ink-muted'
+      }`}>
         {text}
       </Text>
-      <View className={`flex-1 h-[1px] ${lineColor}`} />
+      <LinearGradient
+        colors={isDark 
+          ? ['#4C1D95', 'transparent'] 
+          : ['#DDD6FE', 'transparent']
+        }
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        className="flex-1 h-[1px]"
+      />
     </View>
   );
 }
 
 interface BadgeProps {
   text: string;
-  variant?: 'default' | 'warning' | 'success' | 'error';
+  variant?: 'default' | 'warning' | 'success' | 'error' | 'primary' | 'accent';
   icon?: string;
 }
 
@@ -37,23 +64,44 @@ export function Badge({ text, variant = 'default', icon }: BadgeProps) {
   const { isDark } = useTheme();
 
   const variantStyles = {
-    default: isDark ? 'bg-surface-muted-dark border-border-dark' : 'bg-surface-muted border-border',
-    warning: 'bg-secondary/15 border-secondary/30',
-    success: 'bg-mint/15 border-mint/30',
-    error: 'bg-error/15 border-error/30',
+    default: {
+      bg: isDark ? 'bg-surface-muted-dark/70' : 'bg-surface-muted/70',
+      border: isDark ? 'border-border-dark' : 'border-border',
+      text: isDark ? 'text-ink-muted-light' : 'text-ink-muted',
+    },
+    warning: {
+      bg: 'bg-warning/15',
+      border: 'border-warning/40',
+      text: 'text-warning',
+    },
+    success: {
+      bg: 'bg-mint/15',
+      border: 'border-mint/40',
+      text: 'text-mint',
+    },
+    error: {
+      bg: 'bg-error/15',
+      border: 'border-error/40',
+      text: 'text-error',
+    },
+    primary: {
+      bg: 'bg-primary/15',
+      border: 'border-primary/40',
+      text: 'text-primary',
+    },
+    accent: {
+      bg: 'bg-accent/15',
+      border: 'border-accent/40',
+      text: isDark ? 'text-accent' : 'text-accent-dark',
+    },
   };
 
-  const textStyles = {
-    default: isDark ? 'text-ink-muted-light' : 'text-ink-muted',
-    warning: 'text-secondary',
-    success: 'text-mint',
-    error: 'text-error',
-  };
+  const styles = variantStyles[variant];
 
   return (
-    <View className={`${variantStyles[variant]} border px-3 py-1.5 rounded-full flex-row items-center`}>
-      {icon && <Text className={`${textStyles[variant]} text-xs mr-1.5`}>{icon}</Text>}
-      <Text className={`${textStyles[variant]} text-2xs font-bold uppercase tracking-wider`}>
+    <View className={`${styles.bg} ${styles.border} border px-4 py-2 rounded-full flex-row items-center`}>
+      {icon && <Text className={`${styles.text} text-sm mr-2`}>{icon}</Text>}
+      <Text className={`${styles.text} text-xs font-black uppercase tracking-[2px]`}>
         {text}
       </Text>
     </View>
@@ -71,21 +119,28 @@ interface ListItemProps {
 
 export function ListItem({ icon, title, subtitle, rightContent, onPress, showBorder = true }: ListItemProps) {
   const { isDark } = useTheme();
-  const borderClass = showBorder ? (isDark ? 'border-b border-border-dark' : 'border-b border-border') : '';
+  
+  const borderClass = showBorder 
+    ? isDark 
+      ? 'border-b border-border-dark/30' 
+      : 'border-b border-border/50'
+    : '';
 
   const content = (
     <View className={`flex-row items-center py-4 ${borderClass}`}>
       {icon && (
-        <View className="mr-3.5">
+        <View className={`mr-4 w-10 h-10 rounded-xl items-center justify-center ${
+          isDark ? 'bg-primary/10' : 'bg-primary-muted'
+        }`}>
           {typeof icon === 'string' ? <Text className="text-xl">{icon}</Text> : icon}
         </View>
       )}
       <View className="flex-1">
-        <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+        <Text className={`text-base font-bold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
           {title}
         </Text>
         {subtitle && (
-          <Text className={`text-sm mt-0.5 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+          <Text className={`text-sm mt-1 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
             {subtitle}
           </Text>
         )}

@@ -11,43 +11,60 @@ interface ThemeContextValue {
   colors: typeof lightColors;
 }
 
+// NEON ARCADE BRUTALISM PALETTE
 const lightColors = {
-  primary: '#2EC4C6',
-  primaryLight: '#5DD3D5',
-  primaryDark: '#1FA8AA',
-  primaryMuted: '#D4F4F4',
-  secondary: '#F59C7A',
-  secondaryLight: '#F7B499',
-  secondaryDark: '#E87A52',
-  secondaryMuted: '#FDEDE7',
-  accent: '#7FB5FF',
-  accentLight: '#A3CBFF',
-  accentDark: '#5A9AEF',
-  accentMuted: '#E8F2FF',
-  mint: '#56D1B7',
-  mintLight: '#7EDCC9',
-  mintDark: '#3BB89D',
-  mintMuted: '#E0F7F1',
-  success: '#22C55E',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  info: '#3B82F6',
-  background: '#F5F7FB',
+  // Primary: Electric Violet
+  primary: '#A855F7',
+  primaryLight: '#C084FC',
+  primaryDark: '#7C3AED',
+  primaryMuted: '#F3E8FF',
+  primaryGlow: 'rgba(168, 85, 247, 0.5)',
+  // Secondary: Hot Cyber Pink  
+  secondary: '#F472B6',
+  secondaryLight: '#F9A8D4',
+  secondaryDark: '#DB2777',
+  secondaryMuted: '#FCE7F3',
+  secondaryGlow: 'rgba(244, 114, 182, 0.5)',
+  // Accent: Cyber Yellow
+  accent: '#FACC15',
+  accentLight: '#FDE047',
+  accentDark: '#EAB308',
+  accentMuted: '#FEF9C3',
+  accentGlow: 'rgba(250, 204, 21, 0.5)',
+  // Mint: Neon Cyan
+  mint: '#22D3EE',
+  mintLight: '#67E8F9',
+  mintDark: '#06B6D4',
+  mintMuted: '#CFFAFE',
+  mintGlow: 'rgba(34, 211, 238, 0.5)',
+  // Semantic
+  success: '#4ADE80',
+  warning: '#FB923C',
+  error: '#F87171',
+  info: '#60A5FA',
+  // Light theme surfaces
+  background: '#FAF5FF',
   surface: '#FFFFFF',
-  surfaceMuted: '#EEF2F7',
-  ink: '#1F2937',
+  surfaceMuted: '#F3E8FF',
+  ink: '#1E1B4B',
   inkMuted: '#6B7280',
-  border: '#E3E8F0',
+  border: '#DDD6FE',
+  // Neon effects
+  neonViolet: '#8B5CF6',
+  neonPink: '#EC4899',
+  neonCyan: '#06B6D4',
+  neonYellow: '#EAB308',
 };
 
 const darkColors = {
   ...lightColors,
-  background: '#0F172A',
-  surface: '#1E293B',
-  surfaceMuted: '#334155',
-  ink: '#F8FAFC',
-  inkMuted: '#94A3B8',
-  border: '#334155',
+  // Deep space background with purple tint
+  background: '#0C0118',
+  surface: '#1A0A2E',
+  surfaceMuted: '#2D1B4E',
+  ink: '#FAF5FF',
+  inkMuted: '#A78BFA',
+  border: '#4C1D95',
 };
 
 const THEME_STORAGE_KEY = '@tiltmaze_theme';

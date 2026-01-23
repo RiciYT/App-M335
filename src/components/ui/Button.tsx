@@ -3,8 +3,8 @@ import { TouchableOpacity, Text, ActivityIndicator, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../theme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
-type ButtonSize = 'sm' | 'md' | 'lg';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'accent';
+type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
 interface ButtonProps {
   children: ReactNode;
@@ -20,9 +20,10 @@ interface ButtonProps {
 }
 
 const sizeStyles = {
-  sm: { height: 'h-10', text: 'text-sm', padding: 'px-4', iconSize: 16 },
-  md: { height: 'h-14', text: 'text-base', padding: 'px-6', iconSize: 20 },
-  lg: { height: 'h-16', text: 'text-lg', padding: 'px-8', iconSize: 24 },
+  sm: { height: 'h-11', text: 'text-sm', padding: 'px-5', iconSize: 16, letterSpacing: 1 },
+  md: { height: 'h-14', text: 'text-base', padding: 'px-7', iconSize: 20, letterSpacing: 1.5 },
+  lg: { height: 'h-16', text: 'text-lg', padding: 'px-8', iconSize: 24, letterSpacing: 2 },
+  xl: { height: 'h-20', text: 'text-xl', padding: 'px-10', iconSize: 28, letterSpacing: 3 },
 };
 
 export function Button({
@@ -40,98 +41,195 @@ export function Button({
   const { isDark } = useTheme();
   const sizeStyle = sizeStyles[size];
 
+  const getLoadingColor = () => {
+    if (variant === 'outline' || variant === 'ghost') return '#A855F7';
+    return '#FFFFFF';
+  };
+
   const renderContent = () => {
     if (loading) {
-      return <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? '#2EC4C6' : '#FFFFFF'} />;
+      return <ActivityIndicator color={getLoadingColor()} />;
     }
+
+    const textColorClass = (() => {
+      switch (variant) {
+        case 'primary':
+        case 'secondary':
+        case 'accent':
+          return 'text-white';
+        case 'outline':
+          return isDark ? 'text-primary-light' : 'text-primary-dark';
+        case 'ghost':
+          return isDark ? 'text-ink-light' : 'text-ink';
+        default:
+          return 'text-white';
+      }
+    })();
 
     return (
       <View className="flex-row items-center justify-center">
-        {icon && iconPosition === 'left' && <View className="mr-2">{icon}</View>}
+        {icon && iconPosition === 'left' && <View className="mr-3">{icon}</View>}
         <Text
-          className={`font-bold tracking-wide ${sizeStyle.text} ${
-            variant === 'primary' || variant === 'secondary' 
-              ? 'text-white' 
-              : isDark ? 'text-ink-light' : 'text-ink'
-          }`}
+          className={`font-black uppercase ${sizeStyle.text} ${textColorClass}`}
+          style={{ letterSpacing: sizeStyle.letterSpacing }}
         >
           {children}
         </Text>
-        {icon && iconPosition === 'right' && <View className="ml-2">{icon}</View>}
+        {icon && iconPosition === 'right' && <View className="ml-3">{icon}</View>}
       </View>
     );
   };
 
-  const baseClasses = `${sizeStyle.height} ${sizeStyle.padding} rounded-3xl items-center justify-center ${
+  const baseClasses = `${sizeStyle.height} ${sizeStyle.padding} items-center justify-center ${
     fullWidth ? 'w-full' : ''
   } ${disabled || loading ? 'opacity-50' : ''} ${className}`;
 
+  // Primary: Electric Violet gradient with glow
   if (variant === 'primary') {
     return (
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         onPress={onPress}
         disabled={disabled || loading}
         className={fullWidth ? 'w-full' : ''}
       >
         <LinearGradient
-          colors={['#2EC4C6', '#1FA8AA']}
+          colors={['#A855F7', '#7C3AED']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className={`${baseClasses} shadow-lg`}
-          style={{ shadowColor: '#2EC4C6', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12 }}
+          className={`${baseClasses} rounded-2xl`}
+          style={{
+            shadowColor: '#A855F7',
+            shadowOpacity: 0.5,
+            shadowOffset: { width: 0, height: 6 },
+            shadowRadius: 16,
+            elevation: 8,
+          }}
         >
+          {/* Inner glow effect */}
+          <View
+            className="absolute inset-0 rounded-2xl"
+            style={{
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+            }}
+          />
           {renderContent()}
         </LinearGradient>
       </TouchableOpacity>
     );
   }
 
+  // Secondary: Hot Pink gradient with glow
   if (variant === 'secondary') {
     return (
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         onPress={onPress}
         disabled={disabled || loading}
         className={fullWidth ? 'w-full' : ''}
       >
         <LinearGradient
-          colors={['#F59C7A', '#E87A52']}
+          colors={['#F472B6', '#DB2777']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className={`${baseClasses} shadow-lg`}
-          style={{ shadowColor: '#F59C7A', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 4 }, shadowRadius: 12 }}
+          className={`${baseClasses} rounded-2xl`}
+          style={{
+            shadowColor: '#F472B6',
+            shadowOpacity: 0.5,
+            shadowOffset: { width: 0, height: 6 },
+            shadowRadius: 16,
+            elevation: 8,
+          }}
         >
+          <View
+            className="absolute inset-0 rounded-2xl"
+            style={{
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+            }}
+          />
           {renderContent()}
         </LinearGradient>
       </TouchableOpacity>
     );
   }
 
+  // Accent: Cyber Yellow with dark text
+  if (variant === 'accent') {
+    return (
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={onPress}
+        disabled={disabled || loading}
+        className={fullWidth ? 'w-full' : ''}
+      >
+        <LinearGradient
+          colors={['#FACC15', '#EAB308']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className={`${baseClasses} rounded-2xl`}
+          style={{
+            shadowColor: '#FACC15',
+            shadowOpacity: 0.4,
+            shadowOffset: { width: 0, height: 6 },
+            shadowRadius: 16,
+            elevation: 8,
+          }}
+        >
+          <View
+            className="absolute inset-0 rounded-2xl"
+            style={{
+              borderWidth: 1,
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+            }}
+          />
+          <View className="flex-row items-center justify-center">
+            {icon && iconPosition === 'left' && <View className="mr-3">{icon}</View>}
+            <Text
+              className={`font-black uppercase ${sizeStyle.text} text-[#1E1B4B]`}
+              style={{ letterSpacing: sizeStyle.letterSpacing }}
+            >
+              {children}
+            </Text>
+            {icon && iconPosition === 'right' && <View className="ml-3">{icon}</View>}
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
+  // Outline: Glassmorphism with neon border
   if (variant === 'outline') {
     return (
       <TouchableOpacity
-        activeOpacity={0.7}
+        activeOpacity={0.8}
         onPress={onPress}
         disabled={disabled || loading}
-        className={`${baseClasses} ${
+        className={`${baseClasses} rounded-2xl ${
           isDark 
-            ? 'bg-surface-dark border border-border-dark' 
-            : 'bg-surface-light border border-border'
-        } shadow-sm`}
+            ? 'bg-surface-dark/80 border-2 border-primary/40' 
+            : 'bg-surface-light/90 border-2 border-primary/30'
+        }`}
+        style={{
+          shadowColor: '#A855F7',
+          shadowOpacity: isDark ? 0.3 : 0.15,
+          shadowOffset: { width: 0, height: 4 },
+          shadowRadius: 12,
+        }}
       >
         {renderContent()}
       </TouchableOpacity>
     );
   }
 
-  // Ghost variant
+  // Ghost: Minimal with hover state
   return (
     <TouchableOpacity
       activeOpacity={0.7}
       onPress={onPress}
       disabled={disabled || loading}
-      className={`${baseClasses} bg-transparent`}
+      className={`${baseClasses} bg-transparent rounded-2xl`}
     >
       {renderContent()}
     </TouchableOpacity>

@@ -19,14 +19,24 @@ interface GameScreenProps {
 }
 
 const SCREEN_WIDTH = width;
-const GAME_AREA_HEIGHT = height - 220; // Adjusted for new header/footer
-const BALL_RADIUS = 15;
-const TARGET_RADIUS = 30;
+const GAME_AREA_HEIGHT = height - 240;
+const BALL_RADIUS = 16;
+const TARGET_RADIUS = 32;
 const WALL_THICKNESS = 20;
-const FALL_THRESHOLD = 120; // Distance below GAME_AREA_HEIGHT before treating the ball as fallen
+const FALL_THRESHOLD = 120;
 const FALL_RESET_DELAY_MS = 700;
 const SETTINGS_KEY = '@tiltmaze_settings';
 const BALL_INITIAL_POSITION = { x: 50, y: 50 };
+
+// Maze wall configuration - defines horizontal obstacle positions
+const MAZE_WALL_CONFIG = {
+  WALL_HEIGHT: 12,
+  WALLS: [
+    { xRatio: 0.25, yRatio: 0.3, widthRatio: 0.4 },  // Top-left wall
+    { xRatio: 0.75, yRatio: 0.5, widthRatio: 0.4 },  // Middle-right wall
+    { xRatio: 0.3, yRatio: 0.7, widthRatio: 0.5 },   // Bottom-left wall
+  ],
+};
 
 export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) {
   const { isDark } = useTheme();
@@ -137,27 +147,15 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         GAME_AREA_HEIGHT + WALL_THICKNESS * 2,
         { isStatic: true, label: 'wall' }
       ),
-      // Inner maze walls - horizontal
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH * 0.25,
-        GAME_AREA_HEIGHT * 0.3,
-        SCREEN_WIDTH * 0.4,
-        10,
-        { isStatic: true, label: 'maze-wall' }
-      ),
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH * 0.75,
-        GAME_AREA_HEIGHT * 0.5,
-        SCREEN_WIDTH * 0.4,
-        10,
-        { isStatic: true, label: 'maze-wall' }
-      ),
-      Matter.Bodies.rectangle(
-        SCREEN_WIDTH * 0.3,
-        GAME_AREA_HEIGHT * 0.7,
-        SCREEN_WIDTH * 0.5,
-        10,
-        { isStatic: true, label: 'maze-wall' }
+      // Inner maze walls - generated from config
+      ...MAZE_WALL_CONFIG.WALLS.map(wall => 
+        Matter.Bodies.rectangle(
+          SCREEN_WIDTH * wall.xRatio,
+          GAME_AREA_HEIGHT * wall.yRatio,
+          SCREEN_WIDTH * wall.widthRatio,
+          MAZE_WALL_CONFIG.WALL_HEIGHT,
+          { isStatic: true, label: 'maze-wall' }
+        )
       ),
     ];
 
@@ -271,63 +269,116 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     setSettings({ ...DEFAULT_TILT_SETTINGS });
   }, []);
 
-  // Get maze wall positions for rendering
-  const mazeWalls = [
-    { x: SCREEN_WIDTH * 0.25 - (SCREEN_WIDTH * 0.4) / 2, y: GAME_AREA_HEIGHT * 0.3 - 5, width: SCREEN_WIDTH * 0.4, height: 10 },
-    { x: SCREEN_WIDTH * 0.75 - (SCREEN_WIDTH * 0.4) / 2, y: GAME_AREA_HEIGHT * 0.5 - 5, width: SCREEN_WIDTH * 0.4, height: 10 },
-    { x: SCREEN_WIDTH * 0.3 - (SCREEN_WIDTH * 0.5) / 2, y: GAME_AREA_HEIGHT * 0.7 - 5, width: SCREEN_WIDTH * 0.5, height: 10 },
-  ];
+  // Calculate maze wall positions for rendering using config
+  const mazeWalls = MAZE_WALL_CONFIG.WALLS.map(wall => ({
+    x: SCREEN_WIDTH * wall.xRatio - (SCREEN_WIDTH * wall.widthRatio) / 2,
+    y: GAME_AREA_HEIGHT * wall.yRatio - MAZE_WALL_CONFIG.WALL_HEIGHT / 2,
+    width: SCREEN_WIDTH * wall.widthRatio,
+    height: MAZE_WALL_CONFIG.WALL_HEIGHT,
+  }));
 
-  const GridBackground = () => (
+  // Neon arcade grid for game area
+  const GameGrid = () => (
     <View className="absolute inset-0 z-0" pointerEvents="none">
-      <View className={`absolute inset-0 ${isDark ? 'opacity-[0.03]' : 'opacity-[0.05]'}`}>
-        {[...Array(20)].map((_, i) => (
-          <View 
-            key={`v-${i}`} 
-            className={`absolute top-0 bottom-0 w-[1px] ${isDark ? 'bg-ink-light' : 'bg-ink'}`} 
-            style={{ left: i * (width / 10) }} 
-          />
-        ))}
-        {[...Array(40)].map((_, i) => (
+      {/* Horizontal scanlines */}
+      <View className="absolute inset-0" style={{ opacity: isDark ? 0.04 : 0.03 }}>
+        {[...Array(Math.ceil(GAME_AREA_HEIGHT / 30))].map((_, i) => (
           <View 
             key={`h-${i}`} 
-            className={`absolute left-0 right-0 h-[1px] ${isDark ? 'bg-ink-light' : 'bg-ink'}`} 
-            style={{ top: i * (width / 10) }} 
+            className="absolute left-0 right-0 h-[1px]"
+            style={{ 
+              top: i * 30,
+              backgroundColor: '#A855F7',
+            }} 
+          />
+        ))}
+      </View>
+      {/* Vertical lines */}
+      <View className="absolute inset-0" style={{ opacity: isDark ? 0.03 : 0.02 }}>
+        {[...Array(Math.ceil(SCREEN_WIDTH / 40))].map((_, i) => (
+          <View 
+            key={`v-${i}`} 
+            className="absolute top-0 bottom-0 w-[1px]"
+            style={{ 
+              left: i * 40,
+              backgroundColor: '#A855F7',
+            }} 
           />
         ))}
       </View>
     </View>
   );
 
-  const glowOpacity = isDark ? 'opacity-10' : 'opacity-20';
-
   return (
     <View className={`flex-1 relative overflow-hidden ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <GridBackground />
+      
+      {/* Background gradient */}
+      <LinearGradient
+        colors={isDark 
+          ? ['#0C0118', '#150726', '#0C0118'] 
+          : ['#FAF5FF', '#F3E8FF', '#FAF5FF']
+        }
+        className="absolute inset-0"
+      />
       
       {/* Glow effects */}
-      <View className={`absolute -top-[10%] -left-[15%] w-72 h-72 bg-primary ${glowOpacity} rounded-full`} />
-      <View className={`absolute top-[20%] -right-[20%] w-64 h-64 bg-secondary ${glowOpacity} rounded-full`} />
-      <View className={`absolute -bottom-[15%] -right-[10%] w-80 h-80 bg-accent ${glowOpacity} rounded-full`} />
+      <View 
+        className="absolute w-80 h-80 rounded-full"
+        style={{
+          top: -80,
+          left: -60,
+          backgroundColor: isDark ? 'rgba(168, 85, 247, 0.12)' : 'rgba(168, 85, 247, 0.08)',
+        }}
+      />
+      <View 
+        className="absolute w-72 h-72 rounded-full"
+        style={{
+          top: GAME_AREA_HEIGHT * 0.3,
+          right: -80,
+          backgroundColor: isDark ? 'rgba(244, 114, 182, 0.1)' : 'rgba(244, 114, 182, 0.06)',
+        }}
+      />
+      <View 
+        className="absolute w-96 h-96 rounded-full"
+        style={{
+          bottom: -100,
+          left: -50,
+          backgroundColor: isDark ? 'rgba(34, 211, 238, 0.08)' : 'rgba(34, 211, 238, 0.05)',
+        }}
+      />
 
       <SafeAreaView className="flex-1">
         {/* Header Section */}
-        <View className="flex-row items-center justify-between px-5 py-3">
+        <View className="flex-row items-center justify-between px-5 py-4">
           <IconButton
             icon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
             onPress={onBack}
             size="md"
           />
           
-          <Card variant="default" className="px-4 py-2 rounded-3xl">
+          {/* Timer with neon glow */}
+          <View 
+            className={`px-5 py-2.5 rounded-2xl ${isDark ? 'bg-surface-dark/80' : 'bg-surface-light/90'}`}
+            style={{
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.25)',
+              shadowColor: '#A855F7',
+              shadowOpacity: isDark ? 0.3 : 0.15,
+              shadowOffset: { width: 0, height: 2 },
+              shadowRadius: 10,
+            }}
+          >
             <View className="flex-row items-center">
               <Text className="mr-2 text-lg">⏱</Text>
-              <Text className={`font-bold text-lg ${isDark ? 'text-ink-light' : 'text-ink'}`} style={{ fontVariant: ['tabular-nums'] }}>
+              <Text 
+                className={`font-black text-xl ${isDark ? 'text-ink-light' : 'text-ink'}`} 
+                style={{ fontVariant: ['tabular-nums'], letterSpacing: -1 }}
+              >
                 {formatTime(elapsedTime)}
               </Text>
             </View>
-          </Card>
+          </View>
           
           <IconButton
             icon={<Text className="text-xl">⚙️</Text>}
@@ -338,24 +389,45 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
         <View className="flex-1">
           <View style={{ height: GAME_AREA_HEIGHT, width: SCREEN_WIDTH, position: 'relative' }}>
-            <View className={`absolute bottom-0 left-0 right-0 h-8 ${isDark ? 'bg-slate-700/70' : 'bg-slate-200/70'}`} />
-            <View className={`absolute bottom-6 left-0 right-0 h-[2px] ${isDark ? 'bg-slate-600/60' : 'bg-slate-300/60'}`} />
+            <GameGrid />
+            
+            {/* Bottom edge/void indicator */}
+            <LinearGradient
+              colors={isDark 
+                ? ['transparent', 'rgba(168, 85, 247, 0.15)'] 
+                : ['transparent', 'rgba(168, 85, 247, 0.08)']
+              }
+              className="absolute bottom-0 left-0 right-0 h-12"
+            />
+            <View 
+              className="absolute bottom-8 left-4 right-4 h-[2px]"
+              style={{
+                backgroundColor: isDark ? 'rgba(244, 114, 182, 0.4)' : 'rgba(244, 114, 182, 0.3)',
+              }}
+            />
 
-            {/* Maze Walls */}
+            {/* Maze Walls with neon glow */}
             {mazeWalls.map((wall, index) => (
-              <View
+              <LinearGradient
                 key={`wall-${index}`}
-                className={`absolute rounded-full shadow-lg ${isDark ? 'bg-slate-500' : 'bg-slate-300'}`}
+                colors={isDark ? ['#4C1D95', '#7C3AED'] : ['#DDD6FE', '#C084FC']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="absolute rounded-full"
                 style={{
                   left: wall.x,
                   top: wall.y,
                   width: wall.width,
                   height: wall.height,
+                  shadowColor: '#A855F7',
+                  shadowOpacity: isDark ? 0.5 : 0.3,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowRadius: 8,
                 }}
               />
             ))}
 
-            {/* Target */}
+            {/* Target with neon cyan glow */}
             <View
               className="absolute items-center justify-center"
               style={{
@@ -365,75 +437,117 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                 height: TARGET_RADIUS * 2,
               }}
             >
+              {/* Outer glow ring */}
               <View 
-                className="w-full h-full rounded-full bg-mint/20 border-2 border-mint items-center justify-center"
+                className="absolute inset-[-4px] rounded-full"
                 style={{
-                  shadowColor: '#56D1B7',
+                  borderWidth: 2,
+                  borderColor: 'rgba(34, 211, 238, 0.3)',
+                }}
+              />
+              <View 
+                className="w-full h-full rounded-full bg-mint/15 border-2 border-mint items-center justify-center"
+                style={{
+                  shadowColor: '#22D3EE',
                   shadowOffset: { width: 0, height: 0 },
-                  shadowRadius: 12,
-                  shadowOpacity: 0.6,
+                  shadowRadius: 16,
+                  shadowOpacity: 0.7,
                 }}
               >
-                <View className="w-4 h-4 rounded-full bg-mint" />
+                <View className="w-5 h-5 rounded-full bg-mint" />
               </View>
             </View>
 
-            {/* Ball */}
+            {/* Ball with violet/pink gradient and glow */}
             <LinearGradient
-              colors={['#2EC4C6', '#7FB5FF']}
-              className="absolute rounded-full shadow-lg"
+              colors={['#A855F7', '#F472B6']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              className="absolute rounded-full"
               style={{
                 left: ballPosition.x - BALL_RADIUS,
                 top: ballPosition.y - BALL_RADIUS,
                 width: BALL_RADIUS * 2,
                 height: BALL_RADIUS * 2,
-                shadowColor: '#2EC4C6',
-                shadowOpacity: 0.5,
-                shadowOffset: { width: 0, height: 2 },
-                shadowRadius: 8,
+                shadowColor: '#A855F7',
+                shadowOpacity: 0.6,
+                shadowOffset: { width: 0, height: 4 },
+                shadowRadius: 12,
               }}
-            />
+            >
+              {/* Inner highlight */}
+              <View 
+                className="absolute top-1 left-1 w-3 h-3 rounded-full bg-white/40"
+              />
+            </LinearGradient>
 
             {gameWon && (
-              <View className="absolute inset-0 items-center justify-center bg-black/50">
-                <Card variant="elevated" className="items-center p-8">
-                  <Text className="text-6xl mb-3">🎉</Text>
-                  <Text className="text-mint text-2xl font-black">You Won!</Text>
-                </Card>
+              <View className="absolute inset-0 items-center justify-center bg-black/60">
+                <View 
+                  className={`items-center p-8 rounded-3xl ${isDark ? 'bg-surface-dark/90' : 'bg-surface-light/95'}`}
+                  style={{
+                    borderWidth: 2,
+                    borderColor: '#22D3EE',
+                    shadowColor: '#22D3EE',
+                    shadowOpacity: 0.5,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowRadius: 24,
+                  }}
+                >
+                  <Text className="text-7xl mb-4">🎉</Text>
+                  <Text className="text-mint text-3xl font-black tracking-tight">Victory!</Text>
+                </View>
               </View>
             )}
 
             {ballFell && !gameWon && (
-              <View className="absolute inset-0 items-center justify-center bg-black/40">
-                <Card variant="elevated" className="items-center p-6">
+              <View className="absolute inset-0 items-center justify-center bg-black/50">
+                <View 
+                  className={`items-center p-6 rounded-3xl ${isDark ? 'bg-surface-dark/90' : 'bg-surface-light/95'}`}
+                  style={{
+                    borderWidth: 2,
+                    borderColor: '#F472B6',
+                    shadowColor: '#F472B6',
+                    shadowOpacity: 0.5,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowRadius: 20,
+                  }}
+                >
                   <Text className="text-5xl mb-2">💥</Text>
-                  <Text className="text-primary text-xl font-black">You Fell!</Text>
-                </Card>
+                  <Text className="text-secondary text-xl font-black">Oops!</Text>
+                </View>
               </View>
             )}
           </View>
         </View>
 
         {/* Footer Info */}
-        <View className="px-5 pb-5">
-          <Card variant="default" className="p-4">
-            <View className="flex-row items-center mb-2">
+        <View className="px-5 pb-4">
+          <View 
+            className={`p-4 rounded-2xl flex-row justify-around ${isDark ? 'bg-surface-dark/60' : 'bg-surface-light/80'}`}
+            style={{
+              borderWidth: 1,
+              borderColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+            }}
+          >
+            <View className="flex-row items-center">
               <Text className="mr-2 text-primary">📱</Text>
-              <Text className={`text-xs font-medium uppercase tracking-wider ${
+              <Text className={`text-xs font-black uppercase tracking-[1px] ${
                 isDark ? 'text-ink-muted-light' : 'text-ink-muted'
               }`}>
-                Tilt to move the ball
+                Tilt
               </Text>
             </View>
+            <View className="w-[1px] bg-primary/20" />
             <View className="flex-row items-center">
               <Text className="mr-2 text-mint">🎯</Text>
-              <Text className={`text-xs font-medium uppercase tracking-wider ${
+              <Text className={`text-xs font-black uppercase tracking-[1px] ${
                 isDark ? 'text-ink-muted-light' : 'text-ink-muted'
               }`}>
-                Reach the emerald target
+                Target
               </Text>
             </View>
-          </Card>
+          </View>
         </View>
 
         {/* Settings Modal */}
@@ -443,35 +557,58 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
           transparent={true}
           onRequestClose={() => setShowSettings(false)}
         >
-          <View className="flex-1 bg-black/50 justify-center items-center px-5">
-            <View className={`rounded-4xl p-6 w-full max-h-[75%] shadow-2xl ${
-              isDark ? 'bg-surface-dark border border-border-dark' : 'bg-surface-light border border-border'
-            }`}>
-              <Text className={`text-2xl font-black text-center mb-1 ${isDark ? 'text-ink-light' : 'text-ink'}`}>
-                Tilt Settings
+          <View className="flex-1 bg-black/60 justify-center items-center px-5">
+            <View 
+              className={`rounded-3xl p-6 w-full max-h-[75%] ${
+                isDark ? 'bg-surface-dark' : 'bg-surface-light'
+              }`}
+              style={{
+                borderWidth: 2,
+                borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                shadowColor: '#A855F7',
+                shadowOpacity: isDark ? 0.4 : 0.2,
+                shadowOffset: { width: 0, height: 8 },
+                shadowRadius: 24,
+              }}
+            >
+              <Text 
+                className={`text-2xl font-black text-center mb-1 tracking-tight ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                style={{
+                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'transparent',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 6,
+                }}
+              >
+                Controls
               </Text>
-              <Text className={`text-sm text-center mb-6 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
-                Adjust horizontal controls
+              <Text className={`text-xs font-bold text-center mb-6 uppercase tracking-[2px] ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                Customize tilt sensitivity
               </Text>
               
               <ScrollView className="max-h-[280px]" showsVerticalScrollIndicator={false}>
                 {/* Inversion Setting */}
                 <View className={`flex-row justify-between items-center py-4 border-b ${
-                  isDark ? 'border-border-dark' : 'border-border'
+                  isDark ? 'border-border-dark/30' : 'border-border/30'
                 }`}>
                   <View className="flex-1">
-                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                    <Text className={`text-base font-bold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
                       Invert Direction
                     </Text>
-                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
-                      Swap left/right movement
+                    <Text className={`text-xs mt-1 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                      Swap left/right
                     </Text>
                   </View>
                   <TouchableOpacity 
                     onPress={toggleInvertX}
-                    className={`px-5 py-2.5 rounded-full ${settings.invertX ? 'bg-mint' : isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}
+                    className={`px-5 py-2.5 rounded-2xl ${settings.invertX ? 'bg-mint' : isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}
+                    style={{
+                      shadowColor: settings.invertX ? '#22D3EE' : 'transparent',
+                      shadowOpacity: 0.4,
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowRadius: 8,
+                    }}
                   >
-                    <Text className={`font-bold text-sm ${settings.invertX ? 'text-white' : isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                    <Text className={`font-black text-sm ${settings.invertX ? 'text-white' : isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
                       {settings.invertX ? 'ON' : 'OFF'}
                     </Text>
                   </TouchableOpacity>
@@ -479,90 +616,114 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
                 {/* Sensitivity */}
                 <View className={`flex-row justify-between items-center py-4 border-b ${
-                  isDark ? 'border-border-dark' : 'border-border'
+                  isDark ? 'border-border-dark/30' : 'border-border/30'
                 }`}>
                   <View className="flex-1">
-                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                    <Text className={`text-base font-bold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
                       Sensitivity
                     </Text>
-                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                    <Text className={`text-xs mt-1 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
                       {settings.sensitivity.toFixed(1)}x
                     </Text>
                   </View>
                   <View className="flex-row gap-2">
                     <TouchableOpacity 
-                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
+                      className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
                       onPress={() => adjustSetting('sensitivity', -0.1, 0.3, 3.0, 1)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: 'rgba(168, 85, 247, 0.3)',
+                      }}
                     >
-                      <Text className="text-primary font-bold text-lg">−</Text>
+                      <Text className="text-primary font-black text-lg">−</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
+                      className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
                       onPress={() => adjustSetting('sensitivity', 0.1, 0.3, 3.0, 1)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: 'rgba(168, 85, 247, 0.3)',
+                      }}
                     >
-                      <Text className="text-primary font-bold text-lg">+</Text>
+                      <Text className="text-primary font-black text-lg">+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {/* Deadzone */}
                 <View className={`flex-row justify-between items-center py-4 border-b ${
-                  isDark ? 'border-border-dark' : 'border-border'
+                  isDark ? 'border-border-dark/30' : 'border-border/30'
                 }`}>
                   <View className="flex-1">
-                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                    <Text className={`text-base font-bold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
                       Deadzone
                     </Text>
-                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                    <Text className={`text-xs mt-1 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
                       {settings.deadzone.toFixed(2)}
                     </Text>
                   </View>
                   <View className="flex-row gap-2">
                     <TouchableOpacity 
-                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
+                      className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
                       onPress={() => adjustSetting('deadzone', -0.01, 0.01, 0.15, 2)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: 'rgba(168, 85, 247, 0.3)',
+                      }}
                     >
-                      <Text className="text-primary font-bold text-lg">−</Text>
+                      <Text className="text-primary font-black text-lg">−</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
+                      className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
                       onPress={() => adjustSetting('deadzone', 0.01, 0.01, 0.15, 2)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: 'rgba(168, 85, 247, 0.3)',
+                      }}
                     >
-                      <Text className="text-primary font-bold text-lg">+</Text>
+                      <Text className="text-primary font-black text-lg">+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {/* Smoothing */}
                 <View className={`flex-row justify-between items-center py-4 ${
-                  isDark ? 'border-border-dark' : 'border-border'
+                  isDark ? 'border-border-dark/30' : 'border-border/30'
                 }`}>
                   <View className="flex-1">
-                    <Text className={`text-base font-semibold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
+                    <Text className={`text-base font-bold ${isDark ? 'text-ink-light' : 'text-ink'}`}>
                       Smoothing
                     </Text>
-                    <Text className={`text-xs ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+                    <Text className={`text-xs mt-1 ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
                       {settings.smoothingAlpha.toFixed(2)}
                     </Text>
                   </View>
                   <View className="flex-row gap-2">
                     <TouchableOpacity 
-                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
+                      className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
                       onPress={() => adjustSetting('smoothingAlpha', -0.05, 0.1, 0.8, 2)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: 'rgba(168, 85, 247, 0.3)',
+                      }}
                     >
-                      <Text className="text-primary font-bold text-lg">−</Text>
+                      <Text className="text-primary font-black text-lg">−</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      className="w-11 h-11 rounded-full bg-primary/15 items-center justify-center"
+                      className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
                       onPress={() => adjustSetting('smoothingAlpha', 0.05, 0.1, 0.8, 2)}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: 'rgba(168, 85, 247, 0.3)',
+                      }}
                     >
-                      <Text className="text-primary font-bold text-lg">+</Text>
+                      <Text className="text-primary font-black text-lg">+</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               </ScrollView>
 
-              <View className="flex-row gap-4 mt-6">
+              <View className="flex-row gap-3 mt-6">
                 <View className="flex-1">
                   <Button
                     variant="outline"
