@@ -16,7 +16,6 @@ interface ScreenContainerProps {
 
 // Geometric grid with neon arcade aesthetic
 function ArcadeGrid({ isDark }: { isDark: boolean }) {
-  const lineColor = isDark ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.05)';
   const dotColor = isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)';
   
   return (

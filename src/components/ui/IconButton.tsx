@@ -1,6 +1,5 @@
 import React, { ReactNode } from 'react';
-import { TouchableOpacity, Text, View } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { TouchableOpacity, Text } from 'react-native';
 import { useTheme } from '../../theme';
 
 type IconButtonSize = 'sm' | 'md' | 'lg';

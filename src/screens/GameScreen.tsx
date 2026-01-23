@@ -153,7 +153,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
           SCREEN_WIDTH * wall.xRatio,
           GAME_AREA_HEIGHT * wall.yRatio,
           SCREEN_WIDTH * wall.widthRatio,
-          10,
+          MAZE_WALL_CONFIG.WALL_HEIGHT,
           { isStatic: true, label: 'maze-wall' }
         )
       ),

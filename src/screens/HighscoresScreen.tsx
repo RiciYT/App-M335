@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, ActivityIndicator } from 'react-native';
 import { ref, get } from 'firebase/database';
-import { LinearGradient } from 'expo-linear-gradient';
 import { database } from '../config/firebase';
 import { formatTime, GameScore } from '../types';
-import { ScreenContainer, Header, Card } from '../components/ui';
+import { ScreenContainer, Header } from '../components/ui';
 import { useTheme } from '../theme';
 
 const MEDALS = {

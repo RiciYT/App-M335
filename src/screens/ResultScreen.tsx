@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { ref, set, get } from 'firebase/database';
-import { LinearGradient } from 'expo-linear-gradient';
 import { auth, database } from '../config/firebase';
 import { formatTime, Screen } from '../types';
-import { ScreenContainer, Button, Card } from '../components/ui';
+import { ScreenContainer, Button } from '../components/ui';
 import { useTheme } from '../theme';
 
 interface ResultScreenProps {

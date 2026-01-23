@@ -36,7 +36,7 @@ export function Card({ children, variant = 'default', className = '', style, glo
       case 'highlight':
         return `${isDark ? 'bg-primary/15 border-primary/40' : 'bg-primary-muted border-primary/25'} border rounded-3xl p-5`;
       case 'glass':
-        return `${isDark ? 'bg-white/5' : 'bg-white/70'} border border-white/20 rounded-3xl p-5 backdrop-blur-xl`;
+        return `${isDark ? 'bg-white/5' : 'bg-white/70'} border border-white/20 rounded-3xl p-5`;
       case 'neon':
         return `${isDark ? 'bg-surface-dark/80' : 'bg-surface-light/95'} border-2 border-primary rounded-3xl p-5`;
       default:
