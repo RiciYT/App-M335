@@ -628,7 +628,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">−</Text>
+                      <Ionicons name="remove" size={20} color="#A855F7" />
                     </TouchableOpacity>
                     <TouchableOpacity 
                       className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
@@ -638,7 +638,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">+</Text>
+                      <Ionicons name="add" size={20} color="#A855F7" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -664,7 +664,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">−</Text>
+                      <Ionicons name="remove" size={20} color="#A855F7" />
                     </TouchableOpacity>
                     <TouchableOpacity 
                       className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
@@ -674,7 +674,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">+</Text>
+                      <Ionicons name="add" size={20} color="#A855F7" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -700,7 +700,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">−</Text>
+                      <Ionicons name="remove" size={20} color="#A855F7" />
                     </TouchableOpacity>
                     <TouchableOpacity 
                       className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
@@ -710,7 +710,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">+</Text>
+                      <Ionicons name="add" size={20} color="#A855F7" />
                     </TouchableOpacity>
                   </View>
                 </View>

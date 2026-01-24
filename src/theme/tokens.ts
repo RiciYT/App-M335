@@ -109,6 +109,10 @@ export const tokens = {
         opacity: 0.4,
         radius: 16,
       },
+      strong: {
+        opacity: 0.5,
+        radius: 20,
+      },
     },
   },
 
@@ -148,7 +152,16 @@ export const createGlow = (
   intensity: 'light' | 'dark' | 'strong' = 'dark'
 ) => {
   const glow = tokens.glow[glowType];
-  const config = glow[intensity];
+  
+  // Handle the 'strong' case for glows that don't have it
+  let config;
+  if (intensity === 'strong' && 'strong' in glow) {
+    config = glow.strong;
+  } else if (intensity === 'dark') {
+    config = glow.dark;
+  } else {
+    config = glow.light;
+  }
   
   return {
     shadowColor: glow.color,
