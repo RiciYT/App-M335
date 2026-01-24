@@ -11,6 +11,7 @@ import { ScreenContainer, Header, GlassCard, ListItem, SegmentedControl, NeonChi
 import { useTheme } from '../theme';
 import { AppSettings, SETTINGS_KEY, DEFAULT_SETTINGS } from '../types';
 import { tokens } from '../theme/tokens';
+import { setMusicEnabled } from '../audio/music';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -71,7 +72,12 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
   };
 
   const toggleSound = useCallback(() => {
-    setSettings(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }));
+    setSettings(prev => {
+      const newEnabled = !prev.soundEnabled;
+      // Immediately update music state
+      setMusicEnabled(newEnabled);
+      return { ...prev, soundEnabled: newEnabled };
+    });
   }, []);
 
   const toggleVibration = useCallback(() => {
@@ -137,15 +143,6 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
 
   const cycleTheme = (mode: 'light' | 'dark' | 'system') => {
     setThemeMode(mode);
-  };
-
-  const getThemeLabel = (mode: string) => {
-    switch (mode) {
-      case 'light': return 'Light';
-      case 'dark': return 'Dark';
-      case 'system': return 'Auto';
-      default: return 'Auto';
-    }
   };
 
   return (
@@ -219,7 +216,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
               <Switch
                 value={settings.soundEnabled}
                 onValueChange={toggleSound}
-                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#22D3EE' }}
+                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#A855F7' }}
                 thumbColor="#fff"
               />
             }
@@ -233,7 +230,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
               <Switch
                 value={settings.vibrationEnabled}
                 onValueChange={toggleVibration}
-                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#22D3EE' }}
+                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#A855F7' }}
                 thumbColor="#fff"
               />
             }

@@ -82,7 +82,11 @@ export const tokens = {
         radius: 20,
       },
     },
-    // Cyan/mint glow
+    // Cyan/mint glow - USE ONLY FOR TARGET/GOAL ELEMENTS
+    // This color should be reserved exclusively for:
+    // - Target indicator in game
+    // - Success/completion states
+    // - Goal-related UI elements
     mint: {
       color: '#22D3EE',
       light: {

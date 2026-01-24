@@ -6,7 +6,7 @@ import { database } from '../config/firebase';
 import { formatTime, GameScore } from '../types';
 import { ScreenContainer, Header, GlassCard } from '../components/ui';
 import { useTheme } from '../theme';
-import { tokens, createGlow } from '../theme/tokens';
+import { tokens } from '../theme/tokens';
 
 const MEDALS = {
   FIRST: 'medal',
@@ -87,41 +87,99 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     const medal = getMedalIcon(index);
     const isTopThree = index < 3;
 
+    // Updated colors: #1 uses pink glow, #2/#3 use purple tones
     const getMedalColor = () => {
-      if (index === 0) return '#FACC15'; // Gold
-      if (index === 1) return '#C0C0C0'; // Silver
-      if (index === 2) return '#CD7F32'; // Bronze
+      if (index === 0) return '#F472B6'; // Pink for #1
+      if (index === 1) return '#C084FC'; // Light purple for #2
+      if (index === 2) return '#A855F7'; // Purple for #3
       return '#A855F7';
     };
 
     const getGlowConfig = () => {
-      if (index === 0) return { color: 'accent' as const, intensity: 'light' as const };
-      if (index === 1) return { color: 'primary' as const, intensity: 'light' as const };
-      if (index === 2) return { color: 'secondary' as const, intensity: 'light' as const };
+      if (index === 0) return { color: 'secondary' as const, intensity: 'strong' as const };
+      if (index === 1) return { color: 'primary' as const, intensity: 'dark' as const };
+      if (index === 2) return { color: 'primary' as const, intensity: 'light' as const };
       return { color: 'primary' as const, intensity: 'light' as const };
     };
 
     const glowConfig = getGlowConfig();
 
+    // Placeholder skeleton styling
+    if (isPlaceholder) {
+      return (
+        <GlassCard
+          variant="default"
+          style={{
+            marginBottom: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            opacity: 0.35,
+            borderStyle: 'dashed',
+          }}
+        >
+          {/* Rank indicator */}
+          <View className="mr-4 items-center justify-center w-14">
+            <View className={`w-11 h-11 rounded-xl items-center justify-center ${
+              isDark ? 'bg-primary/10' : 'bg-primary-muted/50'
+            }`}>
+              <Text className="text-lg font-black text-primary/50">#{index + 1}</Text>
+            </View>
+          </View>
+
+          {/* Placeholder content */}
+          <View className="flex-1">
+            <View
+              className="h-4 rounded mb-2"
+              style={{
+                width: '60%',
+                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+              }}
+            />
+            <View
+              className="h-3 rounded"
+              style={{
+                width: '30%',
+                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.1)' : 'rgba(168, 85, 247, 0.08)',
+              }}
+            />
+          </View>
+        </GlassCard>
+      );
+    }
+
     return (
       <GlassCard 
-        variant={isTopThree && !isPlaceholder ? 'elevated' : 'default'}
+        variant={isTopThree ? 'elevated' : 'default'}
         glowColor={glowConfig.color}
         style={{
           marginBottom: 12,
           flexDirection: 'row',
           alignItems: 'center',
-          opacity: isPlaceholder ? 0.3 : 1,
-          borderWidth: isTopThree && !isPlaceholder ? 2 : 1,
-          borderColor: isTopThree && !isPlaceholder 
-            ? `${getMedalColor()}40` 
+          borderWidth: isTopThree ? 2 : 1,
+          borderColor: isTopThree
+            ? `${getMedalColor()}50`
             : isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
         }}
       >
         {/* Rank indicator */}
         <View className="mr-4 items-center justify-center w-14">
-          {medal && !isPlaceholder ? (
-            <Ionicons name={medal} size={40} color={getMedalColor()} />
+          {medal ? (
+            <View className="relative">
+              <Ionicons name={medal} size={40} color={getMedalColor()} />
+              {index === 0 && (
+                <View
+                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center"
+                  style={{
+                    backgroundColor: '#F472B6',
+                    shadowColor: '#F472B6',
+                    shadowOpacity: 0.6,
+                    shadowRadius: 6,
+                  }}
+                >
+                  <Text className="text-[10px] font-black text-white">1</Text>
+                </View>
+              )}
+            </View>
           ) : (
             <View className={`w-11 h-11 rounded-xl items-center justify-center ${
               isDark ? 'bg-primary/20' : 'bg-primary-muted'
@@ -135,8 +193,8 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
         <View className="flex-1">
           <Text 
             className={`mb-1 ${
-              isTopThree && !isPlaceholder ? 'text-lg font-black' : 'text-base font-bold'
-            } ${isDark ? 'text-ink-light' : 'text-ink'}`} 
+              isTopThree ? 'text-lg font-black' : 'text-base font-bold'
+            } ${isDark ? 'text-ink-light' : 'text-ink'}`}
             numberOfLines={1}
           >
             {displayName}
@@ -145,16 +203,16 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
             <Ionicons 
               name="stopwatch" 
               size={16} 
-              color={isTopThree && !isPlaceholder ? getMedalColor() : '#A855F7'} 
-              style={{ marginRight: 8 }} 
+              color={isTopThree ? getMedalColor() : '#A855F7'}
+              style={{ marginRight: 8 }}
             />
             <Text 
-              className={`font-black ${isTopThree && !isPlaceholder ? 'text-xl' : 'text-lg'}`}
+              className={`font-black ${isTopThree ? 'text-xl' : 'text-lg'}`}
               style={{
-                color: isTopThree && !isPlaceholder ? getMedalColor() : isDark ? '#C084FC' : '#A855F7',
+                color: isTopThree ? getMedalColor() : isDark ? '#C084FC' : '#A855F7',
               }}
             >
-              {isPlaceholder ? '—' : formatTime(item.time)}
+              {formatTime(item.time)}
             </Text>
           </View>
         </View>

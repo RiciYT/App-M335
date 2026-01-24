@@ -44,7 +44,8 @@
     "owner": "riciyt",
     "originalFullName": "@riciyt/app-m335",
     "plugins": [
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-font"
     ]
   }
 }

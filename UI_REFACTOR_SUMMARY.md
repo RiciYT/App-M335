@@ -4,6 +4,57 @@
 
 This document describes the comprehensive UI refactor of the Tilt Maze app to implement a consistent Arcade/Neon/Glow design system. All changes focus on styling and visual consistency while preserving existing functionality and navigation.
 
+## Final Polish Pass (2026-01-24)
+
+### 1. Icon Style Unification
+- **LoginScreen**: Removed emoji (🎮) from logo, replaced with `Ionicons game-controller`
+- **LoginScreen**: Removed decorative pink "badge dot" from logo
+- All screens now use consistent Ionicons from `@expo/vector-icons`
+
+### 2. Cyan Accent Restriction
+Cyan (#22D3EE) is now reserved **exclusively** for target/goal elements:
+- ✅ Target indicator in game
+- ✅ Success/completion states
+- ✅ NeonChip variant="mint" for TARGET label
+- ❌ Settings toggles → Changed to Purple (#A855F7)
+- ❌ Invert Direction toggle in Controls overlay → Changed to Purple
+
+**Changed in SettingsScreen:**
+- Sound Effects switch: `true: '#22D3EE'` → `true: '#A855F7'`
+- Vibration switch: `true: '#22D3EE'` → `true: '#A855F7'`
+
+**Changed in GameScreen:**
+- Invert Direction toggle: `bg-mint` → `bg-primary`
+- Shadow color: `#22D3EE` → `#A855F7`
+
+### 3. Leaderboard Styling Improvements
+- **Removed** yellow/gold border and icon for #1
+- **#1 Place**: Pink glow + badge with "1" indicator
+  - Medal color: `#F472B6` (pink)
+  - Glow: `secondary` (pink) with `strong` intensity
+- **#2 Place**: Light purple (`#C084FC`)
+- **#3 Place**: Purple (`#A855F7`)
+- **Placeholder rows**: Skeleton-style with dashed border
+  - Better visual differentiation from real scores
+  - Shows rank number and skeleton bars for name/time
+
+### 4. Game HUD Optimization
+- **Bottom bar height reduced**: 56px → 44px
+- **Padding reduced**: `px-3 py-2` → `px-2 py-1.5`
+- **Border radius reduced**: `rounded-2xl` → `rounded-xl`
+- **Divider height reduced**: `h-8` → `h-6`
+- **Grid opacity reduced** for better gameplay contrast:
+  - Horizontal: `0.04/0.03` → `0.02/0.015`
+  - Vertical: `0.03/0.02` → `0.015/0.01`
+
+### 5. Consistency Fixes
+- Added documentation comment in `tokens.ts` explaining cyan usage restriction
+- Removed unused imports and constants:
+  - `createGlow` from HighscoresScreen
+  - `tokens` from GameScreen
+  - `SETTINGS_KEY` from GameScreen
+  - `getThemeLabel` from SettingsScreen
+
 ## Key Objectives
 
 1. **Icon Consistency**: Replace all emoji icons with a unified icon set (@expo/vector-icons)

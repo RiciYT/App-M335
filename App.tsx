@@ -7,6 +7,7 @@ import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from './src/config/firebase';
 import { Screen } from './src/types';
 import { ThemeProvider, useTheme } from './src/theme';
+import { useAppSettings } from './src/hooks/useAppSettings';
 import LoginScreen from './src/screens/LoginScreen';
 import MenuScreen from './src/screens/MenuScreen';
 import GameScreen from './src/screens/GameScreen';
@@ -16,6 +17,9 @@ import SettingsScreen from './src/screens/SettingsScreen';
 
 function AppContent() {
   const { isDark } = useTheme();
+  // Initialize app settings and music
+  useAppSettings();
+
   const [user, setUser] = useState<User | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);

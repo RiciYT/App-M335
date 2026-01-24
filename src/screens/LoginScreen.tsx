@@ -11,6 +11,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../config/firebase';
 import { Toast, Button, ScreenContainer, Divider } from '../components/ui';
 import { useTheme } from '../theme';
@@ -135,20 +136,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
                 borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
               }}
             >
-              <Text className="text-6xl">🎮</Text>
-            </View>
-            
-            {/* Accent dot */}
-            <View 
-              className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-secondary items-center justify-center"
-              style={{
-                shadowColor: '#F472B6',
-                shadowOpacity: 0.6,
-                shadowOffset: { width: 0, height: 2 },
-                shadowRadius: 8,
-              }}
-            >
-              <View className="w-2 h-2 rounded-full bg-white" />
+              <Ionicons name="game-controller" size={56} color="#A855F7" />
             </View>
           </View>
 

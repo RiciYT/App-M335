@@ -11,7 +11,6 @@ import { formatTime } from '../types';
 import { IconButton, Button, NeonChip } from '../components/ui';
 import { useTheme } from '../theme';
 import { useAppSettings } from '../hooks/useAppSettings';
-import { tokens } from '../theme/tokens';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,7 +26,6 @@ const TARGET_RADIUS = 32;
 const WALL_THICKNESS = 20;
 const FALL_THRESHOLD = 120;
 const FALL_RESET_DELAY_MS = 700;
-const SETTINGS_KEY = '@tiltmaze_settings';
 const BALL_INITIAL_POSITION = { x: 50, y: 50 };
 
 // Maze wall configuration - defines horizontal obstacle positions
@@ -283,7 +281,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const GameGrid = () => (
     <View className="absolute inset-0 z-0" pointerEvents="none">
       {/* Horizontal scanlines */}
-      <View className="absolute inset-0" style={{ opacity: isDark ? 0.04 : 0.03 }}>
+      <View className="absolute inset-0" style={{ opacity: isDark ? 0.02 : 0.015 }}>
         {[...Array(Math.ceil(GAME_AREA_HEIGHT / 30))].map((_, i) => (
           <View 
             key={`h-${i}`} 
@@ -296,7 +294,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         ))}
       </View>
       {/* Vertical lines */}
-      <View className="absolute inset-0" style={{ opacity: isDark ? 0.03 : 0.02 }}>
+      <View className="absolute inset-0" style={{ opacity: isDark ? 0.015 : 0.01 }}>
         {[...Array(Math.ceil(SCREEN_WIDTH / 40))].map((_, i) => (
           <View 
             key={`v-${i}`} 
@@ -524,19 +522,19 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         </View>
 
         {/* Footer Info - Compact with Neon Chips */}
-        <View className="px-5 pb-4">
-          <View 
-            className={`px-3 py-2 rounded-2xl flex-row justify-around items-center ${isDark ? 'bg-surface-dark/60' : 'bg-surface-light/80'}`}
+        <View className="px-5 pb-3">
+          <View
+            className={`px-2 py-1.5 rounded-xl flex-row justify-around items-center ${isDark ? 'bg-surface-dark/60' : 'bg-surface-light/80'}`}
             style={{
               borderWidth: 1,
               borderColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.15)',
-              height: 56,
+              height: 44,
             }}
           >
             <NeonChip icon="phone-portrait" variant="primary" size="sm">
               Tilt
             </NeonChip>
-            <View className="w-[1px] h-8 bg-primary/20" />
+            <View className="w-[1px] h-6 bg-primary/20" />
             <NeonChip icon="locate" variant="mint" size="sm">
               Target
             </NeonChip>
@@ -593,9 +591,9 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                   </View>
                   <TouchableOpacity 
                     onPress={toggleInvertX}
-                    className={`px-5 py-2.5 rounded-2xl ${settings.invertX ? 'bg-mint' : isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}
+                    className={`px-5 py-2.5 rounded-2xl ${settings.invertX ? 'bg-primary' : isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'}`}
                     style={{
-                      shadowColor: settings.invertX ? '#22D3EE' : 'transparent',
+                      shadowColor: settings.invertX ? '#A855F7' : 'transparent',
                       shadowOpacity: 0.4,
                       shadowOffset: { width: 0, height: 2 },
                       shadowRadius: 8,
