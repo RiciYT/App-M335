@@ -63,5 +63,10 @@ export function useAppSettings() {
     isLoading,
     soundEnabled: settings.soundEnabled,
     vibrationEnabled: settings.vibrationEnabled,
+    // Tilt settings
+    sensitivity: settings.sensitivity,
+    invertX: settings.invertX,
+    deadzone: settings.deadzone,
+    smoothingAlpha: settings.smoothingAlpha,
   };
 }

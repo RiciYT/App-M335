@@ -1,8 +1,10 @@
 import React, { ReactNode } from 'react';
 import { TouchableOpacity, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../theme';
-import { tokens, createBorder } from '../../theme/tokens';
+import { tokens } from '../../theme';
+
+// Neon Cyan colors
+const NEON_CYAN = '#00f2ff';
 
 interface NeonChipProps {
   children: ReactNode;
@@ -21,8 +23,6 @@ export function NeonChip({
   size = 'md',
   active = false,
 }: NeonChipProps) {
-  const { isDark } = useTheme();
-
   const sizeConfig = {
     sm: { height: 32, paddingH: 12, fontSize: 11, iconSize: 14, letterSpacing: 1.5 },
     md: { height: 40, paddingH: 16, fontSize: 12, iconSize: 16, letterSpacing: 2 },
@@ -32,10 +32,10 @@ export function NeonChip({
 
   const getColors = () => {
     const colors = {
-      primary: { bg: '#A855F7', text: '#FFFFFF', border: '#A855F7' },
+      primary: { bg: NEON_CYAN, text: '#050a14', border: NEON_CYAN },
       secondary: { bg: '#F472B6', text: '#FFFFFF', border: '#F472B6' },
-      mint: { bg: '#22D3EE', text: '#FFFFFF', border: '#22D3EE' },
-      accent: { bg: '#FACC15', text: '#1E1B4B', border: '#FACC15' },
+      mint: { bg: NEON_CYAN, text: '#050a14', border: NEON_CYAN },
+      accent: { bg: '#FACC15', text: '#050a14', border: '#FACC15' },
     };
     return colors[variant];
   };
@@ -45,11 +45,13 @@ export function NeonChip({
   const chipStyle = active 
     ? {
         backgroundColor: colors.bg,
-        ...createBorder(colors.border, isDark, 'thin'),
+        borderWidth: 1,
+        borderColor: colors.border,
       }
     : {
-        backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.1)',
-        ...createBorder(colors.border, isDark, 'thin'),
+        backgroundColor: 'rgba(0, 242, 255, 0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 242, 255, 0.3)',
       };
 
   const Component = onPress ? TouchableOpacity : View;
@@ -72,13 +74,13 @@ export function NeonChip({
         <Ionicons 
           name={icon} 
           size={config.iconSize} 
-          color={active ? colors.text : colors.bg} 
-          style={{ marginRight: 6 }} 
+          color={active ? colors.text : NEON_CYAN}
+          style={{ marginRight: 6 }}
         />
       )}
       <Text
         style={{
-          color: active ? colors.text : colors.bg,
+          color: active ? colors.text : NEON_CYAN,
           fontSize: config.fontSize,
           fontWeight: '900',
           textTransform: 'uppercase',

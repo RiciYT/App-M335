@@ -1,19 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, TextInput, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { signOut, type User } from 'firebase/auth';
-import { ref, get, set } from 'firebase/database';
-import { LinearGradient } from 'expo-linear-gradient';
+import { get, ref, set, update } from 'firebase/database';
 import { Ionicons } from '@expo/vector-icons';
 import { auth, database } from '../config/firebase';
 import { Screen } from '../types';
-import { ScreenContainer, NeonPrimaryButton, NeonSecondaryButton, NeonGhostButton, NeonChip, GlassCard } from '../components/ui';
-import { useTheme } from '../theme';
-import { tokens } from '../theme/tokens';
 
-const BUTTON_ICONS = {
-  SAVE: 'checkmark',
-  CANCEL: 'close',
-} as const;
+// Neon Cyan color constants matching the design
+const NEON_CYAN = '#00f2ff';
+const DEEP_NAVY = '#050a14';
 
 interface MenuScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -23,48 +20,9 @@ interface MenuScreenProps {
 }
 
 export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: MenuScreenProps) {
-  const { isDark } = useTheme();
   const [nickname, setNickname] = useState('');
-  const [editingNickname, setEditingNickname] = useState(false);
-  const [savedNickname, setSavedNickname] = useState('');
-
-  useEffect(() => {
-    if (user && !isGuest) {
-      fetchNickname();
-    }
-  }, [user, isGuest]);
-
-  const fetchNickname = async () => {
-    if (!user) return;
-    try {
-      const nicknameRef = ref(database, `users/${user.uid}/nickname`);
-      const snapshot = await get(nicknameRef);
-      if (snapshot.exists()) {
-        const nick = snapshot.val();
-        setSavedNickname(nick);
-        setNickname(nick);
-      }
-    } catch (error) {
-      console.error('Error fetching nickname:', error);
-    }
-  };
-
-  const saveNickname = async () => {
-    if (!user || !nickname.trim()) {
-      Alert.alert('Error', 'Please enter a valid nickname');
-      return;
-    }
-    try {
-      const nicknameRef = ref(database, `users/${user.uid}/nickname`);
-      await set(nicknameRef, nickname.trim());
-      setSavedNickname(nickname.trim());
-      setEditingNickname(false);
-      Alert.alert('Success', 'Nickname saved!');
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      Alert.alert('Error', 'Failed to save nickname: ' + message);
-    }
-  };
+  const glowAnim = useRef(new Animated.Value(0)).current;
+  const enterAnim = useRef(new Animated.Value(0)).current;
 
   const handleLogout = async () => {
     try {
@@ -77,197 +35,430 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
     }
   };
 
-  const getUserDisplayName = () => {
-    if (isGuest) return 'Guest';
-    if (savedNickname) return savedNickname;
-    if (user?.isAnonymous) return 'Anonymous User';
-    return user?.email || 'Player';
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [glowAnim]);
+
+  useEffect(() => {
+    Animated.timing(enterAnim, {
+      toValue: 1,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+  }, [enterAnim]);
+
+  useEffect(() => {
+    if (isGuest || !user) {
+      setNickname('');
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadNickname = async () => {
+      try {
+        const nicknameRef = ref(database, `users/${user.uid}/nickname`);
+        const snapshot = await get(nicknameRef);
+        if (isMounted) {
+          setNickname(snapshot.exists() ? String(snapshot.val() || '') : '');
+        }
+      } catch (error) {
+        console.error('Nickname load error:', error);
+      }
+    };
+
+    loadNickname();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isGuest, user]);
+
+  const saveNickname = async () => {
+    if (isGuest || !user) return;
+
+    const trimmed = nickname.trim();
+
+    try {
+      const nicknameRef = ref(database, `users/${user.uid}/nickname`);
+      await set(nicknameRef, trimmed || null);
+
+      const scoreRef = ref(database, `scores/${user.uid}`);
+      const scoreSnapshot = await get(scoreRef);
+      if (scoreSnapshot.exists()) {
+        await update(scoreRef, { nickname: trimmed || null });
+      }
+    } catch (error) {
+      console.error('Nickname save error:', error);
+    }
   };
 
+
   return (
-    <ScreenContainer>
-      <View className="flex-1 px-6 py-6 justify-between">
-        {/* Header Section */}
-        <View className="items-center justify-center mt-2 mb-4">
-          {/* Compact Logo */}
-          <View className="relative w-20 h-20 mb-4">
-            <LinearGradient
-              colors={['#A855F7', '#F472B6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="absolute inset-0 rounded-2xl"
-              style={{ 
-                transform: [{ rotate: '6deg' }],
-                opacity: 0.9,
-              }}
-            />
-            <View 
-              className={`absolute inset-0 rounded-2xl items-center justify-center ${
-                isDark ? 'bg-surface-dark' : 'bg-surface-light'
-              }`}
-              style={{
-                shadowColor: '#A855F7',
-                shadowOpacity: isDark ? 0.4 : 0.25,
-                shadowOffset: { width: 0, height: 4 },
-                shadowRadius: 16,
-                borderWidth: 1,
-                borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
-              }}
-            >
-              <Ionicons name="game-controller" size={40} color="#A855F7" />
-            </View>
-          </View>
+    <View style={{ flex: 1, backgroundColor: DEEP_NAVY }}>
+      <StatusBar style="light" />
+      <SafeAreaView style={{ flex: 1 }}>
+      {/* Cyber Grid Background */}
+      <View
+        style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.03,
+        }}
+      >
+        {/* Grid lines */}
+        {[...Array(15)].map((_, i) => (
+          <View
+            key={`h-${i}`}
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              top: i * 60,
+              height: 1,
+              backgroundColor: NEON_CYAN,
+            }}
+          />
+        ))}
+        {[...Array(8)].map((_, i) => (
+          <View
+            key={`v-${i}`}
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: i * 60,
+              width: 1,
+              backgroundColor: NEON_CYAN,
+            }}
+          />
+        ))}
+      </View>
+
+      {/* Mesh Gradient Overlay */}
+      <View
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundColor: 'transparent',
+          opacity: 0.8,
+        }}
+      />
+
+      {/* Decorative circles */}
+      <View
+        style={{
+          position: 'absolute',
+          top: '25%',
+          left: -80,
+          width: 256,
+          height: 256,
+          borderRadius: 128,
+          borderWidth: 1,
+          borderColor: 'rgba(0, 242, 255, 0.05)',
+        }}
+      />
+      <View
+        style={{
+          position: 'absolute',
+          bottom: '25%',
+          right: -80,
+          width: 320,
+          height: 320,
+          borderRadius: 160,
+          borderWidth: 1,
+          borderColor: 'rgba(0, 242, 255, 0.05)',
+        }}
+      />
+
+      <Animated.View
+        style={{
+          flex: 1,
+          paddingHorizontal: 24,
+          paddingTop: 64,
+          paddingBottom: 48,
+          opacity: enterAnim,
+          transform: [
+            {
+              translateY: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }),
+            },
+          ],
+        }}
+      >
+        {/* Header */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <View style={{ width: 48, height: 48 }} />
 
           {/* Title */}
-          <View className="items-center">
-            <View className="flex-row items-center">
-              <Text 
-                className={`text-3xl font-black tracking-tighter ${isDark ? 'text-ink-light' : 'text-ink'}`}
+          <Text
+            style={{
+              color: NEON_CYAN,
+              fontSize: 48,
+              fontWeight: '900',
+              fontStyle: 'italic',
+              letterSpacing: -2,
+              textShadowColor: 'rgba(0, 242, 255, 0.8)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 10,
+            }}
+          >
+            TILT MAZE
+          </Text>
+
+          <View style={{ width: 48, height: 48 }} />
+        </View>
+
+        {/* Main Content */}
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          {/* Nickname Input */}
+          <View style={{ position: 'relative', width: '100%', maxWidth: 320, marginBottom: 24 }}>
+            <TextInput
+              value={nickname}
+              onChangeText={setNickname}
+              placeholder={isGuest ? 'SIGN IN TO SET NICKNAME' : 'ENTER NICKNAME'}
+              placeholderTextColor="rgba(0, 242, 255, 0.25)"
+              editable={!isGuest && !!user}
+              onEndEditing={saveNickname}
+              onSubmitEditing={saveNickname}
+              style={{
+                width: '100%',
+                height: 56,
+                backgroundColor: 'rgba(5, 10, 20, 0.8)',
+                borderWidth: 2,
+                borderColor: 'rgba(0, 242, 255, 0.3)',
+                borderRadius: 16,
+                paddingHorizontal: 20,
+                textAlign: 'center',
+                color: NEON_CYAN,
+                fontSize: 14,
+                fontWeight: '700',
+                letterSpacing: 4,
+                textTransform: 'uppercase',
+                opacity: isGuest ? 0.5 : 1,
+              }}
+            />
+            {/* Label */}
+            <View
+              style={{
+                position: 'absolute',
+                top: -10,
+                left: '50%',
+                transform: [{ translateX: -40 }],
+                backgroundColor: DEEP_NAVY,
+                paddingHorizontal: 12,
+              }}
+            >
+              <Text
                 style={{
-                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'transparent',
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 8,
+                  fontSize: 9,
+                  color: 'rgba(0, 242, 255, 0.6)',
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  fontStyle: 'italic',
                 }}
               >
-                TILT
+                Player Tag
               </Text>
-              <Text className="text-3xl font-black tracking-tighter text-primary ml-2">MAZE</Text>
             </View>
-             
-            {/* Welcome */}
-            <View className="mt-4 items-center">
-              <Text className={`text-xs font-black uppercase tracking-[4px] mb-2 ${
-                isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-              }`}>
-                Welcome back
-              </Text>
-              <Text 
-                className={`text-2xl font-black tracking-tight ${isDark ? 'text-ink-light' : 'text-ink'}`}
+          </View>
+
+          {/* Play Button with Glow */}
+          <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center', paddingVertical: 24 }}>
+            {/* Glow behind button */}
+            <Animated.View
+              style={{
+                position: 'absolute',
+                width: 288,
+                height: 288,
+                borderRadius: 144,
+                backgroundColor: 'rgba(0, 242, 255, 0.2)',
+                opacity: glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.55] }),
+                transform: [
+                  {
+                    scale: glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.05] }),
+                  },
+                ],
+              }}
+            />
+
+            {/* Play Button */}
+            <TouchableOpacity
+              onPress={() => onNavigate('Game')}
+              activeOpacity={0.85}
+              style={{
+                width: 224,
+                height: 224,
+                borderRadius: 112,
+                backgroundColor: DEEP_NAVY,
+                borderWidth: 12,
+                borderColor: 'rgba(0, 242, 255, 0.2)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                shadowColor: NEON_CYAN,
+                shadowOpacity: 0.4,
+                shadowOffset: { width: 0, height: 0 },
+                shadowRadius: 20,
+                elevation: 10,
+                overflow: 'hidden',
+              }}
+            >
+              {/* Inner gradient overlay */}
+              <View
                 style={{
-                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'transparent',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  borderRadius: 112,
+                  backgroundColor: 'rgba(0, 242, 255, 0.05)',
+                }}
+              />
+
+              <Ionicons
+                name="play"
+                size={110}
+                color={NEON_CYAN}
+                style={{
+                  textShadowColor: 'rgba(0, 242, 255, 0.8)',
                   textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 4,
+                  textShadowRadius: 15,
+                }}
+              />
+              <Text
+                style={{
+                  color: NEON_CYAN,
+                  fontSize: 30,
+                  fontWeight: '900',
+                  letterSpacing: -1,
+                  fontStyle: 'italic',
+                  marginTop: -8,
+                  textShadowColor: 'rgba(0, 242, 255, 0.8)',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 10,
                 }}
               >
-                {getUserDisplayName()}
+                PLAY
               </Text>
-              
-              {isGuest && (
-                <View className="mt-3">
-                  <NeonChip icon="warning" variant="accent" size="sm">
-                    Guest Mode
-                  </NeonChip>
-                </View>
-              )}
-            </View>
+            </TouchableOpacity>
           </View>
 
-          {/* Nickname Section - Inline Edit */}
-          {!isGuest && user && (
-            <View className="mt-4 flex-row items-center justify-center gap-2">
-              {editingNickname ? (
-                <View className="flex-row items-center gap-2">
-                  <GlassCard variant="default" style={{ padding: 8, flexDirection: 'row', alignItems: 'center' }}>
-                    <TextInput
-                      className={`text-sm py-1 font-medium ${isDark ? 'text-ink-light' : 'text-ink'}`}
-                      placeholder="Enter nickname"
-                      value={nickname}
-                      onChangeText={setNickname}
-                      maxLength={20}
-                      style={{ width: 140 }}
-                      placeholderTextColor={isDark ? '#A78BFA' : '#9CA3AF'}
-                    />
-                  </GlassCard>
-                  <TouchableOpacity 
-                    onPress={saveNickname}
-                    className="w-9 h-9 items-center justify-center bg-primary/20 rounded-xl"
-                    style={{
-                      borderWidth: 1,
-                      borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
-                    }}
-                  >
-                    <Ionicons name={BUTTON_ICONS.SAVE} size={18} color="#A855F7" />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={() => {
-                      setNickname(savedNickname);
-                      setEditingNickname(false);
-                    }}
-                    className={`w-9 h-9 items-center justify-center rounded-xl ${
-                      isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'
-                    }`}
-                  >
-                    <Ionicons name={BUTTON_ICONS.CANCEL} size={18} color={isDark ? '#A78BFA' : '#6B7280'} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <NeonChip 
-                  icon="pencil" 
-                  variant="primary" 
-                  size="sm"
-                  onPress={() => setEditingNickname(true)}
-                >
-                  {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
-                </NeonChip>
-              )}
-            </View>
-          )}
-        </View>
-
-        {/* Action Buttons */}
-        <View className="w-full space-y-4 mb-8">
-          <NeonPrimaryButton
-            size="xl"
-            onPress={() => onNavigate('Game')}
-            icon="play"
-          >
-            PLAY
-          </NeonPrimaryButton>
-
-          <View className="flex-row gap-3 mt-2">
-            <View className="flex-1">
-              <NeonSecondaryButton
-                size="md"
-                onPress={() => onNavigate('Highscores')}
-                icon="trophy"
+          {/* Secondary Buttons */}
+          <View style={{ marginTop: 48, width: '100%', maxWidth: 240, gap: 16 }}>
+            {/* High Scores Button */}
+            <TouchableOpacity
+              onPress={() => onNavigate('Highscores')}
+              activeOpacity={0.8}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                width: '100%',
+                paddingVertical: 16,
+                borderRadius: 16,
+                backgroundColor: 'rgba(0, 242, 255, 0.03)',
+                borderWidth: 1,
+                borderColor: 'rgba(0, 242, 255, 0.3)',
+              }}
+            >
+              <Ionicons name="stats-chart" size={24} color="rgba(0, 242, 255, 0.8)" />
+              <Text
+                style={{
+                  color: 'rgba(0, 242, 255, 0.8)',
+                  fontSize: 14,
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: 4,
+                }}
               >
-                Scores
-              </NeonSecondaryButton>
-            </View>
-            <View className="flex-1">
-              <NeonSecondaryButton
-                size="md"
-                onPress={() => onNavigate('Settings')}
-                icon="settings"
+                High Scores
+              </Text>
+            </TouchableOpacity>
+
+            {/* Options Button */}
+            <TouchableOpacity
+              onPress={() => onNavigate('Settings')}
+              activeOpacity={0.8}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                width: '100%',
+                paddingVertical: 16,
+                borderRadius: 16,
+                backgroundColor: 'rgba(0, 242, 255, 0.03)',
+                borderWidth: 1,
+                borderColor: 'rgba(0, 242, 255, 0.3)',
+              }}
+            >
+              <Ionicons name="options" size={24} color="rgba(0, 242, 255, 0.8)" />
+              <Text
+                style={{
+                  color: 'rgba(0, 242, 255, 0.8)',
+                  fontSize: 14,
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                  letterSpacing: 4,
+                }}
               >
-                Settings
-              </NeonSecondaryButton>
-            </View>
-          </View>
+                Options
+              </Text>
+            </TouchableOpacity>
 
-          <NeonGhostButton
-            onPress={handleLogout}
-            icon={isGuest ? 'arrow-back' : 'log-out'}
-            fullWidth={true}
-          >
-            {isGuest ? 'Back' : 'Logout'}
-          </NeonGhostButton>
+            {/* Logout/Back Button */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              activeOpacity={0.8}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 12,
+                width: '100%',
+                paddingVertical: 12,
+                marginTop: 8,
+              }}
+            >
+              <Ionicons
+                name={isGuest ? 'arrow-back' : 'log-out-outline'}
+                size={20}
+                color="rgba(0, 242, 255, 0.4)"
+              />
+              <Text
+                style={{
+                  color: 'rgba(0, 242, 255, 0.4)',
+                  fontSize: 12,
+                  fontWeight: '600',
+                  textTransform: 'uppercase',
+                  letterSpacing: 2,
+                }}
+              >
+                {isGuest ? 'Back' : 'Logout'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Footer */}
-        <View className="pb-3">
-          <View className="flex-row items-center justify-center">
-            <View className="w-6 h-[1px] bg-primary/30 mr-3" />
-            <Text className={`text-center text-xs font-black uppercase tracking-[2px] ${
-              isDark ? 'text-ink-muted-light/60' : 'text-ink-muted/60'
-            }`}>
-              Tilt · Navigate · Win
-            </Text>
-            <View className="w-6 h-[1px] bg-primary/30 ml-3" />
-          </View>
-        </View>
-      </View>
-    </ScreenContainer>
+      </Animated.View>
+      </SafeAreaView>
+    </View>
   );
 }
 

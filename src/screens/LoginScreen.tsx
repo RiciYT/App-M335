@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import {
   GoogleAuthProvider,
   signInWithCredential,
@@ -10,11 +10,13 @@ import {
   isErrorWithCode,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../config/firebase';
-import { Toast, Button, ScreenContainer, Divider } from '../components/ui';
-import { useTheme } from '../theme';
+import { Toast, ScreenContainer } from '../components/ui';
+
+// Neon Cyan colors
+const NEON_CYAN = '#00f2ff';
+const DEEP_NAVY = '#020617';
 
 GoogleSignin.configure({
   webClientId: '205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com',
@@ -22,11 +24,9 @@ GoogleSignin.configure({
 
 interface LoginScreenProps {
   onLogin: () => void;
-  onGuestPlay: () => void;
 }
 
-export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) {
-  const { isDark } = useTheme();
+export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [loadingType, setLoadingType] = useState<'guest' | 'google' | null>(null);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'error' | 'success' | 'info' }>({
@@ -34,6 +34,26 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
     message: '',
     type: 'info',
   });
+  const glowAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 1,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0,
+          duration: 1600,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [glowAnim]);
 
   const showToast = (message: string, type: 'error' | 'success' | 'info' = 'error') => {
     setToast({ visible: true, message, type });
@@ -79,16 +99,10 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
     }
   };
 
-  const handleGuestPlay = () => {
-    setLoadingType('guest');
-    setTimeout(() => {
-      onGuestPlay();
-    }, 100);
-  };
 
   return (
-    <ScreenContainer>
-      <View className="flex-1 px-6 py-8 justify-between">
+    <ScreenContainer edges={['top', 'bottom']}>
+      <View style={{ flex: 1, paddingHorizontal: 32, paddingVertical: 48 }}>
         <Toast
           visible={toast.visible}
           message={toast.message}
@@ -97,130 +111,172 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps) 
         />
 
         {/* Header Section */}
-        <View className="flex-1 items-center justify-center mt-8 mb-6">
-          {/* Logo with neon glow */}
-          <View className="relative w-32 h-32 mb-10">
-            {/* Outer glow ring */}
-            <View 
-              className="absolute inset-[-8px] rounded-[32px]"
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          {/* Title */}
+          <View style={{ alignItems: 'center', marginBottom: 40 }}>
+            <Text
               style={{
-                backgroundColor: 'transparent',
-                borderWidth: 2,
-                borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
-              }}
-            />
-            
-            {/* Gradient background rotated */}
-            <LinearGradient
-              colors={['#A855F7', '#F472B6', '#22D3EE']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              className="absolute inset-0 rounded-[28px]"
-              style={{ 
-                transform: [{ rotate: '6deg' }],
-                opacity: 0.9,
-              }}
-            />
-            
-            {/* Main logo container */}
-            <View 
-              className={`absolute inset-0 rounded-[28px] items-center justify-center ${
-                isDark ? 'bg-surface-dark' : 'bg-surface-light'
-              }`}
-              style={{
-                shadowColor: '#A855F7',
-                shadowOpacity: isDark ? 0.5 : 0.3,
-                shadowOffset: { width: 0, height: 8 },
-                shadowRadius: 24,
-                borderWidth: 1,
-                borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                fontSize: 48,
+                fontWeight: '900',
+                letterSpacing: -2,
+                color: NEON_CYAN,
+                textTransform: 'uppercase',
+                fontStyle: 'italic',
+                textShadowColor: 'rgba(34, 211, 238, 0.8)',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 10,
               }}
             >
-              <Ionicons name="game-controller" size={56} color="#A855F7" />
+              Tilt
+            </Text>
+            <View
+              style={{
+                backgroundColor: NEON_CYAN,
+                paddingHorizontal: 24,
+                paddingVertical: 8,
+                borderRadius: 4,
+                marginTop: 8,
+                transform: [{ rotate: '-1deg' }],
+                shadowColor: NEON_CYAN,
+                shadowOpacity: 0.6,
+                shadowOffset: { width: 0, height: 0 },
+                shadowRadius: 25,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 36,
+                  fontWeight: '900',
+                  letterSpacing: 8,
+                  color: DEEP_NAVY,
+                  textTransform: 'uppercase',
+                }}
+              >
+                Maze
+              </Text>
             </View>
           </View>
 
-          {/* Title with dramatic typography */}
-          <View className="items-center">
-            <View className="flex-row items-baseline">
-              <Text 
-                className={`text-6xl font-black tracking-tighter ${isDark ? 'text-ink-light' : 'text-ink'}`}
-                style={{
-                  textShadowColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
-                  textShadowOffset: { width: 0, height: 0 },
-                  textShadowRadius: 16,
-                }}
-              >
-                TILT
-              </Text>
-            </View>
-            <LinearGradient
-              colors={['#A855F7', '#F472B6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              className="px-4 py-1 rounded-lg mt-1"
+          {/* Ball Icon with Glow */}
+          <View style={{ position: 'relative', marginBottom: 32 }}>
+            {/* Blur glow behind */}
+            <Animated.View
+              style={{
+                position: 'absolute',
+                top: -16,
+                left: -16,
+                right: -16,
+                bottom: -16,
+                backgroundColor: 'rgba(34, 211, 238, 0.2)',
+                borderRadius: 999,
+                opacity: glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.7] }),
+                transform: [
+                  {
+                    scale: glowAnim.interpolate({ inputRange: [0, 1], outputRange: [0.98, 1.05] }),
+                  },
+                ],
+              }}
+            />
+            {/* Ball */}
+            <View
+              style={{
+                width: 112,
+                height: 112,
+                borderRadius: 56,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: 'rgba(103, 232, 249, 0.3)',
+                backgroundColor: NEON_CYAN,
+                shadowColor: NEON_CYAN,
+                shadowOpacity: 0.7,
+                shadowOffset: { width: 0, height: 0 },
+                shadowRadius: 30,
+              }}
             >
-              <Text 
-                className="text-5xl font-black tracking-tight text-white"
-                style={{ letterSpacing: -2 }}
-              >
-                MAZE
-              </Text>
-            </LinearGradient>
-            
-            <Text className={`text-base text-center mt-6 max-w-[280px] leading-relaxed font-medium ${
-              isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-            }`}>
-              Guide the ball through the maze by tilting your device
-            </Text>
+              <Ionicons name="grid" size={48} color="rgba(255, 255, 255, 0.9)" />
+            </View>
+            {/* Rotating ring */}
+            <View
+              style={{
+                position: 'absolute',
+                top: -8,
+                left: -8,
+                right: -8,
+                bottom: -8,
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: 'rgba(34, 211, 238, 0.2)',
+              }}
+            />
           </View>
+
+          {/* Subtitle */}
+          <Text
+            style={{
+              color: 'rgba(103, 232, 249, 0.7)',
+              fontSize: 14,
+              fontWeight: '300',
+              maxWidth: 240,
+              textAlign: 'center',
+              lineHeight: 22,
+            }}
+          >
+            Guide the ball through the maze by{' '}
+            <Text style={{ color: NEON_CYAN, fontWeight: '600' }}>tilting your device</Text>
+          </Text>
         </View>
 
         {/* Action Buttons */}
-        <View className="w-full space-y-5 mb-10">
-          <Button
-            variant="secondary"
-            size="lg"
-            onPress={handleGuestPlay}
-            loading={loadingType === 'guest'}
-            disabled={loading}
-            icon={<Text className="text-white text-2xl">▶</Text>}
-          >
-            PLAY NOW
-          </Button>
-
-          <Divider text="or sign in" />
-
-          <Button
-            variant="outline"
-            size="md"
+        <View style={{ width: '100%', gap: 32 }}>
+          {/* Google Login Button */}
+          <TouchableOpacity
             onPress={handleGoogleSignIn}
-            loading={loadingType === 'google'}
             disabled={loading}
-            icon={
-              <View className="w-6 h-6 rounded-full bg-white items-center justify-center">
-                <Text className="text-primary-dark font-black text-sm">G</Text>
-              </View>
-            }
+            activeOpacity={0.8}
+            style={{
+              width: '100%',
+              height: 64,
+              backgroundColor: DEEP_NAVY,
+              borderWidth: 2,
+              borderColor: 'rgba(34, 211, 238, 0.6)',
+              borderRadius: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              shadowColor: NEON_CYAN,
+              shadowOpacity: 0.4,
+              shadowOffset: { width: 0, height: 0 },
+              shadowRadius: 15,
+              opacity: loading ? 0.5 : 1,
+            }}
           >
-            Google
-          </Button>
-        </View>
+            {loadingType === 'google' ? (
+              <ActivityIndicator size="small" color={NEON_CYAN} />
+            ) : (
+              <>
+                {/* Google Icon */}
+                <View style={{ width: 20, height: 20 }}>
+                  <Text style={{ color: NEON_CYAN, fontSize: 16, fontWeight: '700' }}>G</Text>
+                </View>
+                <Text
+                  style={{
+                    color: NEON_CYAN,
+                    fontSize: 14,
+                    fontWeight: '700',
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Login with Google
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
 
-        {/* Footer */}
-        <View className="pb-4">
-          <View className="flex-row items-center justify-center">
-            <View className="w-8 h-[1px] bg-primary/30 mr-3" />
-            <Text className={`text-center text-xs font-black uppercase tracking-[3px] ${
-              isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-            }`}>
-              Tilt to Play
-            </Text>
-            <View className="w-8 h-[1px] bg-primary/30 ml-3" />
-          </View>
         </View>
       </View>
     </ScreenContainer>
   );
 }
-

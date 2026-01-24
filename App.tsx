@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, Text } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { auth } from './src/config/firebase';
 import { Screen } from './src/types';
-import { ThemeProvider, useTheme } from './src/theme';
 import { useAppSettings } from './src/hooks/useAppSettings';
 import LoginScreen from './src/screens/LoginScreen';
 import MenuScreen from './src/screens/MenuScreen';
@@ -15,8 +13,11 @@ import ResultScreen from './src/screens/ResultScreen';
 import HighscoresScreen from './src/screens/HighscoresScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 
+// Neon Cyan colors
+const NEON_CYAN = '#00f2ff';
+const DEEP_NAVY = '#050a14';
+
 function AppContent() {
-  const { isDark } = useTheme();
   // Initialize app settings and music
   useAppSettings();
 
@@ -66,48 +67,56 @@ function AppContent() {
 
   if (loading) {
     return (
-      <View className={`flex-1 items-center justify-center ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
-        <LinearGradient
-          colors={isDark 
-            ? ['#0C0118', '#150726', '#0C0118'] 
-            : ['#FAF5FF', '#F3E8FF', '#FAF5FF']
-          }
-          className="absolute inset-0"
-        />
-        {/* Glow effects */}
-        <View 
-          className="absolute w-72 h-72 rounded-full"
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: DEEP_NAVY }}>
+        {/* Decorative circles */}
+        <View
           style={{
+            position: 'absolute',
+            width: 288,
+            height: 288,
+            borderRadius: 144,
             top: '20%',
             left: -60,
-            backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+            backgroundColor: 'rgba(0, 242, 255, 0.1)',
           }}
         />
         <View 
-          className="absolute w-64 h-64 rounded-full"
           style={{
+            position: 'absolute',
+            width: 256,
+            height: 256,
+            borderRadius: 128,
             bottom: '20%',
             right: -50,
-            backgroundColor: isDark ? 'rgba(244, 114, 182, 0.1)' : 'rgba(244, 114, 182, 0.06)',
+            backgroundColor: 'rgba(0, 242, 255, 0.05)',
           }}
         />
         
         {/* Loading indicator */}
         <View 
-          className="w-20 h-20 rounded-full items-center justify-center"
           style={{
-            backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.15)',
-            shadowColor: '#A855F7',
-            shadowOpacity: isDark ? 0.5 : 0.3,
+            width: 80,
+            height: 80,
+            borderRadius: 40,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(0, 242, 255, 0.15)',
+            shadowColor: NEON_CYAN,
+            shadowOpacity: 0.5,
             shadowOffset: { width: 0, height: 0 },
             shadowRadius: 20,
           }}
         >
-          <ActivityIndicator size="large" color="#A855F7" />
+          <ActivityIndicator size="large" color={NEON_CYAN} />
         </View>
-        <Text className={`mt-4 font-black text-sm tracking-[2px] uppercase ${
-          isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-        }`}>
+        <Text style={{
+          marginTop: 16,
+          fontWeight: '900',
+          fontSize: 14,
+          letterSpacing: 2,
+          textTransform: 'uppercase',
+          color: 'rgba(0, 242, 255, 0.6)',
+        }}>
           Loading
         </Text>
       </View>
@@ -115,9 +124,9 @@ function AppContent() {
   }
 
   return (
-    <View className={`flex-1 ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      
+    <View style={{ flex: 1, backgroundColor: DEEP_NAVY }}>
+      <StatusBar style="light" />
+
       {currentScreen === 'Login' && (
         <LoginScreen onLogin={handleLogin} onGuestPlay={handleGuestPlay} />
       )}
@@ -163,10 +172,8 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <SafeAreaProvider>
-        <AppContent />
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <AppContent />
+    </SafeAreaProvider>
   );
 }

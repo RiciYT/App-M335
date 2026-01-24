@@ -37,9 +37,9 @@ export const tokens = {
   // Border Opacity
   borderOpacity: {
     light: {
-      normal: 0.2,
-      hover: 0.3,
-      active: 0.4,
+      normal: 0.35,
+      hover: 0.5,
+      active: 0.6,
     },
     dark: {
       normal: 0.3,

@@ -1,18 +1,37 @@
 // Functions are exported and used in useAppSettings.ts and SettingsScreen.tsx
 import { AudioPlayer, createAudioPlayer } from "expo-audio";
+import type { EventSubscription } from 'expo-modules-core';
 
 let player: AudioPlayer | null = null;
+let playbackSub: EventSubscription | null = null;
 
 export async function initMusic() {
     // expo-audio handles audio mode configuration automatically
 }
 
 export async function playMainMusic(volume = 0.6) {
-    if (player) return;
+    if (player) {
+        player.loop = true;
+        player.volume = volume;
+        if (!player.playing) {
+            player.play();
+        }
+        return;
+    }
 
     player = createAudioPlayer(require("../../assets/audio/main_theme.mp3"));
     player.loop = true;
     player.volume = volume;
+    playbackSub?.remove();
+    playbackSub = player.addListener('playbackStatusUpdate', (status) => {
+        if (status.didJustFinish && player) {
+            player.seekTo(0).then(() => {
+                player?.play();
+            }).catch((error) => {
+                console.error('Music loop restart error:', error);
+            });
+        }
+    });
     player.play();
 }
 
@@ -21,6 +40,8 @@ export async function playMainMusic(volume = 0.6) {
 export async function stopMusic() {
     if (!player) return;
     player.pause();
+    playbackSub?.remove();
+    playbackSub = null;
     player.release();
     player = null;
 }

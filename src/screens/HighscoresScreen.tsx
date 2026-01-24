@@ -1,27 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
 import { ref, get } from 'firebase/database';
 import { Ionicons } from '@expo/vector-icons';
-import { database } from '../config/firebase';
+import { database, auth } from '../config/firebase';
 import { formatTime, GameScore } from '../types';
-import { ScreenContainer, Header, GlassCard } from '../components/ui';
-import { useTheme } from '../theme';
-import { tokens } from '../theme/tokens';
+import { ScreenContainer } from '../components/ui';
 
-const MEDALS = {
-  FIRST: 'medal',
-  SECOND: 'medal-outline',
-  THIRD: 'ribbon',
-} as const;
+// Neon Cyan colors
+const NEON_CYAN = '#00f2ff';
+const DEEP_NAVY = '#050a14';
 
 interface HighscoresScreenProps {
   onBack: () => void;
 }
 
 export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
-  const { isDark } = useTheme();
   const [scores, setScores] = useState<GameScore[]>([]);
   const [loading, setLoading] = useState(true);
+  const currentUserId = auth.currentUser?.uid;
 
   useEffect(() => {
     fetchHighscores();
@@ -36,33 +32,9 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
         const scoresData = snapshot.val();
         const scoresArray: GameScore[] = Object.values(scoresData);
         scoresArray.sort((a, b) => a.time - b.time);
-        
-        // Always show 10 rows - pad with placeholders
-        const topScores = scoresArray.slice(0, 10);
-        const paddedScores = [...topScores];
-        while (paddedScores.length < 10) {
-          paddedScores.push({
-            userId: `placeholder-${paddedScores.length}`,
-            email: 'placeholder',
-            nickname: null,
-            time: 0,
-            timestamp: 0,
-          });
-        }
-        setScores(paddedScores);
+        setScores(scoresArray.slice(0, 10));
       } else {
-        // No scores yet - show 10 placeholders
-        const placeholders: GameScore[] = [];
-        for (let i = 0; i < 10; i++) {
-          placeholders.push({
-            userId: `placeholder-${i}`,
-            email: 'placeholder',
-            nickname: null,
-            time: 0,
-            timestamp: 0,
-          });
-        }
-        setScores(placeholders);
+        setScores([]);
       }
     } catch (error) {
       console.error('Error fetching highscores:', error);
@@ -71,200 +43,375 @@ export default function HighscoresScreen({ onBack }: HighscoresScreenProps) {
     }
   };
 
-  const renderScore = ({ item, index }: { item: GameScore; index: number }) => {
-    const isPlaceholder = item.email === 'placeholder';
-    const displayName = isPlaceholder ? '—' : (item.nickname || item.email || 'Anonymous');
-    
-    const getMedalIcon = (rank: number): keyof typeof Ionicons.glyphMap | null => {
-      switch (rank) {
-        case 0: return MEDALS.FIRST;
-        case 1: return MEDALS.SECOND;
-        case 2: return MEDALS.THIRD;
-        default: return null;
-      }
-    };
+  const getDisplayName = (score: GameScore) => {
+    return score.nickname || score.email?.split('@')[0] || 'Anonymous';
+  };
 
-    const medal = getMedalIcon(index);
-    const isTopThree = index < 3;
+  // Podium component for top 3
+  const Podium = () => {
+    const top3 = scores.slice(0, 3);
+    const rank1 = top3[0];
+    const rank2 = top3[1];
+    const rank3 = top3[2];
 
-    // Updated colors: #1 uses pink glow, #2/#3 use purple tones
-    const getMedalColor = () => {
-      if (index === 0) return '#F472B6'; // Pink for #1
-      if (index === 1) return '#C084FC'; // Light purple for #2
-      if (index === 2) return '#A855F7'; // Purple for #3
-      return '#A855F7';
-    };
-
-    const getGlowConfig = () => {
-      if (index === 0) return { color: 'secondary' as const, intensity: 'strong' as const };
-      if (index === 1) return { color: 'primary' as const, intensity: 'dark' as const };
-      if (index === 2) return { color: 'primary' as const, intensity: 'light' as const };
-      return { color: 'primary' as const, intensity: 'light' as const };
-    };
-
-    const glowConfig = getGlowConfig();
-
-    // Placeholder skeleton styling
-    if (isPlaceholder) {
-      return (
-        <GlassCard
-          variant="default"
-          style={{
-            marginBottom: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            opacity: 0.35,
-            borderStyle: 'dashed',
-          }}
-        >
-          {/* Rank indicator */}
-          <View className="mr-4 items-center justify-center w-14">
-            <View className={`w-11 h-11 rounded-xl items-center justify-center ${
-              isDark ? 'bg-primary/10' : 'bg-primary-muted/50'
-            }`}>
-              <Text className="text-lg font-black text-primary/50">#{index + 1}</Text>
-            </View>
-          </View>
-
-          {/* Placeholder content */}
-          <View className="flex-1">
+    const PodiumCard = ({
+      score,
+      rank,
+      height
+    }: {
+      score?: GameScore;
+      rank: number;
+      height: number;
+    }) => {
+      if (!score) {
+        return (
+          <View style={{ flex: 1, alignItems: 'center' }}>
             <View
-              className="h-4 rounded mb-2"
               style={{
-                width: '60%',
-                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
-              }}
-            />
-            <View
-              className="h-3 rounded"
-              style={{
-                width: '30%',
-                backgroundColor: isDark ? 'rgba(168, 85, 247, 0.1)' : 'rgba(168, 85, 247, 0.08)',
-              }}
-            />
-          </View>
-        </GlassCard>
-      );
-    }
-
-    return (
-      <GlassCard 
-        variant={isTopThree ? 'elevated' : 'default'}
-        glowColor={glowConfig.color}
-        style={{
-          marginBottom: 12,
-          flexDirection: 'row',
-          alignItems: 'center',
-          borderWidth: isTopThree ? 2 : 1,
-          borderColor: isTopThree
-            ? `${getMedalColor()}50`
-            : isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
-        }}
-      >
-        {/* Rank indicator */}
-        <View className="mr-4 items-center justify-center w-14">
-          {medal ? (
-            <View className="relative">
-              <Ionicons name={medal} size={40} color={getMedalColor()} />
-              {index === 0 && (
-                <View
-                  className="absolute -top-1 -right-1 w-5 h-5 rounded-full items-center justify-center"
-                  style={{
-                    backgroundColor: '#F472B6',
-                    shadowColor: '#F472B6',
-                    shadowOpacity: 0.6,
-                    shadowRadius: 6,
-                  }}
-                >
-                  <Text className="text-[10px] font-black text-white">1</Text>
-                </View>
-              )}
-            </View>
-          ) : (
-            <View className={`w-11 h-11 rounded-xl items-center justify-center ${
-              isDark ? 'bg-primary/20' : 'bg-primary-muted'
-            }`}>
-              <Text className="text-lg font-black text-primary">#{index + 1}</Text>
-            </View>
-          )}
-        </View>
-        
-        {/* Player info */}
-        <View className="flex-1">
-          <Text 
-            className={`mb-1 ${
-              isTopThree ? 'text-lg font-black' : 'text-base font-bold'
-            } ${isDark ? 'text-ink-light' : 'text-ink'}`}
-            numberOfLines={1}
-          >
-            {displayName}
-          </Text>
-          <View className="flex-row items-center">
-            <Ionicons 
-              name="stopwatch" 
-              size={16} 
-              color={isTopThree ? getMedalColor() : '#A855F7'}
-              style={{ marginRight: 8 }}
-            />
-            <Text 
-              className={`font-black ${isTopThree ? 'text-xl' : 'text-lg'}`}
-              style={{
-                color: isTopThree ? getMedalColor() : isDark ? '#C084FC' : '#A855F7',
+                height,
+                width: '100%',
+                borderRadius: 12,
+                backgroundColor: 'rgba(0, 242, 255, 0.05)',
+                borderWidth: 1,
+                borderColor: 'rgba(0, 242, 255, 0.1)',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 12,
               }}
             >
-              {formatTime(item.time)}
+              <Text style={{ color: 'rgba(0, 242, 255, 0.3)', fontSize: 12, fontWeight: '900' }}>
+                RANK {rank}
+              </Text>
+              <Text style={{ color: 'rgba(0, 242, 255, 0.2)', fontSize: 10, marginTop: 4 }}>
+                —
+              </Text>
+            </View>
+          </View>
+        );
+      }
+
+      const isFirst = rank === 1;
+      const isCurrentUser = score.userId === currentUserId;
+
+      return (
+        <View style={{ flex: 1, alignItems: 'center' }}>
+          {isFirst && (
+            <View style={{ marginBottom: 8 }}>
+              <Ionicons name="trophy" size={28} color={NEON_CYAN} style={{
+                textShadowColor: 'rgba(0, 242, 255, 0.8)',
+                textShadowOffset: { width: 0, height: 0 },
+                textShadowRadius: 10,
+              }} />
+            </View>
+          )}
+          <View
+            style={{
+              height,
+              width: '100%',
+              borderRadius: 12,
+              backgroundColor: isFirst
+                ? 'rgba(0, 242, 255, 0.15)'
+                : 'rgba(0, 242, 255, 0.08)',
+              borderWidth: isFirst ? 2 : 1,
+              borderBottomWidth: isFirst ? 4 : 2,
+              borderColor: isFirst
+                ? 'rgba(0, 242, 255, 0.4)'
+                : 'rgba(0, 242, 255, 0.2)',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 12,
+              ...(isFirst && {
+                shadowColor: NEON_CYAN,
+                shadowOpacity: 0.3,
+                shadowOffset: { width: 0, height: 0 },
+                shadowRadius: 15,
+              }),
+            }}
+          >
+            <Text style={{
+              color: isFirst ? NEON_CYAN : 'rgba(0, 242, 255, 0.6)',
+              fontSize: isFirst ? 14 : 11,
+              fontWeight: '900',
+              marginBottom: 4,
+              textShadowColor: isFirst ? 'rgba(0, 242, 255, 0.5)' : 'transparent',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: isFirst ? 8 : 0,
+            }}>
+              RANK {rank}
+            </Text>
+            <Text
+              style={{
+                color: isFirst ? '#FFFFFF' : 'rgba(255, 255, 255, 0.8)',
+                fontSize: isFirst ? 13 : 11,
+                fontWeight: isFirst ? '900' : '700',
+                textTransform: 'uppercase',
+                letterSpacing: 0.5,
+                marginBottom: 8,
+                textAlign: 'center',
+              }}
+              numberOfLines={1}
+            >
+              {getDisplayName(score)}
+            </Text>
+            {isCurrentUser && (
+              <View style={{
+                backgroundColor: NEON_CYAN,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 4,
+                marginBottom: 6,
+              }}>
+                <Text style={{ color: DEEP_NAVY, fontSize: 8, fontWeight: '900' }}>YOU</Text>
+              </View>
+            )}
+            <View style={{
+              height: 1,
+              width: isFirst ? 48 : 32,
+              backgroundColor: isFirst ? 'rgba(0, 242, 255, 0.4)' : 'rgba(0, 242, 255, 0.2)',
+              marginBottom: 8
+            }} />
+            <Text style={{
+              color: isFirst ? NEON_CYAN : 'rgba(0, 242, 255, 0.7)',
+              fontSize: isFirst ? 16 : 13,
+              fontWeight: '700',
+              letterSpacing: 2,
+              textShadowColor: isFirst ? 'rgba(0, 242, 255, 0.5)' : 'transparent',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: isFirst ? 8 : 0,
+            }}>
+              {formatTime(score.time)}
             </Text>
           </View>
         </View>
-      </GlassCard>
+      );
+    };
+
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12, paddingHorizontal: 24, paddingTop: 48, paddingBottom: 32 }}>
+        {/* Rank 2 - Left */}
+        <PodiumCard score={rank2} rank={2} height={130} />
+
+        {/* Rank 1 - Center (taller) */}
+        <View style={{ flex: 1, marginTop: -24 }}>
+          <PodiumCard score={rank1} rank={1} height={160} />
+        </View>
+
+        {/* Rank 3 - Right */}
+        <PodiumCard score={rank3} rank={3} height={110} />
+      </View>
     );
   };
 
+  // Remaining scores (4-10)
+  const RemainingScores = () => {
+    const remaining = scores.slice(3);
+
+    if (remaining.length === 0) return null;
+
+    return (
+      <View style={{ paddingHorizontal: 24, paddingBottom: 40 }}>
+        {remaining.map((score, index) => {
+          const rank = index + 4;
+          const isCurrentUser = score.userId === currentUserId;
+
+          return (
+            <View
+              key={score.userId}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: isCurrentUser
+                  ? 'rgba(0, 242, 255, 0.1)'
+                  : 'rgba(255, 255, 255, 0.03)',
+                paddingHorizontal: 20,
+                paddingVertical: 16,
+                borderRadius: 12,
+                borderWidth: isCurrentUser ? 2 : 1,
+                borderColor: isCurrentUser
+                  ? 'rgba(0, 242, 255, 0.5)'
+                  : 'rgba(255, 255, 255, 0.08)',
+                marginBottom: 12,
+                ...(isCurrentUser && {
+                  shadowColor: NEON_CYAN,
+                  shadowOpacity: 0.2,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowRadius: 10,
+                }),
+              }}
+            >
+              {/* Rank number */}
+              <Text style={{
+                width: 32,
+                fontSize: 18,
+                fontWeight: '900',
+                fontStyle: 'italic',
+                color: isCurrentUser ? NEON_CYAN : 'rgba(255, 255, 255, 0.2)',
+              }}>
+                {String(rank).padStart(2, '0')}
+              </Text>
+
+              {/* Player name */}
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: '700',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                    color: isCurrentUser ? '#FFFFFF' : 'rgba(255, 255, 255, 0.6)',
+                  }}
+                  numberOfLines={1}
+                >
+                  {getDisplayName(score)}
+                </Text>
+                {isCurrentUser && (
+                  <View style={{
+                    backgroundColor: NEON_CYAN,
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 4,
+                  }}>
+                    <Text style={{ color: DEEP_NAVY, fontSize: 8, fontWeight: '900' }}>YOU</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Time */}
+              <Text style={{
+                fontSize: 16,
+                fontWeight: '700',
+                letterSpacing: 2,
+                color: isCurrentUser ? NEON_CYAN : 'rgba(255, 255, 255, 0.5)',
+                ...(isCurrentUser && {
+                  textShadowColor: 'rgba(0, 242, 255, 0.5)',
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 8,
+                }),
+              }}>
+                {formatTime(score.time)}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  };
+
+  // Empty state
+  const EmptyState = () => (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+      <Ionicons name="trophy-outline" size={64} color="rgba(0, 242, 255, 0.3)" />
+      <Text style={{
+        fontSize: 20,
+        fontWeight: '700',
+        color: 'rgba(0, 242, 255, 0.6)',
+        marginTop: 16,
+        textAlign: 'center',
+      }}>
+        No scores yet
+      </Text>
+      <Text style={{
+        fontSize: 14,
+        color: 'rgba(0, 242, 255, 0.4)',
+        marginTop: 8,
+        textAlign: 'center',
+      }}>
+        Be the first to complete the maze!
+      </Text>
+    </View>
+  );
+
   return (
-    <ScreenContainer showGlowEffects={true}>
+    <ScreenContainer showGlowEffects={true} showGrid={false} edges={['top', 'bottom']}>
       {/* Header */}
-      <GlassCard
-        variant="elevated"
-        style={{
-          marginHorizontal: 16,
-          marginTop: 8,
-          borderRadius: tokens.radius['3xl'],
-          overflow: 'hidden',
-          padding: 0,
-        }}
-      >
-        <Header
-          title="Leaderboard"
-          subtitle="Top 10 Players"
-          leftIcon={<Ionicons name="arrow-back" size={24} color={isDark ? '#FAF5FF' : '#1E1B4B'} />}
-          onLeftPress={onBack}
-          variant="transparent"
-        />
-      </GlassCard>
+      <View style={{ paddingTop: 0, paddingBottom: 24, paddingHorizontal: 24 }}>
+        <Text style={{
+          textAlign: 'center',
+          fontSize: 28,
+          fontWeight: '700',
+          color: NEON_CYAN,
+          letterSpacing: 8,
+          textTransform: 'uppercase',
+          textShadowColor: 'rgba(0, 242, 255, 0.8)',
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 8,
+        }}>
+          Leaderboard
+        </Text>
+      </View>
 
       {loading ? (
-        <View className="flex-1 justify-center items-center">
-          <View 
-            className="w-20 h-20 rounded-full items-center justify-center"
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <View
             style={{
-              backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 242, 255, 0.15)',
             }}
           >
-            <ActivityIndicator size="large" color="#A855F7" />
+            <ActivityIndicator size="large" color={NEON_CYAN} />
           </View>
-          <Text className={`mt-4 font-bold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
+          <Text style={{ marginTop: 16, fontWeight: '700', color: 'rgba(0, 242, 255, 0.6)' }}>
             Loading...
           </Text>
         </View>
+      ) : scores.length === 0 ? (
+        <EmptyState />
       ) : (
-        <FlatList
-          data={scores}
-          renderItem={renderScore}
-          keyExtractor={(item, index) => `${item.userId}-${index}`}
-          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        <ScrollView
+          style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
-        />
+          contentContainerStyle={{ paddingBottom: 80 }}
+        >
+          <Podium />
+          <RemainingScores />
+        </ScrollView>
       )}
+
+      {/* Back Button */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingHorizontal: 32,
+          paddingBottom: 20,
+          paddingTop: 8,
+        }}
+      >
+        <TouchableOpacity
+          onPress={onBack}
+          activeOpacity={0.9}
+          style={{
+            width: '100%',
+            height: 64,
+            backgroundColor: NEON_CYAN,
+            borderRadius: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: NEON_CYAN,
+            shadowOpacity: 0.3,
+            shadowOffset: { width: 0, height: 0 },
+            shadowRadius: 30,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: '900',
+              letterSpacing: 8,
+              textTransform: 'uppercase',
+              color: DEEP_NAVY,
+            }}
+          >
+            Back
+          </Text>
+        </TouchableOpacity>
+      </View>
     </ScreenContainer>
   );
 }

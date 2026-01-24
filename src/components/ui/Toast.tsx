@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, View } from 'react-native';
-import { useTheme } from '../../theme';
+
+// Neon Cyan colors
+const NEON_CYAN = '#00f2ff';
+const DEEP_NAVY = '#050a14';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -10,7 +13,6 @@ interface ToastProps {
   visible: boolean;
   duration?: number;
   onHide: () => void;
-  className?: string;
 }
 
 export function Toast({
@@ -19,42 +21,25 @@ export function Toast({
   visible,
   duration = 3000,
   onHide,
-  className = "",
 }: ToastProps) {
-  const { isDark } = useTheme();
   const translateY = useRef(new Animated.Value(-100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const scale = useRef(new Animated.Value(0.9)).current;
 
-  const toastStyles: Record<ToastType, { bg: string; border: string; icon: string }> = {
-    success: { 
-      bg: isDark ? 'bg-mint/20' : 'bg-mint/15', 
-      border: 'border-mint',
-      icon: '✓'
-    },
-    error: { 
-      bg: isDark ? 'bg-error/20' : 'bg-error/15', 
-      border: 'border-error',
-      icon: '✕'
-    },
-    info: { 
-      bg: isDark ? 'bg-primary/20' : 'bg-primary/15', 
-      border: 'border-primary',
-      icon: '!'
-    },
-    warning: { 
-      bg: isDark ? 'bg-warning/20' : 'bg-warning/15', 
-      border: 'border-warning',
-      icon: '⚠'
-    },
+  const getToastColors = () => {
+    switch (type) {
+      case 'success':
+        return { bg: 'rgba(0, 242, 255, 0.15)', border: NEON_CYAN, text: NEON_CYAN, icon: '✓' };
+      case 'error':
+        return { bg: 'rgba(248, 113, 113, 0.15)', border: '#F87171', text: '#F87171', icon: '✕' };
+      case 'warning':
+        return { bg: 'rgba(251, 146, 60, 0.15)', border: '#FB923C', text: '#FB923C', icon: '⚠' };
+      default:
+        return { bg: 'rgba(0, 242, 255, 0.15)', border: NEON_CYAN, text: NEON_CYAN, icon: '!' };
+    }
   };
 
-  const textColors: Record<ToastType, string> = {
-    success: 'text-mint',
-    error: 'text-error',
-    info: 'text-primary',
-    warning: 'text-warning',
-  };
+  const colors = getToastColors();
 
   useEffect(() => {
     if (visible) {
@@ -110,30 +95,49 @@ export function Toast({
 
   if (!visible) return null;
 
-  const styles = toastStyles[type];
-
   return (
     <Animated.View
-      style={[{ transform: [{ translateY }, { scale }], opacity }]}
-      className={`absolute top-16 left-5 right-5 z-[1000] ${className}`}
+      style={[
+        {
+          transform: [{ translateY }, { scale }],
+          opacity,
+          position: 'absolute',
+          top: 64,
+          left: 20,
+          right: 20,
+          zIndex: 1000,
+        }
+      ]}
     >
       <View 
-        className={`${styles.bg} ${styles.border} border-2 p-5 rounded-2xl flex-row items-center`}
         style={{
-          shadowColor: type === 'success' ? '#22D3EE' : type === 'error' ? '#F87171' : '#A855F7',
+          backgroundColor: colors.bg,
+          borderColor: colors.border,
+          borderWidth: 2,
+          padding: 20,
+          borderRadius: 16,
+          flexDirection: 'row',
+          alignItems: 'center',
+          shadowColor: colors.border,
           shadowOpacity: 0.3,
           shadowOffset: { width: 0, height: 4 },
           shadowRadius: 12,
         }}
       >
-        <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-          type === 'success' ? 'bg-mint' : 
-          type === 'error' ? 'bg-error' : 
-          type === 'warning' ? 'bg-warning' : 'bg-primary'
-        }`}>
-          <Text className="text-white font-black text-sm">{styles.icon}</Text>
+        <View
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 12,
+            backgroundColor: colors.border,
+          }}
+        >
+          <Text style={{ color: DEEP_NAVY, fontWeight: '900', fontSize: 14 }}>{colors.icon}</Text>
         </View>
-        <Text className={`${textColors[type]} flex-1 text-base font-bold`}>
+        <Text style={{ color: colors.text, flex: 1, fontSize: 16, fontWeight: '700' }}>
           {message}
         </Text>
       </View>

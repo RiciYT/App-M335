@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOut } from 'firebase/auth';
 import { ref, remove } from 'firebase/database';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { auth, database } from '../config/firebase';
-import { clamp, roundToDecimals } from '../config/tiltControls';
-import { ScreenContainer, Header, GlassCard, ListItem, SegmentedControl, NeonChip } from '../components/ui';
-import { useTheme } from '../theme';
+import { roundToDecimals } from '../config/tiltControls';
+import { ScreenContainer } from '../components/ui';
 import { AppSettings, SETTINGS_KEY, DEFAULT_SETTINGS } from '../types';
-import { tokens } from '../theme/tokens';
 import { setMusicEnabled } from '../audio/music';
+
+// Neon Cyan colors
+const NEON_CYAN = '#00f2ff';
+const DEEP_NAVY = '#050a14';
+
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -19,11 +21,90 @@ interface SettingsScreenProps {
   onLogout: () => void;
 }
 
-const APP_VERSION = '1.0.0';
+// Custom Toggle Component
+const Toggle = ({ value, onToggle }: { value: boolean; onToggle: () => void }) => (
+  <TouchableOpacity
+    onPress={onToggle}
+    activeOpacity={0.8}
+    style={{
+      width: 56,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      paddingHorizontal: 4,
+    }}
+  >
+    <View
+      style={{
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: value ? NEON_CYAN : 'rgba(255, 255, 255, 0.2)',
+        alignSelf: value ? 'flex-end' : 'flex-start',
+        ...(value && {
+          shadowColor: NEON_CYAN,
+          shadowOpacity: 0.5,
+          shadowOffset: { width: 0, height: 0 },
+          shadowRadius: 10,
+        }),
+      }}
+    />
+  </TouchableOpacity>
+);
+
+// Settings Row Component
+const SettingsRow = ({
+  title,
+  subtitle,
+  rightContent,
+}: {
+  title: string;
+  subtitle: string;
+  rightContent: React.ReactNode;
+}) => (
+  <View
+    style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 16,
+    }}
+  >
+    <View style={{ flex: 1, marginRight: 16 }}>
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: '700',
+          letterSpacing: 1,
+          textTransform: 'uppercase',
+          color: 'rgba(255, 255, 255, 0.9)',
+        }}
+      >
+        {title}
+      </Text>
+      <Text
+        style={{
+          fontSize: 11,
+          fontWeight: '500',
+          letterSpacing: 2,
+          textTransform: 'uppercase',
+          color: 'rgba(0, 242, 255, 0.4)',
+          marginTop: 4,
+        }}
+      >
+        {subtitle}
+      </Text>
+    </View>
+    {rightContent}
+  </View>
+);
 
 export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsScreenProps) {
-  const { isDark, themeMode, setThemeMode } = useTheme();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitializedRef = useRef(false);
@@ -39,11 +120,11 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
 
   useEffect(() => {
     if (!isInitializedRef.current) return;
-    
+
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-    
+
     saveTimeoutRef.current = setTimeout(() => {
       saveSettings();
     }, 500);
@@ -74,7 +155,6 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
   const toggleSound = useCallback(() => {
     setSettings(prev => {
       const newEnabled = !prev.soundEnabled;
-      // Immediately update music state
       setMusicEnabled(newEnabled);
       return { ...prev, soundEnabled: newEnabled };
     });
@@ -84,39 +164,30 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
     setSettings(prev => ({ ...prev, vibrationEnabled: !prev.vibrationEnabled }));
   }, []);
 
-  const adjustSensitivity = useCallback((delta: number) => {
+  const handleSensitivityChange = useCallback((value: number) => {
     setSettings(prev => ({
       ...prev,
-      sensitivity: roundToDecimals(clamp(prev.sensitivity + delta, 0.3, 3.0), 1),
+      sensitivity: roundToDecimals(value, 1),
     }));
   }, []);
 
   const handleResetBestTime = () => {
-    Alert.alert(
-      'Reset Best Time',
-      'Are you sure you want to reset your best time? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            const user = auth.currentUser;
-            if (user) {
-              try {
-                const scoreRef = ref(database, `scores/${user.uid}`);
-                await remove(scoreRef);
-                Alert.alert('Success', 'Your best time has been reset.');
-              } catch (error) {
-                Alert.alert('Error', 'Failed to reset best time.');
-              }
-            } else {
-              Alert.alert('Info', 'No score to reset.');
-            }
-          },
-        },
-      ]
-    );
+    setShowResetConfirm(true);
+  };
+
+  const confirmResetBestTime = async () => {
+    setShowResetConfirm(false);
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const scoreRef = ref(database, `scores/${user.uid}`);
+        await remove(scoreRef);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to reset best time.');
+      }
+    } else {
+      Alert.alert('Info', 'No score to reset.');
+    }
   };
 
   const handleSignOut = () => {
@@ -141,236 +212,408 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
     );
   };
 
-  const cycleTheme = (mode: 'light' | 'dark' | 'system') => {
-    setThemeMode(mode);
-  };
+  const sensitivityPresets = [
+    { label: 'Low', value: 0.6 },
+    { label: 'Medium', value: 1.5 },
+    { label: 'High', value: 2.4 },
+  ];
 
   return (
-    <ScreenContainer showGlowEffects={true}>
-      {/* Header */}
-      <GlassCard
-        variant="elevated"
-        style={{
-          marginHorizontal: 16,
-          marginTop: 8,
-          borderRadius: tokens.radius['3xl'],
-          overflow: 'hidden',
-          padding: 0,
-        }}
+    <ScreenContainer showGlowEffects={true} edges={['top', 'bottom']}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Header
-          title="Settings"
-          leftIcon={<Ionicons name="arrow-back" size={24} color={isDark ? '#FAF5FF' : '#1E1B4B'} />}
-          onLeftPress={onBack}
-          variant="transparent"
-        />
-      </GlassCard>
-
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-        {/* Appearance Section */}
-        <GlassCard 
-          variant="default"
-          style={{ marginBottom: 16 }}
-        >
-          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
-            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-          }`}>
-            Appearance
+        {/* Header */}
+        <View style={{ paddingTop: 0, paddingBottom: 40, paddingHorizontal: 32 }}>
+          <Text
+            style={{
+              textAlign: 'center',
+              fontSize: 42,
+              fontWeight: '900',
+              letterSpacing: 6,
+              textTransform: 'uppercase',
+              color: NEON_CYAN,
+              textShadowColor: 'rgba(0, 242, 255, 0.8)',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 10,
+            }}
+          >
+            Settings
           </Text>
-          
-          <ListItem
-            icon="color-palette"
-            title="Theme"
-            subtitle="Choose your theme"
-            showBorder={false}
+          <View
+            style={{
+              width: 64,
+              height: 4,
+              backgroundColor: NEON_CYAN,
+              alignSelf: 'center',
+              marginTop: 16,
+              borderRadius: 2,
+              opacity: 0.5,
+              shadowColor: NEON_CYAN,
+              shadowOpacity: 0.8,
+              shadowOffset: { width: 0, height: 0 },
+              shadowRadius: 10,
+            }}
           />
-          <View className="mt-3">
-            <SegmentedControl
-              options={[
-                { label: 'Light', value: 'light', icon: 'sunny' },
-                { label: 'Dark', value: 'dark', icon: 'moon' },
-                { label: 'Auto', value: 'system', icon: 'phone-portrait' },
-              ]}
-              value={themeMode}
-              onChange={(value) => cycleTheme(value as 'light' | 'dark' | 'system')}
-            />
-          </View>
-        </GlassCard>
+        </View>
 
-        {/* Game Settings Section */}
-        <GlassCard 
-          variant="default"
-          style={{ marginBottom: 16 }}
-        >
-          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
-            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-          }`}>
-            Game
-          </Text>
-          
-          <ListItem
-            icon="volume-high"
+        {/* Settings List */}
+        <View style={{ paddingHorizontal: 32, gap: 24 }}>
+          {/* Sound Effects */}
+          <SettingsRow
             title="Sound Effects"
-            subtitle="Audio feedback"
-            rightContent={
-              <Switch
-                value={settings.soundEnabled}
-                onValueChange={toggleSound}
-                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#A855F7' }}
-                thumbColor="#fff"
-              />
-            }
+            subtitle="Immersive Audio"
+            rightContent={<Toggle value={settings.soundEnabled} onToggle={toggleSound} />}
           />
 
-          <ListItem
-            icon="phone-portrait"
-            title="Vibration"
-            subtitle="Haptic feedback"
-            rightContent={
-              <Switch
-                value={settings.vibrationEnabled}
-                onValueChange={toggleVibration}
-                trackColor={{ false: isDark ? '#4C1D95' : '#DDD6FE', true: '#A855F7' }}
-                thumbColor="#fff"
-              />
-            }
-            showBorder={false}
-          />
-        </GlassCard>
-
-        {/* Controls Section */}
-        <GlassCard 
-          variant="default"
-          style={{ marginBottom: 16 }}
-        >
-          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
-            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-          }`}>
-            Controls
-          </Text>
-          
-          <ListItem
-            icon="phone-portrait-outline"
-            title="Tilt Sensitivity"
-            subtitle={`Current speed`}
-            rightContent={
-              <View className="flex-row gap-2 items-center">
-                <NeonChip variant="primary" size="sm">
-                  {settings.sensitivity.toFixed(1)}x
-                </NeonChip>
-                <TouchableOpacity 
-                  className="w-10 h-10 rounded-xl items-center justify-center"
-                  onPress={() => adjustSensitivity(-0.1)}
-                  style={{
-                    backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.1)',
-                    borderWidth: 1,
-                    borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
-                  }}
-                >
-                  <Ionicons name="remove" size={18} color="#A855F7" />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  className="w-10 h-10 rounded-xl items-center justify-center"
-                  onPress={() => adjustSensitivity(0.1)}
-                  style={{
-                    backgroundColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.1)',
-                    borderWidth: 1,
-                    borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
-                  }}
-                >
-                  <Ionicons name="add" size={18} color="#A855F7" />
-                </TouchableOpacity>
-              </View>
-            }
-            showBorder={false}
+          {/* Haptic Feedback */}
+          <SettingsRow
+            title="Haptic Feedback"
+            subtitle="Tactile Response"
+            rightContent={<Toggle value={settings.vibrationEnabled} onToggle={toggleVibration} />}
           />
 
-          {/* Sensitivity Bar */}
-          <View className="mt-4 pt-4">
-            <View 
-              className="h-3 rounded-full overflow-hidden"
-              style={{
-                backgroundColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
-              }}
-            >
-              <LinearGradient
-                colors={['#A855F7', '#F472B6']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                className="h-full rounded-full"
-                style={{ width: `${((settings.sensitivity - 0.3) / 2.7) * 100}%` }}
-              />
-            </View>
-            <View className="flex-row justify-between mt-2">
-              <Text className={`text-xs font-bold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Slow</Text>
-              <Text className={`text-xs font-bold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Fast</Text>
-            </View>
-          </View>
-        </GlassCard>
-
-        {/* Account Section */}
-        <GlassCard 
-          variant="default"
-          style={{ marginBottom: 16 }}
-        >
-          <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
-            isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-          }`}>
-            Account
-          </Text>
-          
-          {!isGuest && (
-            <>
-              <ListItem
-                icon="trash"
-                title="Reset Best Time"
-                subtitle="Clear your record"
-                onPress={handleResetBestTime}
-              />
-
-              <ListItem
-                icon="log-out"
-                title="Sign Out"
-                subtitle="Log out of account"
-                onPress={handleSignOut}
-                showBorder={false}
-              />
-            </>
-          )}
-
-          {isGuest && (
-            <GlassCard 
-              variant="default"
+          {/* Sensitivity Presets */}
+          <View style={{ marginTop: 16 }}>
+            <View
               style={{
                 flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                marginBottom: 16,
+              }}
+            >
+              <View>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: '700',
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    color: 'rgba(255, 255, 255, 0.9)',
+                  }}
+                >
+                  Sensitivity
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '500',
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    color: 'rgba(0, 242, 255, 0.4)',
+                    marginTop: 4,
+                  }}
+                >
+                  Tilt Control Range
+                </Text>
+              </View>
+            </View>
+
+            {/* Preset Buttons */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+              {sensitivityPresets.map(preset => {
+                const isActive = settings.sensitivity === preset.value;
+                return (
+                  <TouchableOpacity
+                    key={preset.label}
+                    onPress={() => handleSensitivityChange(preset.value)}
+                    activeOpacity={0.8}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      backgroundColor: isActive ? NEON_CYAN : 'rgba(255, 255, 255, 0.1)',
+                      borderWidth: 1,
+                      borderColor: isActive ? NEON_CYAN : 'rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 11,
+                        fontWeight: '700',
+                        letterSpacing: 1,
+                        textTransform: 'uppercase',
+                        color: isActive ? DEEP_NAVY : 'rgba(255, 255, 255, 0.8)',
+                      }}
+                    >
+                      {preset.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Account Section */}
+          {!isGuest && (
+            <View style={{ marginTop: 32, gap: 16 }}>
+              <View
+                style={{
+                  height: 1,
+                  backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                  marginBottom: 16,
+                }}
+              />
+
+              {/* Reset Best Time */}
+              <TouchableOpacity
+                onPress={handleResetBestTime}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 12,
+                }}
+              >
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: '700',
+                      letterSpacing: 1,
+                      textTransform: 'uppercase',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                    }}
+                  >
+                    Reset Best Time
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '500',
+                      letterSpacing: 2,
+                      textTransform: 'uppercase',
+                      color: 'rgba(0, 242, 255, 0.3)',
+                      marginTop: 4,
+                    }}
+                  >
+                    Clear Your Record
+                  </Text>
+                </View>
+                <Ionicons name="trash-outline" size={24} color="rgba(255, 255, 255, 0.3)" />
+              </TouchableOpacity>
+
+              {/* Sign Out */}
+              <TouchableOpacity
+                onPress={handleSignOut}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingVertical: 12,
+                }}
+              >
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: '700',
+                      letterSpacing: 1,
+                      textTransform: 'uppercase',
+                      color: 'rgba(255, 255, 255, 0.7)',
+                    }}
+                  >
+                    Sign Out
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: '500',
+                      letterSpacing: 2,
+                      textTransform: 'uppercase',
+                      color: 'rgba(0, 242, 255, 0.3)',
+                      marginTop: 4,
+                    }}
+                  >
+                    Log Out of Account
+                  </Text>
+                </View>
+                <Ionicons name="log-out-outline" size={24} color="rgba(255, 255, 255, 0.3)" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Guest Warning */}
+          {isGuest && (
+            <View
+              style={{
+                marginTop: 32,
+                flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: isDark ? 'rgba(251, 146, 60, 0.15)' : 'rgba(251, 146, 60, 0.1)',
+                backgroundColor: 'rgba(251, 146, 60, 0.1)',
+                padding: 16,
+                borderRadius: 12,
                 borderWidth: 1,
-                borderColor: isDark ? 'rgba(251, 146, 60, 0.3)' : 'rgba(251, 146, 60, 0.2)',
+                borderColor: 'rgba(251, 146, 60, 0.3)',
               }}
             >
               <Ionicons name="information-circle" size={20} color="#FB923C" style={{ marginRight: 12 }} />
-              <Text className={`flex-1 text-sm font-medium leading-5 ${isDark ? 'text-warning' : 'text-warning'}`}>
-                Sign in to save scores
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '500', color: '#FB923C' }}>
+                Sign in to save scores and sync settings
               </Text>
-            </GlassCard>
+            </View>
           )}
-        </GlassCard>
-
-        {/* App Info */}
-        <View className="items-center py-6">
-          <Text className={`text-sm font-black tracking-wide ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
-            Tilt Maze v{APP_VERSION}
-          </Text>
-          <View className="flex-row items-center mt-2">
-            <View className="w-4 h-[1px] bg-primary/30 mr-2" />
-            <Text className={`text-xs font-medium ${isDark ? 'text-ink-muted-light/60' : 'text-ink-muted/60'}`}>
-              Tilt · Navigate · Win
-            </Text>
-            <View className="w-4 h-[1px] bg-primary/30 ml-2" />
-          </View>
         </View>
       </ScrollView>
+
+      {/* Reset Best Time Modal */}
+      <Modal
+        visible={showResetConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowResetConfirm(false)}
+      >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(2, 6, 23, 0.75)',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 24,
+          }}
+        >
+          <View
+            style={{
+              width: '100%',
+              maxWidth: 360,
+              borderRadius: 18,
+              backgroundColor: DEEP_NAVY,
+              borderWidth: 1,
+              borderColor: 'rgba(0, 242, 255, 0.25)',
+              padding: 20,
+              shadowColor: NEON_CYAN,
+              shadowOpacity: 0.2,
+              shadowOffset: { width: 0, height: 0 },
+              shadowRadius: 20,
+            }}
+          >
+            <Text
+              style={{
+                color: NEON_CYAN,
+                fontSize: 16,
+                fontWeight: '900',
+                letterSpacing: 2,
+                textTransform: 'uppercase',
+                marginBottom: 8,
+              }}
+            >
+              Reset Best Time
+            </Text>
+            <Text
+              style={{
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: 13,
+                lineHeight: 20,
+                marginBottom: 20,
+              }}
+            >
+              Are you sure you want to reset your best time? This action cannot be undone.
+            </Text>
+
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setShowResetConfirm(false)}
+                activeOpacity={0.8}
+                style={{
+                  flex: 1,
+                  height: 44,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                }}
+              >
+                <Text
+                  style={{
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    fontSize: 12,
+                    fontWeight: '700',
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={confirmResetBestTime}
+                activeOpacity={0.8}
+                style={{
+                  flex: 1,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: NEON_CYAN,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text
+                  style={{
+                    color: DEEP_NAVY,
+                    fontSize: 12,
+                    fontWeight: '900',
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Reset
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Back Button */}
+      <View
+        style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingHorizontal: 32,
+          paddingBottom: 20,
+          paddingTop: 8,
+        }}
+      >
+        <TouchableOpacity
+          onPress={onBack}
+          activeOpacity={0.9}
+          style={{
+            width: '100%',
+            height: 64,
+            backgroundColor: NEON_CYAN,
+            borderRadius: 16,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: NEON_CYAN,
+            shadowOpacity: 0.3,
+            shadowOffset: { width: 0, height: 0 },
+            shadowRadius: 30,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: '900',
+              letterSpacing: 8,
+              textTransform: 'uppercase',
+              color: DEEP_NAVY,
+            }}
+          >
+            Back
+          </Text>
+        </TouchableOpacity>
+
+      </View>
     </ScreenContainer>
   );
 }

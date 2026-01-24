@@ -1,11 +1,12 @@
-import React, { ReactNode } from 'react';
-import { View, Dimensions } from 'react-native';
+import React, { ReactNode, useEffect, useRef } from 'react';
+import { Animated, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme } from '../../theme';
 
-const { width, height } = Dimensions.get('window');
+
+// Neon Cyan color constants
+const NEON_CYAN = '#00f2ff';
+const DEEP_NAVY = '#050a14';
 
 interface ScreenContainerProps {
   children: ReactNode;
@@ -14,60 +15,74 @@ interface ScreenContainerProps {
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }
 
-// Simplified dot pattern - one layer only
-function ArcadeGrid({ isDark }: { isDark: boolean }) {
-  const dotColor = isDark ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.06)';
-  
+// Cyber grid pattern
+function CyberGrid() {
   return (
-    <View className="absolute inset-0 z-0" pointerEvents="none">
-      {/* Dot matrix pattern only */}
-      <View className="absolute inset-0">
-        {[...Array(12)].map((_, row) => (
-          [...Array(8)].map((_, col) => (
-            <View
-              key={`dot-${row}-${col}`}
-              className="absolute w-1 h-1 rounded-full"
-              style={{
-                left: col * (width / 7) + 20,
-                top: row * 60 + 30,
-                backgroundColor: dotColor,
-              }}
-            />
-          ))
-        ))}
-      </View>
+    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.03 }} pointerEvents="none">
+      {[...Array(15)].map((_, i) => (
+        <View
+          key={`h-${i}`}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: i * 60,
+            height: 1,
+            backgroundColor: NEON_CYAN,
+          }}
+        />
+      ))}
+      {[...Array(8)].map((_, i) => (
+        <View
+          key={`v-${i}`}
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: i * 60,
+            width: 1,
+            backgroundColor: NEON_CYAN,
+          }}
+        />
+      ))}
     </View>
   );
 }
 
-// Subtle decorative glow orbs - reduced opacity for content focus
-function NeonGlows({ isDark }: { isDark: boolean }) {
+// Decorative glow elements
+function NeonGlows() {
   return (
     <>
-      {/* Primary violet glow - top left */}
+      {/* Decorative circles */}
       <View
-        className="absolute w-80 h-80 rounded-full"
         style={{
-          top: -100,
+          position: 'absolute',
+          top: '25%',
           left: -80,
-          backgroundColor: isDark ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.05)',
+          width: 256,
+          height: 256,
+          borderRadius: 128,
+          borderWidth: 1,
+          borderColor: 'rgba(0, 242, 255, 0.05)',
         }}
       />
-      
-      {/* Secondary pink glow - bottom right */}
       <View
-        className="absolute w-72 h-72 rounded-full"
         style={{
-          bottom: -100,
+          position: 'absolute',
+          bottom: '25%',
           right: -80,
-          backgroundColor: isDark ? 'rgba(244, 114, 182, 0.06)' : 'rgba(244, 114, 182, 0.04)',
+          width: 320,
+          height: 320,
+          borderRadius: 160,
+          borderWidth: 1,
+          borderColor: 'rgba(0, 242, 255, 0.05)',
         }}
       />
+
+      {/* Vertical accent lines */}
     </>
   );
 }
-
-// Removed noise overlay to simplify - keeping to 2 layers max
 
 export function ScreenContainer({
   children,
@@ -75,27 +90,37 @@ export function ScreenContainer({
   showGlowEffects = true,
   edges = ['top', 'bottom'],
 }: ScreenContainerProps) {
-  const { isDark } = useTheme();
+  const enterAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(enterAnim, {
+      toValue: 1,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+  }, [enterAnim]);
 
   return (
-    <View className={`flex-1 relative overflow-hidden ${isDark ? 'bg-background-dark' : 'bg-background-light'}`}>
-      <StatusBar style={isDark ? 'light' : 'dark'} />
-      
-      {/* Subtle gradient base */}
-      <LinearGradient
-        colors={isDark 
-          ? ['#0C0118', '#150726', '#0C0118'] 
-          : ['#FAF5FF', '#F3E8FF', '#FAF5FF']
-        }
-        locations={[0, 0.5, 1]}
-        className="absolute inset-0"
-      />
-      
-      {showGlowEffects && <NeonGlows isDark={isDark} />}
-      {showGrid && <ArcadeGrid isDark={isDark} />}
-      
-      <SafeAreaView className="flex-1" edges={edges}>
-        {children}
+    <View style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: DEEP_NAVY }}>
+      <StatusBar style="light" />
+
+      {showGlowEffects && <NeonGlows />}
+      {showGrid && <CyberGrid />}
+
+      <SafeAreaView style={{ flex: 1 }} edges={edges}>
+        <Animated.View
+          style={{
+            flex: 1,
+            opacity: enterAnim,
+            transform: [
+              {
+                translateY: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }),
+              },
+            ],
+          }}
+        >
+          {children}
+        </Animated.View>
       </SafeAreaView>
     </View>
   );

@@ -13,7 +13,11 @@ export interface GameScore {
 export interface AppSettings {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
+  // Tilt control settings
   sensitivity: number;
+  invertX: boolean;
+  deadzone: number;
+  smoothingAlpha: number;
 }
 
 export const SETTINGS_KEY = '@tiltmaze_settings';
@@ -21,7 +25,11 @@ export const SETTINGS_KEY = '@tiltmaze_settings';
 export const DEFAULT_SETTINGS: AppSettings = {
   soundEnabled: true,
   vibrationEnabled: true,
+  // Tilt control defaults
   sensitivity: TILT_CONTROLS.SENSITIVITY,
+  invertX: TILT_CONTROLS.INVERT_X,
+  deadzone: TILT_CONTROLS.DEADZONE,
+  smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
 };
 
 export const formatTime = (ms: number): string => {
