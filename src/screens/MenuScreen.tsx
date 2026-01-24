@@ -3,14 +3,16 @@ import { View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { signOut, type User } from 'firebase/auth';
 import { ref, get, set } from 'firebase/database';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { auth, database } from '../config/firebase';
 import { Screen } from '../types';
-import { Button, ScreenContainer, Badge, Card } from '../components/ui';
+import { ScreenContainer, NeonPrimaryButton, NeonSecondaryButton, NeonGhostButton, NeonChip, GlassCard } from '../components/ui';
 import { useTheme } from '../theme';
+import { tokens } from '../theme/tokens';
 
 const BUTTON_ICONS = {
-  SAVE: '✓',
-  CANCEL: '✕',
+  SAVE: 'checkmark',
+  CANCEL: 'close',
 } as const;
 
 interface MenuScreenProps {
@@ -112,7 +114,7 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
                 borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
               }}
             >
-              <Text className="text-4xl">🎮</Text>
+              <Ionicons name="game-controller" size={40} color="#A855F7" />
             </View>
           </View>
 
@@ -152,59 +154,61 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
               
               {isGuest && (
                 <View className="mt-3">
-                  <Badge variant="warning" icon="⚠️" text="Guest Mode" />
+                  <NeonChip icon="warning" variant="accent" size="sm">
+                    Guest Mode
+                  </NeonChip>
                 </View>
               )}
             </View>
           </View>
 
-          {/* Nickname Section */}
+          {/* Nickname Section - Inline Edit */}
           {!isGuest && user && (
-            <View className="mt-4 w-full max-w-[280px]">
+            <View className="mt-4 flex-row items-center justify-center gap-2">
               {editingNickname ? (
-                <Card variant="default" className="flex-row items-center p-3">
-                  <TextInput
-                    className={`flex-1 text-sm py-1 font-medium ${isDark ? 'text-ink-light' : 'text-ink'}`}
-                    placeholder="Enter nickname"
-                    value={nickname}
-                    onChangeText={setNickname}
-                    maxLength={20}
-                    placeholderTextColor={isDark ? '#A78BFA' : '#9CA3AF'}
-                  />
-                  <View className="flex-row gap-2">
-                    <TouchableOpacity 
-                      onPress={saveNickname}
-                      className="w-9 h-9 items-center justify-center bg-primary/20 rounded-xl"
-                    >
-                      <Text className="text-primary font-black">{BUTTON_ICONS.SAVE}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      onPress={() => {
-                        setNickname(savedNickname);
-                        setEditingNickname(false);
-                      }}
-                      className={`w-9 h-9 items-center justify-center rounded-xl ${
-                        isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'
-                      }`}
-                    >
-                      <Text className={isDark ? 'text-ink-muted-light' : 'text-ink-muted'}>{BUTTON_ICONS.CANCEL}</Text>
-                    </TouchableOpacity>
-                  </View>
-                </Card>
+                <View className="flex-row items-center gap-2">
+                  <GlassCard variant="default" style={{ padding: 8, flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                      className={`text-sm py-1 font-medium ${isDark ? 'text-ink-light' : 'text-ink'}`}
+                      placeholder="Enter nickname"
+                      value={nickname}
+                      onChangeText={setNickname}
+                      maxLength={20}
+                      style={{ width: 140 }}
+                      placeholderTextColor={isDark ? '#A78BFA' : '#9CA3AF'}
+                    />
+                  </GlassCard>
+                  <TouchableOpacity 
+                    onPress={saveNickname}
+                    className="w-9 h-9 items-center justify-center bg-primary/20 rounded-xl"
+                    style={{
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                    }}
+                  >
+                    <Ionicons name={BUTTON_ICONS.SAVE} size={18} color="#A855F7" />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={() => {
+                      setNickname(savedNickname);
+                      setEditingNickname(false);
+                    }}
+                    className={`w-9 h-9 items-center justify-center rounded-xl ${
+                      isDark ? 'bg-surface-muted-dark' : 'bg-surface-muted'
+                    }`}
+                  >
+                    <Ionicons name={BUTTON_ICONS.CANCEL} size={18} color={isDark ? '#A78BFA' : '#6B7280'} />
+                  </TouchableOpacity>
+                </View>
               ) : (
-                <TouchableOpacity 
-                  className="flex-row items-center justify-center py-2 px-4 rounded-full bg-primary/10"
+                <NeonChip 
+                  icon="pencil" 
+                  variant="primary" 
+                  size="sm"
                   onPress={() => setEditingNickname(true)}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
-                  }}
                 >
-                  <Text className="text-primary text-sm mr-2">✏️</Text>
-                  <Text className="text-primary text-xs font-black uppercase tracking-[2px]">
-                    {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
-                  </Text>
-                </TouchableOpacity>
+                  {savedNickname ? 'Edit Nickname' : 'Set Nickname'}
+                </NeonChip>
               )}
             </View>
           )}
@@ -212,48 +216,42 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
 
         {/* Action Buttons */}
         <View className="w-full space-y-4 mb-8">
-          <Button
-            variant="secondary"
+          <NeonPrimaryButton
             size="xl"
             onPress={() => onNavigate('Game')}
-            icon={<Text className="text-white text-3xl">▶</Text>}
+            icon="play"
           >
             PLAY
-          </Button>
+          </NeonPrimaryButton>
 
           <View className="flex-row gap-3 mt-2">
             <View className="flex-1">
-              <Button
-                variant="outline"
+              <NeonSecondaryButton
                 size="md"
                 onPress={() => onNavigate('Highscores')}
-                icon={<Text className="text-2xl">🏆</Text>}
+                icon="trophy"
               >
                 Scores
-              </Button>
+              </NeonSecondaryButton>
             </View>
             <View className="flex-1">
-              <Button
-                variant="outline"
+              <NeonSecondaryButton
                 size="md"
                 onPress={() => onNavigate('Settings')}
-                icon={<Text className="text-2xl">⚙️</Text>}
+                icon="settings"
               >
                 Settings
-              </Button>
+              </NeonSecondaryButton>
             </View>
           </View>
 
-          <TouchableOpacity 
+          <NeonGhostButton
             onPress={handleLogout}
-            className="py-4 items-center"
+            icon={isGuest ? 'arrow-back' : 'log-out'}
+            fullWidth={true}
           >
-            <Text className={`text-sm font-black uppercase tracking-[3px] ${
-              isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-            }`}>
-              {isGuest ? '← Back' : 'Logout →'}
-            </Text>
-          </TouchableOpacity>
+            {isGuest ? 'Back' : 'Logout'}
+          </NeonGhostButton>
         </View>
 
         {/* Footer */}

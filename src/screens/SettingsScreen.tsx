@@ -4,11 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signOut } from 'firebase/auth';
 import { ref, remove } from 'firebase/database';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { auth, database } from '../config/firebase';
 import { clamp, roundToDecimals } from '../config/tiltControls';
-import { ScreenContainer, Header, Card, ListItem } from '../components/ui';
+import { ScreenContainer, Header, GlassCard, ListItem, SegmentedControl, NeonChip } from '../components/ui';
 import { useTheme } from '../theme';
 import { AppSettings, SETTINGS_KEY, DEFAULT_SETTINGS } from '../types';
+import { tokens } from '../theme/tokens';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -133,53 +135,45 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
     );
   };
 
-  const cycleTheme = () => {
-    const themes: Array<'light' | 'dark' | 'system'> = ['light', 'dark', 'system'];
-    const currentIndex = themes.indexOf(themeMode);
-    const nextIndex = (currentIndex + 1) % themes.length;
-    setThemeMode(themes[nextIndex]);
+  const cycleTheme = (mode: 'light' | 'dark' | 'system') => {
+    setThemeMode(mode);
   };
 
-  const getThemeLabel = () => {
-    switch (themeMode) {
-      case 'light': return '☀️ Light';
-      case 'dark': return '🌙 Dark';
-      case 'system': return '🔄 Auto';
+  const getThemeLabel = (mode: string) => {
+    switch (mode) {
+      case 'light': return 'Light';
+      case 'dark': return 'Dark';
+      case 'system': return 'Auto';
+      default: return 'Auto';
     }
   };
 
   return (
     <ScreenContainer showGlowEffects={true}>
       {/* Header */}
-      <View 
-        className={`mx-4 mt-2 rounded-3xl overflow-hidden ${
-          isDark ? 'bg-surface-dark/80' : 'bg-surface-light/90'
-        }`}
+      <GlassCard
+        variant="elevated"
         style={{
-          borderWidth: 1,
-          borderColor: isDark ? 'rgba(76, 29, 149, 0.4)' : 'rgba(168, 85, 247, 0.2)',
-          shadowColor: '#A855F7',
-          shadowOpacity: isDark ? 0.3 : 0.15,
-          shadowOffset: { width: 0, height: 4 },
-          shadowRadius: 16,
+          marginHorizontal: 16,
+          marginTop: 8,
+          borderRadius: tokens.radius['3xl'],
+          overflow: 'hidden',
+          padding: 0,
         }}
       >
         <Header
           title="Settings"
-          leftIcon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
+          leftIcon={<Ionicons name="arrow-back" size={24} color={isDark ? '#FAF5FF' : '#1E1B4B'} />}
           onLeftPress={onBack}
           variant="transparent"
         />
-      </View>
+      </GlassCard>
 
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Appearance Section */}
-        <View 
-          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
-          style={{
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
-          }}
+        <GlassCard 
+          variant="default"
+          style={{ marginBottom: 16 }}
         >
           <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
@@ -188,35 +182,28 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           </Text>
           
           <ListItem
-            icon="🎨"
+            icon="color-palette"
             title="Theme"
-            subtitle={`Current: ${getThemeLabel()}`}
-            onPress={cycleTheme}
-            rightContent={
-              <TouchableOpacity 
-                onPress={cycleTheme}
-                className={`px-4 py-2 rounded-xl ${isDark ? 'bg-primary/20' : 'bg-primary-muted'}`}
-                style={{
-                  borderWidth: 1,
-                  borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
-                }}
-              >
-                <Text className={`font-black text-sm ${isDark ? 'text-primary-light' : 'text-primary-dark'}`}>
-                  {getThemeLabel()}
-                </Text>
-              </TouchableOpacity>
-            }
+            subtitle="Choose your theme"
             showBorder={false}
           />
-        </View>
+          <View className="mt-3">
+            <SegmentedControl
+              options={[
+                { label: 'Light', value: 'light', icon: 'sunny' },
+                { label: 'Dark', value: 'dark', icon: 'moon' },
+                { label: 'Auto', value: 'system', icon: 'phone-portrait' },
+              ]}
+              value={themeMode}
+              onChange={(value) => cycleTheme(value as 'light' | 'dark' | 'system')}
+            />
+          </View>
+        </GlassCard>
 
         {/* Game Settings Section */}
-        <View 
-          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
-          style={{
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
-          }}
+        <GlassCard 
+          variant="default"
+          style={{ marginBottom: 16 }}
         >
           <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
@@ -225,7 +212,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           </Text>
           
           <ListItem
-            icon="🔊"
+            icon="volume-high"
             title="Sound Effects"
             subtitle="Audio feedback"
             rightContent={
@@ -239,7 +226,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           />
 
           <ListItem
-            icon="📳"
+            icon="phone-portrait"
             title="Vibration"
             subtitle="Haptic feedback"
             rightContent={
@@ -252,15 +239,12 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
             }
             showBorder={false}
           />
-        </View>
+        </GlassCard>
 
         {/* Controls Section */}
-        <View 
-          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
-          style={{
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
-          }}
+        <GlassCard 
+          variant="default"
+          style={{ marginBottom: 16 }}
         >
           <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
@@ -269,11 +253,14 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           </Text>
           
           <ListItem
-            icon="📱"
+            icon="phone-portrait-outline"
             title="Tilt Sensitivity"
-            subtitle={`Speed: ${settings.sensitivity.toFixed(1)}x`}
+            subtitle={`Current speed`}
             rightContent={
-              <View className="flex-row gap-2">
+              <View className="flex-row gap-2 items-center">
+                <NeonChip variant="primary" size="sm">
+                  {settings.sensitivity.toFixed(1)}x
+                </NeonChip>
                 <TouchableOpacity 
                   className="w-10 h-10 rounded-xl items-center justify-center"
                   onPress={() => adjustSensitivity(-0.1)}
@@ -283,7 +270,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
                     borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
                   }}
                 >
-                  <Text className="text-primary font-black text-lg">−</Text>
+                  <Ionicons name="remove" size={18} color="#A855F7" />
                 </TouchableOpacity>
                 <TouchableOpacity 
                   className="w-10 h-10 rounded-xl items-center justify-center"
@@ -294,7 +281,7 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
                     borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.2)',
                   }}
                 >
-                  <Text className="text-primary font-black text-lg">+</Text>
+                  <Ionicons name="add" size={18} color="#A855F7" />
                 </TouchableOpacity>
               </View>
             }
@@ -322,15 +309,12 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
               <Text className={`text-xs font-bold ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>Fast</Text>
             </View>
           </View>
-        </View>
+        </GlassCard>
 
         {/* Account Section */}
-        <View 
-          className={`mb-4 rounded-2xl p-5 ${isDark ? 'bg-surface-dark/70' : 'bg-surface-light/90'}`}
-          style={{
-            borderWidth: 1,
-            borderColor: isDark ? 'rgba(76, 29, 149, 0.3)' : 'rgba(168, 85, 247, 0.15)',
-          }}
+        <GlassCard 
+          variant="default"
+          style={{ marginBottom: 16 }}
         >
           <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
             isDark ? 'text-ink-muted-light' : 'text-ink-muted'
@@ -341,14 +325,14 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           {!isGuest && (
             <>
               <ListItem
-                icon="🗑️"
+                icon="trash"
                 title="Reset Best Time"
                 subtitle="Clear your record"
                 onPress={handleResetBestTime}
               />
 
               <ListItem
-                icon="🚪"
+                icon="log-out"
                 title="Sign Out"
                 subtitle="Log out of account"
                 onPress={handleSignOut}
@@ -358,22 +342,23 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           )}
 
           {isGuest && (
-            <View 
-              className={`flex-row items-center p-4 rounded-2xl ${
-                isDark ? 'bg-warning/15' : 'bg-warning/10'
-              }`}
+            <GlassCard 
+              variant="default"
               style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: isDark ? 'rgba(251, 146, 60, 0.15)' : 'rgba(251, 146, 60, 0.1)',
                 borderWidth: 1,
                 borderColor: isDark ? 'rgba(251, 146, 60, 0.3)' : 'rgba(251, 146, 60, 0.2)',
               }}
             >
-              <Text className="text-lg mr-3">ℹ️</Text>
+              <Ionicons name="information-circle" size={20} color="#FB923C" style={{ marginRight: 12 }} />
               <Text className={`flex-1 text-sm font-medium leading-5 ${isDark ? 'text-warning' : 'text-warning'}`}>
                 Sign in to save scores
               </Text>
-            </View>
+            </GlassCard>
           )}
-        </View>
+        </GlassCard>
 
         {/* App Info */}
         <View className="items-center py-6">

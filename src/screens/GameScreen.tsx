@@ -4,12 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import Matter from 'matter-js';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { DEFAULT_TILT_SETTINGS, TiltSettings, useTiltControl } from '../hooks/useTiltControl';
 import { clamp, roundToDecimals, TILT_CONTROLS } from '../config/tiltControls';
 import { formatTime } from '../types';
-import { IconButton, Card, Button } from '../components/ui';
+import { IconButton, Button, NeonChip } from '../components/ui';
 import { useTheme } from '../theme';
 import { useAppSettings } from '../hooks/useAppSettings';
+import { tokens } from '../theme/tokens';
 
 const { width, height } = Dimensions.get('window');
 
@@ -352,7 +354,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
         {/* Header Section */}
         <View className="flex-row items-center justify-between px-5 py-4">
           <IconButton
-            icon={<Text className={`text-2xl ${isDark ? 'text-ink-light' : 'text-ink'}`}>←</Text>}
+            icon={<Ionicons name="arrow-back" size={24} color={isDark ? '#FAF5FF' : '#1E1B4B'} />}
             onPress={onBack}
             size="md"
           />
@@ -370,7 +372,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
             }}
           >
             <View className="flex-row items-center">
-              <Text className="mr-2 text-lg">⏱</Text>
+              <Ionicons name="stopwatch" size={20} color="#A855F7" style={{ marginRight: 8 }} />
               <Text 
                 className={`font-black text-xl ${isDark ? 'text-ink-light' : 'text-ink'}`} 
                 style={{ fontVariant: ['tabular-nums'], letterSpacing: -1 }}
@@ -381,7 +383,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
           </View>
           
           <IconButton
-            icon={<Text className="text-xl">⚙️</Text>}
+            icon={<Ionicons name="pause" size={24} color={isDark ? '#FAF5FF' : '#1E1B4B'} />}
             onPress={() => setShowSettings(true)}
             size="md"
           />
@@ -494,7 +496,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                     shadowRadius: 24,
                   }}
                 >
-                  <Text className="text-7xl mb-4">🎉</Text>
+                  <Ionicons name="checkmark-circle" size={80} color="#22D3EE" style={{ marginBottom: 16 }} />
                   <Text className="text-mint text-3xl font-black tracking-tight">Victory!</Text>
                 </View>
               </View>
@@ -513,7 +515,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                     shadowRadius: 20,
                   }}
                 >
-                  <Text className="text-5xl mb-2">💥</Text>
+                  <Ionicons name="alert-circle" size={60} color="#F472B6" style={{ marginBottom: 8 }} />
                   <Text className="text-secondary text-xl font-black">Oops!</Text>
                 </View>
               </View>
@@ -521,32 +523,23 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
           </View>
         </View>
 
-        {/* Footer Info */}
+        {/* Footer Info - Compact with Neon Chips */}
         <View className="px-5 pb-4">
           <View 
-            className={`p-4 rounded-2xl flex-row justify-around ${isDark ? 'bg-surface-dark/60' : 'bg-surface-light/80'}`}
+            className={`px-3 py-2 rounded-2xl flex-row justify-around items-center ${isDark ? 'bg-surface-dark/60' : 'bg-surface-light/80'}`}
             style={{
               borderWidth: 1,
               borderColor: isDark ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+              height: 56,
             }}
           >
-            <View className="flex-row items-center">
-              <Text className="mr-2 text-primary">📱</Text>
-              <Text className={`text-xs font-black uppercase tracking-[1px] ${
-                isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-              }`}>
-                Tilt
-              </Text>
-            </View>
-            <View className="w-[1px] bg-primary/20" />
-            <View className="flex-row items-center">
-              <Text className="mr-2 text-mint">🎯</Text>
-              <Text className={`text-xs font-black uppercase tracking-[1px] ${
-                isDark ? 'text-ink-muted-light' : 'text-ink-muted'
-              }`}>
-                Target
-              </Text>
-            </View>
+            <NeonChip icon="phone-portrait" variant="primary" size="sm">
+              Tilt
+            </NeonChip>
+            <View className="w-[1px] h-8 bg-primary/20" />
+            <NeonChip icon="locate" variant="mint" size="sm">
+              Target
+            </NeonChip>
           </View>
         </View>
 
@@ -635,7 +628,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">−</Text>
+                      <Ionicons name="remove" size={20} color="#A855F7" />
                     </TouchableOpacity>
                     <TouchableOpacity 
                       className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
@@ -645,7 +638,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">+</Text>
+                      <Ionicons name="add" size={20} color="#A855F7" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -671,7 +664,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">−</Text>
+                      <Ionicons name="remove" size={20} color="#A855F7" />
                     </TouchableOpacity>
                     <TouchableOpacity 
                       className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
@@ -681,7 +674,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">+</Text>
+                      <Ionicons name="add" size={20} color="#A855F7" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -707,7 +700,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">−</Text>
+                      <Ionicons name="remove" size={20} color="#A855F7" />
                     </TouchableOpacity>
                     <TouchableOpacity 
                       className="w-11 h-11 rounded-xl bg-primary/20 items-center justify-center"
@@ -717,7 +710,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
                         borderColor: 'rgba(168, 85, 247, 0.3)',
                       }}
                     >
-                      <Text className="text-primary font-black text-lg">+</Text>
+                      <Ionicons name="add" size={20} color="#A855F7" />
                     </TouchableOpacity>
                   </View>
                 </View>

@@ -5,7 +5,7 @@ export type Screen = 'Login' | 'Menu' | 'Game' | 'Result' | 'Highscores' | 'Sett
 export interface GameScore {
   userId: string;
   email: string;
-  nickname: string;
+  nickname: string | null;
   time: number;
   timestamp: number;
 }

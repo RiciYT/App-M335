@@ -14,27 +14,13 @@ interface ScreenContainerProps {
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
 }
 
-// Geometric grid with neon arcade aesthetic
+// Simplified dot pattern - one layer only
 function ArcadeGrid({ isDark }: { isDark: boolean }) {
-  const dotColor = isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)';
+  const dotColor = isDark ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.06)';
   
   return (
     <View className="absolute inset-0 z-0" pointerEvents="none">
-      {/* Diagonal scanlines effect */}
-      <View className="absolute inset-0" style={{ opacity: isDark ? 0.03 : 0.02 }}>
-        {[...Array(40)].map((_, i) => (
-          <View
-            key={`scan-${i}`}
-            className="absolute left-0 right-0 h-[1px]"
-            style={{
-              top: i * 20,
-              backgroundColor: isDark ? '#A855F7' : '#7C3AED',
-            }}
-          />
-        ))}
-      </View>
-      
-      {/* Dot matrix pattern */}
+      {/* Dot matrix pattern only */}
       <View className="absolute inset-0">
         {[...Array(12)].map((_, row) => (
           [...Array(8)].map((_, col) => (
@@ -54,7 +40,7 @@ function ArcadeGrid({ isDark }: { isDark: boolean }) {
   );
 }
 
-// Dramatic neon glow orbs
+// Subtle decorative glow orbs - reduced opacity for content focus
 function NeonGlows({ isDark }: { isDark: boolean }) {
   return (
     <>
@@ -64,57 +50,24 @@ function NeonGlows({ isDark }: { isDark: boolean }) {
         style={{
           top: -100,
           left: -80,
-          backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
-          transform: [{ scale: 1.2 }],
+          backgroundColor: isDark ? 'rgba(168, 85, 247, 0.08)' : 'rgba(168, 85, 247, 0.05)',
         }}
       />
       
-      {/* Secondary pink glow - top right */}
+      {/* Secondary pink glow - bottom right */}
       <View
         className="absolute w-72 h-72 rounded-full"
         style={{
-          top: height * 0.15,
-          right: -100,
-          backgroundColor: isDark ? 'rgba(244, 114, 182, 0.12)' : 'rgba(244, 114, 182, 0.08)',
-        }}
-      />
-      
-      {/* Accent cyan glow - bottom */}
-      <View
-        className="absolute w-96 h-96 rounded-full"
-        style={{
-          bottom: -150,
-          right: -50,
-          backgroundColor: isDark ? 'rgba(34, 211, 238, 0.1)' : 'rgba(34, 211, 238, 0.06)',
-        }}
-      />
-      
-      {/* Yellow accent spark - center left */}
-      <View
-        className="absolute w-48 h-48 rounded-full"
-        style={{
-          top: height * 0.4,
-          left: -60,
-          backgroundColor: isDark ? 'rgba(250, 204, 21, 0.08)' : 'rgba(250, 204, 21, 0.05)',
+          bottom: -100,
+          right: -80,
+          backgroundColor: isDark ? 'rgba(244, 114, 182, 0.06)' : 'rgba(244, 114, 182, 0.04)',
         }}
       />
     </>
   );
 }
 
-// Noise texture overlay for depth
-function NoiseOverlay({ isDark }: { isDark: boolean }) {
-  return (
-    <View
-      className="absolute inset-0 z-10"
-      pointerEvents="none"
-      style={{
-        opacity: isDark ? 0.02 : 0.015,
-        backgroundColor: 'transparent',
-      }}
-    />
-  );
-}
+// Removed noise overlay to simplify - keeping to 2 layers max
 
 export function ScreenContainer({
   children,
@@ -140,7 +93,6 @@ export function ScreenContainer({
       
       {showGlowEffects && <NeonGlows isDark={isDark} />}
       {showGrid && <ArcadeGrid isDark={isDark} />}
-      <NoiseOverlay isDark={isDark} />
       
       <SafeAreaView className="flex-1" edges={edges}>
         {children}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 
 interface DividerProps {
@@ -109,7 +110,7 @@ export function Badge({ text, variant = 'default', icon }: BadgeProps) {
 }
 
 interface ListItemProps {
-  icon?: string | React.ReactNode;
+  icon?: keyof typeof Ionicons.glyphMap | React.ReactNode;
   title: string;
   subtitle?: string;
   rightContent?: React.ReactNode;
@@ -132,7 +133,11 @@ export function ListItem({ icon, title, subtitle, rightContent, onPress, showBor
         <View className={`mr-4 w-10 h-10 rounded-xl items-center justify-center ${
           isDark ? 'bg-primary/10' : 'bg-primary-muted'
         }`}>
-          {typeof icon === 'string' ? <Text className="text-xl">{icon}</Text> : icon}
+          {typeof icon === 'string' ? (
+            <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={24} color="#A855F7" />
+          ) : (
+            icon
+          )}
         </View>
       )}
       <View className="flex-1">
