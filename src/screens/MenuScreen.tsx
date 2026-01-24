@@ -15,20 +15,17 @@ const DEEP_NAVY = '#050a14';
 interface MenuScreenProps {
   onNavigate: (screen: Screen) => void;
   onLogout: () => void;
-  isGuest: boolean;
   user: User | null;
 }
 
-export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: MenuScreenProps) {
+export default function MenuScreen({ onNavigate, onLogout, user }: MenuScreenProps) {
   const [nickname, setNickname] = useState('');
   const glowAnim = useRef(new Animated.Value(0)).current;
   const enterAnim = useRef(new Animated.Value(0)).current;
 
   const handleLogout = async () => {
     try {
-      if (!isGuest) {
-        await signOut(auth);
-      }
+      await signOut(auth);
       onLogout();
     } catch (error) {
       console.error('Logout error:', error);
@@ -63,7 +60,7 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
   }, [enterAnim]);
 
   useEffect(() => {
-    if (isGuest || !user) {
+    if (!user) {
       setNickname('');
       return;
     }
@@ -87,10 +84,10 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
     return () => {
       isMounted = false;
     };
-  }, [isGuest, user]);
+  }, [user]);
 
   const saveNickname = async () => {
-    if (isGuest || !user) return;
+    if (!user) return;
 
     const trimmed = nickname.trim();
 
@@ -230,9 +227,9 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
             <TextInput
               value={nickname}
               onChangeText={setNickname}
-              placeholder={isGuest ? 'SIGN IN TO SET NICKNAME' : 'ENTER NICKNAME'}
+              placeholder="ENTER NICKNAME"
               placeholderTextColor="rgba(0, 242, 255, 0.25)"
-              editable={!isGuest && !!user}
+              editable={!!user}
               onEndEditing={saveNickname}
               onSubmitEditing={saveNickname}
               style={{
@@ -249,7 +246,6 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
                 fontWeight: '700',
                 letterSpacing: 4,
                 textTransform: 'uppercase',
-                opacity: isGuest ? 0.5 : 1,
               }}
             />
             {/* Label */}
@@ -437,7 +433,7 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
               }}
             >
               <Ionicons
-                name={isGuest ? 'arrow-back' : 'log-out-outline'}
+                name="log-out-outline"
                 size={20}
                 color="rgba(0, 242, 255, 0.4)"
               />
@@ -450,7 +446,7 @@ export default function MenuScreen({ onNavigate, onLogout, isGuest, user }: Menu
                   letterSpacing: 2,
                 }}
               >
-                {isGuest ? 'Back' : 'Logout'}
+                Logout
               </Text>
             </TouchableOpacity>
           </View>

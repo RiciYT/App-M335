@@ -70,7 +70,7 @@ diff --git a/src/screens/LoginScreen.tsx b/src/screens/LoginScreen.tsx
 index bca28fe..5f57529 100644
 --- a/src/screens/LoginScreen.tsx
 +++ b/src/screens/LoginScreen.tsx
-@@ -38,7 +38,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps)
+@@ -38,7 +38,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps)
    });
  
    // Google Sign-In setup
@@ -79,7 +79,7 @@ index bca28fe..5f57529 100644
    const [request, response, promptAsync] = Google.useIdTokenAuthRequest(
      {
        clientId: '205887865955-eh17efj9j2jhseli4qbjgvosfoj53uua.apps.googleusercontent.com',
-@@ -77,7 +77,7 @@ export default function LoginScreen({ onLogin, onGuestPlay }: LoginScreenProps)
+@@ -77,7 +77,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps)
    const handleGoogleSignIn = async () => {
      setLoadingType('google');
      try {

@@ -11,7 +11,7 @@ export const TILT_CONTROLS = {
    * When true, tilting the phone left moves the ball left (natural behavior).
    * The accelerometer by default reports values that feel "reversed".
    */
-  INVERT_X: true,  // Invert X-axis: tilting left moves ball left
+  INVERT_X: false,  // Invert X-axis: tilting left moves ball left
 
   /**
    * Sensitivity (X-axis only)
@@ -26,7 +26,7 @@ export const TILT_CONTROLS = {
    * from small hand movements. Range: 0.02 - 0.1 recommended.
    * Default: 0.05
    */
-  DEADZONE: 0.05,
+  DEADZONE: 0.02,
 
   /**
    * Smoothing Alpha (Low-pass filter coefficient)
@@ -36,7 +36,14 @@ export const TILT_CONTROLS = {
    * Range: 0.1 - 0.5 recommended.
    * Default: 0.25
    */
-  SMOOTHING_ALPHA: 0.25,
+  SMOOTHING_ALPHA: 0.5,
+
+  /**
+   * Curve Power (non-linear shaping)
+   * Values > 1 reduce sensitivity near center and ramp up towards edges.
+   * Default: 1.6
+   */
+  CURVE_POWER: 1.15,
 
   /**
    * Constant Gravity (Y-axis)
@@ -47,8 +54,22 @@ export const TILT_CONTROLS = {
   CONSTANT_GRAVITY_Y: 0.8,
 
   /**
+   * Ball physics tuning
+   */
+  BALL_FRICTION: 0.04,
+  BALL_RESTITUTION: 0.3,
+  BALL_FRICTION_AIR: 0.025,
+
+  /**
+   * Tilt force tuning
+   */
+  FORCE: 0.0005,
+  MAX_VX: 9,
+  MAX_DT_MS: 1000 / 60,
+
+  /**
    * Update Interval (milliseconds)
-   * How often the accelerometer sends updates.
+   * How often DeviceMotion sends updates.
    * Lower values = more frequent updates but more CPU usage.
    * Range: 16 - 100 recommended.
    * Default: 16 (~60 updates per second)

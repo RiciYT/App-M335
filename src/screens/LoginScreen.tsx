@@ -28,7 +28,7 @@ interface LoginScreenProps {
 
 export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
-  const [loadingType, setLoadingType] = useState<'guest' | 'google' | null>(null);
+  const [loadingType, setLoadingType] = useState<'google' | null>(null);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'error' | 'success' | 'info' }>({
     visible: false,
     message: '',

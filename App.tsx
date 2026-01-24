@@ -22,7 +22,6 @@ function AppContent() {
   useAppSettings();
 
   const [user, setUser] = useState<User | null>(null);
-  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<Screen>('Login');
   const [gameTime, setGameTime] = useState(0);
@@ -32,27 +31,19 @@ function AppContent() {
       setUser(user);
       setLoading(false);
       if (user) {
-        setIsGuest(false);
         setCurrentScreen('Menu');
-      } else if (!isGuest) {
+      } else {
         setCurrentScreen('Login');
       }
     });
-  }, [isGuest]);
+  }, []);
 
   const handleLogin = () => {
-    setIsGuest(false);
-    setCurrentScreen('Menu');
-  };
-
-  const handleGuestPlay = () => {
-    setIsGuest(true);
     setCurrentScreen('Menu');
   };
 
   const handleLogout = () => {
     setUser(null);
-    setIsGuest(false);
     setCurrentScreen('Login');
   };
 
@@ -128,14 +119,13 @@ function AppContent() {
       <StatusBar style="light" />
 
       {currentScreen === 'Login' && (
-        <LoginScreen onLogin={handleLogin} onGuestPlay={handleGuestPlay} />
+        <LoginScreen onLogin={handleLogin} />
       )}
       
       {currentScreen === 'Menu' && (
         <MenuScreen 
           onNavigate={handleNavigate} 
           onLogout={handleLogout}
-          isGuest={isGuest}
           user={user}
         />
       )}
@@ -151,7 +141,6 @@ function AppContent() {
         <ResultScreen 
           time={gameTime}
           onNavigate={handleNavigate}
-          isGuest={isGuest}
         />
       )}
       
@@ -162,7 +151,6 @@ function AppContent() {
       {currentScreen === 'Settings' && (
         <SettingsScreen 
           onBack={() => handleNavigate('Menu')} 
-          isGuest={isGuest}
           onLogout={handleLogout}
         />
       )}

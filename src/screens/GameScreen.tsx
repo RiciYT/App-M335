@@ -5,9 +5,8 @@ import { StatusBar } from 'expo-status-bar';
 import Matter from 'matter-js';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Accelerometer } from 'expo-sensors';
-import { DEFAULT_TILT_SETTINGS, TiltSettings, useTiltControl } from '../hooks/useTiltControl';
-import { TILT_CONTROLS, applyDeadzone, clamp, lerp } from '../config/tiltControls';
+import { TILT_CONTROLS, lerp } from '../config/tiltControls';
+import { startTilt, getTiltX, calibrateTilt, stopTilt } from '../input/tiltInput';
 import { formatTime } from '../types';
 import { IconButton } from '../components/ui';
 import { useAppSettings } from '../hooks/useAppSettings';
@@ -65,24 +64,15 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const [isPaused, setIsPaused] = useState(false);
   const [targetBroken, setTargetBroken] = useState(false);
   const [ballBroken, setBallBroken] = useState(false);
-  const [engine, setEngine] = useState<Matter.Engine | null>(null);
   const [tiltX, setTiltX] = useState(0);
   const { vibrationEnabled, sensitivity, invertX, deadzone, smoothingAlpha } = useAppSettings();
   const vibrationEnabledRef = useRef(vibrationEnabled);
-  const tiltXRef = useRef(0);
-  
-  // Build TiltSettings from app settings
-  const settings: TiltSettings = {
-    invertX,
-    sensitivity,
-    deadzone,
-    smoothingAlpha,
-    updateInterval: DEFAULT_TILT_SETTINGS.updateInterval,
-  };
+  const calibratedRef = useRef(false);
+  const displayTiltRef = useRef(0);
 
   const ballRef = useRef<Matter.Body | null>(null);
   const targetRef = useRef<Matter.Body | null>(null);
-  const runnerRef = useRef<Matter.Runner | null>(null);
+  const rafRef = useRef<number | null>(null);
   const gameWonRef = useRef(false);
   const ballFellRef = useRef(false);
   const fallHandledRef = useRef(false);
@@ -91,42 +81,31 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
   const targetPulse = useRef(new Animated.Value(0)).current;
   const targetBreakAnim = useRef(new Animated.Value(0)).current;
   const ballBreakAnim = useRef(new Animated.Value(0)).current;
-  const tiltSmoothRef = useRef(0);
   const onGroundRef = useRef(false);
   const lastGroundedAtRef = useRef(0);
 
-  useTiltControl({
-    engine,
-    enabled: !gameWon && !isPaused && engine !== null,
-    settings,
-  });
+  useEffect(() => {
+    startTilt({
+      invertX,
+      smoothingAlpha,
+      deadzone,
+      curvePower: TILT_CONTROLS.CURVE_POWER,
+      updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
+    });
+
+    if (!calibratedRef.current) {
+      calibrateTilt();
+      calibratedRef.current = true;
+    }
+
+    return () => {
+      stopTilt();
+    };
+  }, [invertX, deadzone, smoothingAlpha]);
 
   useEffect(() => {
     vibrationEnabledRef.current = vibrationEnabled;
   }, [vibrationEnabled]);
-
-  useEffect(() => {
-    tiltXRef.current = tiltX;
-  }, [tiltX]);
-
-  useEffect(() => {
-    let isMounted = true;
-    Accelerometer.setUpdateInterval(50);
-    const sub = Accelerometer.addListener(({ x }) => {
-      let value = invertX ? -x : x;
-      tiltSmoothRef.current = lerp(tiltSmoothRef.current, value, smoothingAlpha);
-      value = applyDeadzone(tiltSmoothRef.current, deadzone);
-      value = clamp(value, -1, 1);
-      if (isMounted) {
-        setTiltX(value);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      sub.remove();
-    };
-  }, [invertX, deadzone, smoothingAlpha]);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -145,6 +124,17 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     }
   }, []);
 
+  const applyTiltToBall = useCallback((ball: Matter.Body, tiltValue: number) => {
+    if (!ball) return;
+    const forceX = tiltValue * TILT_CONTROLS.FORCE * sensitivity;
+    if (forceX === 0) return;
+    const vx = ball.velocity.x;
+    if ((vx > TILT_CONTROLS.MAX_VX && forceX > 0) || (vx < -TILT_CONTROLS.MAX_VX && forceX < 0)) {
+      return;
+    }
+    Matter.Body.applyForce(ball, ball.position, { x: forceX, y: 0 });
+  }, [sensitivity]);
+
   useEffect(() => {
     // Create matter-js engine with constant downward gravity
     const newEngine = Matter.Engine.create({
@@ -153,9 +143,9 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
     // Create the ball
     const ball = Matter.Bodies.circle(BALL_INITIAL_POSITION.x, BALL_INITIAL_POSITION.y, BALL_RADIUS, {
-      restitution: 0.35, // Bounciness
-      friction: 0.005,
-      frictionAir: 0.001,
+      restitution: TILT_CONTROLS.BALL_RESTITUTION,
+      friction: TILT_CONTROLS.BALL_FRICTION,
+      frictionAir: TILT_CONTROLS.BALL_FRICTION_AIR,
       label: 'ball',
     });
     ballRef.current = ball;
@@ -292,37 +282,45 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
 
     Matter.Events.on(newEngine, 'afterUpdate', handleAfterUpdate);
 
-    // Start the physics engine
-    const runner = Matter.Runner.create();
-    runnerRef.current = runner;
-    Matter.Runner.run(runner, newEngine);
-    
-    // Set engine state to trigger tilt control hook
-    setEngine(newEngine);
+    // Manual game loop with fixed timestep (16.667 ms)
+    let lastTs = 0;
+    let accumulator = 0;
+    const fixedDt = TILT_CONTROLS.MAX_DT_MS;
+    const tick = (ts: number) => {
+      if (!lastTs) lastTs = ts;
+      const rawDt = ts - lastTs;
+      lastTs = ts;
+      accumulator += Math.min(rawDt || fixedDt, fixedDt * 4);
 
-    // Update ball position for rendering
-    const updatePosition = () => {
+      const currentTilt = getTiltX();
+      displayTiltRef.current = lerp(displayTiltRef.current, currentTilt, 0.6);
+      setTiltX(displayTiltRef.current);
+
+      if (ballRef.current && !gameWonRef.current) {
+        applyTiltToBall(ballRef.current, currentTilt);
+      }
+
+      while (accumulator >= fixedDt) {
+        Matter.Engine.update(newEngine, fixedDt);
+        accumulator -= fixedDt;
+      }
+
       if (ballRef.current) {
-        if (Math.abs(ballRef.current.velocity.y) > 0.3) {
-          Matter.Body.applyForce(ballRef.current, ballRef.current.position, {
-            x: tiltXRef.current * 0.0002,
-            y: 0,
-          });
-        }
         setBallPosition({
           x: ballRef.current.position.x,
           y: ballRef.current.position.y,
         });
       }
-      if (!gameWon) {
-        requestAnimationFrame(updatePosition);
+
+      if (!gameWonRef.current) {
+        rafRef.current = requestAnimationFrame(tick);
       }
     };
-    requestAnimationFrame(updatePosition);
+    rafRef.current = requestAnimationFrame(tick);
 
     return () => {
-      if (runnerRef.current) {
-        Matter.Runner.stop(runnerRef.current);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
       }
       if (fallTimeoutRef.current) {
         clearTimeout(fallTimeoutRef.current);
@@ -332,9 +330,8 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
       Matter.Events.off(newEngine, 'collisionActive');
       Matter.Events.off(newEngine, 'collisionEnd');
       Matter.Engine.clear(newEngine);
-      setEngine(null);
     };
-  }, [onGameComplete, resetBall, startTime]);
+  }, [applyTiltToBall, onGameComplete, resetBall, startTime]);
 
   useEffect(() => {
     Animated.timing(enterAnim, {

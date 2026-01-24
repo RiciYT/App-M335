@@ -13,10 +13,9 @@ const DEEP_NAVY = '#050a14';
 interface ResultScreenProps {
   time: number;
   onNavigate: (screen: Screen) => void;
-  isGuest: boolean;
 }
 
-export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreenProps) {
+export default function ResultScreen({ time, onNavigate }: ResultScreenProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
@@ -24,10 +23,8 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
   const enterAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (!isGuest) {
-      saveScore();
-    }
-  }, [isGuest]);
+    saveScore();
+  }, [time]);
 
   useEffect(() => {
     Animated.timing(enterAnim, {
@@ -273,27 +270,6 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
           ],
         }}
       >
-        {/* Guest Warning */}
-        {isGuest && (
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              backgroundColor: 'rgba(251, 146, 60, 0.1)',
-              padding: 12,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: 'rgba(251, 146, 60, 0.3)',
-              marginBottom: 8,
-            }}
-          >
-            <Ionicons name="warning" size={20} color="#FB923C" style={{ marginRight: 10 }} />
-            <Text style={{ flex: 1, fontSize: 12, fontWeight: '600', color: '#FB923C' }}>
-              Sign in to save your score
-            </Text>
-          </View>
-        )}
-
         {/* Play Again - Primary Button */}
         <TouchableOpacity
           onPress={() => onNavigate('Game')}

@@ -321,14 +321,13 @@ Navigation Methods:
 - onNavigate(screen: string)
 - onBack() → previous screen
 - onLogin() → Menu
-- onGuestPlay() → Menu (guest mode)
 - onLogout() → Login
 - onGameComplete(time) → Result
 ```
 
 ### Screen Transitions
 ```
-Login (Guest/Anonymous/Google)
+Login (Google)
          │
          ▼
       Menu ←→ Highscores

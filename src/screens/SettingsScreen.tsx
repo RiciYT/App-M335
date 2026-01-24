@@ -17,7 +17,6 @@ const DEEP_NAVY = '#050a14';
 
 interface SettingsScreenProps {
   onBack: () => void;
-  isGuest: boolean;
   onLogout: () => void;
 }
 
@@ -102,7 +101,7 @@ const SettingsRow = ({
   </View>
 );
 
-export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsScreenProps) {
+export default function SettingsScreen({ onBack, onLogout }: SettingsScreenProps) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -348,116 +347,93 @@ export default function SettingsScreen({ onBack, isGuest, onLogout }: SettingsSc
           </View>
 
           {/* Account Section */}
-          {!isGuest && (
-            <View style={{ marginTop: 32, gap: 16 }}>
-              <View
-                style={{
-                  height: 1,
-                  backgroundColor: 'rgba(0, 242, 255, 0.1)',
-                  marginBottom: 16,
-                }}
-              />
-
-              {/* Reset Best Time */}
-              <TouchableOpacity
-                onPress={handleResetBestTime}
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingVertical: 12,
-                }}
-              >
-                <View>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: '700',
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    }}
-                  >
-                    Reset Best Time
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: '500',
-                      letterSpacing: 2,
-                      textTransform: 'uppercase',
-                      color: 'rgba(0, 242, 255, 0.3)',
-                      marginTop: 4,
-                    }}
-                  >
-                    Clear Your Record
-                  </Text>
-                </View>
-                <Ionicons name="trash-outline" size={24} color="rgba(255, 255, 255, 0.3)" />
-              </TouchableOpacity>
-
-              {/* Sign Out */}
-              <TouchableOpacity
-                onPress={handleSignOut}
-                activeOpacity={0.7}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  paddingVertical: 12,
-                }}
-              >
-                <View>
-                  <Text
-                    style={{
-                      fontSize: 16,
-                      fontWeight: '700',
-                      letterSpacing: 1,
-                      textTransform: 'uppercase',
-                      color: 'rgba(255, 255, 255, 0.7)',
-                    }}
-                  >
-                    Sign Out
-                  </Text>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: '500',
-                      letterSpacing: 2,
-                      textTransform: 'uppercase',
-                      color: 'rgba(0, 242, 255, 0.3)',
-                      marginTop: 4,
-                    }}
-                  >
-                    Log Out of Account
-                  </Text>
-                </View>
-                <Ionicons name="log-out-outline" size={24} color="rgba(255, 255, 255, 0.3)" />
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Guest Warning */}
-          {isGuest && (
+          <View style={{ marginTop: 32, gap: 16 }}>
             <View
               style={{
-                marginTop: 32,
+                height: 1,
+                backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                marginBottom: 16,
+              }}
+            />
+
+            {/* Reset Best Time */}
+            <TouchableOpacity
+              onPress={handleResetBestTime}
+              activeOpacity={0.7}
+              style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                backgroundColor: 'rgba(251, 146, 60, 0.1)',
-                padding: 16,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: 'rgba(251, 146, 60, 0.3)',
+                justifyContent: 'space-between',
+                paddingVertical: 12,
               }}
             >
-              <Ionicons name="information-circle" size={20} color="#FB923C" style={{ marginRight: 12 }} />
-              <Text style={{ flex: 1, fontSize: 14, fontWeight: '500', color: '#FB923C' }}>
-                Sign in to save scores and sync settings
-              </Text>
-            </View>
-          )}
+              <View>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: '700',
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                  }}
+                >
+                  Reset Best Time
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '500',
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    color: 'rgba(0, 242, 255, 0.3)',
+                    marginTop: 4,
+                  }}
+                >
+                  Clear Your Record
+                </Text>
+              </View>
+              <Ionicons name="trash-outline" size={24} color="rgba(255, 255, 255, 0.3)" />
+            </TouchableOpacity>
+
+            {/* Sign Out */}
+            <TouchableOpacity
+              onPress={handleSignOut}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingVertical: 12,
+              }}
+            >
+              <View>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: '700',
+                    letterSpacing: 1,
+                    textTransform: 'uppercase',
+                    color: 'rgba(255, 255, 255, 0.7)',
+                  }}
+                >
+                  Sign Out
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '500',
+                    letterSpacing: 2,
+                    textTransform: 'uppercase',
+                    color: 'rgba(0, 242, 255, 0.3)',
+                    marginTop: 4,
+                  }}
+                >
+                  Log Out of Account
+                </Text>
+              </View>
+              <Ionicons name="log-out-outline" size={24} color="rgba(255, 255, 255, 0.3)" />
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
