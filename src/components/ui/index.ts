@@ -9,5 +9,6 @@ export { Divider, Badge, ListItem } from './Common';
 export { NeonPrimaryButton, NeonSecondaryButton, NeonGhostButton } from './NeonButton';
 export { GlassCard } from './GlassCard';
 export { NeonChip } from './NeonChip';
+export { SegmentedControl } from './SegmentedControl';
 
 

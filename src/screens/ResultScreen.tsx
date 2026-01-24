@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { ref, set, get } from 'firebase/database';
+import { Ionicons } from '@expo/vector-icons';
 import { auth, database } from '../config/firebase';
 import { formatTime, Screen } from '../types';
-import { ScreenContainer, Button } from '../components/ui';
+import { ScreenContainer, NeonPrimaryButton, NeonSecondaryButton, NeonGhostButton, GlassCard } from '../components/ui';
 import { useTheme } from '../theme';
+import { tokens, createGlow } from '../theme/tokens';
 
 interface ResultScreenProps {
   time: number;
@@ -17,6 +19,7 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [isNewBest, setIsNewBest] = useState(false);
+  const [previousBest, setPreviousBest] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isGuest) {
@@ -44,6 +47,10 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
       const existingData = snapshot.val();
 
       const newBest = !existingData || time < existingData.time;
+      
+      if (existingData && !newBest) {
+        setPreviousBest(existingData.time);
+      }
       
       if (newBest) {
         await set(userScoreRef, {
@@ -76,13 +83,10 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
               className="w-28 h-28 rounded-full items-center justify-center mb-6"
               style={{
                 backgroundColor: isDark ? 'rgba(34, 211, 238, 0.15)' : 'rgba(34, 211, 238, 0.1)',
-                shadowColor: '#22D3EE',
-                shadowOpacity: 0.5,
-                shadowOffset: { width: 0, height: 0 },
-                shadowRadius: 24,
+                ...createGlow('mint', 'strong'),
               }}
             >
-              <Text className="text-6xl">🎉</Text>
+              <Ionicons name="checkmark-circle" size={80} color="#22D3EE" />
             </View>
             
             <Text 
@@ -95,21 +99,16 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
             >
               Complete!
             </Text>
-            <Text className={`font-medium ${isDark ? 'text-ink-muted-light' : 'text-ink-muted'}`}>
-              Great run!
-            </Text>
           </View>
           
           {/* Time Display Card with neon styling */}
-          <View 
-            className={`mb-6 items-center py-8 rounded-3xl ${isDark ? 'bg-surface-dark/80' : 'bg-surface-light'}`}
+          <GlassCard 
+            variant="elevated" 
+            glowColor="primary"
             style={{ 
-              borderWidth: 2,
-              borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.25)',
-              shadowColor: '#A855F7', 
-              shadowOpacity: isDark ? 0.4 : 0.2, 
-              shadowRadius: 24,
-              shadowOffset: { width: 0, height: 8 }
+              marginBottom: tokens.spacing.lg,
+              alignItems: 'center',
+              paddingVertical: tokens.spacing['3xl'],
             }}
           >
             <Text className={`text-xs font-black uppercase tracking-[3px] mb-4 ${
@@ -118,7 +117,7 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
               Your Time
             </Text>
             <View className="flex-row items-center">
-              <Text className="text-3xl mr-3">⏱</Text>
+              <Ionicons name="stopwatch" size={32} color="#A855F7" style={{ marginRight: 12 }} />
               <Text 
                 className="text-5xl font-black text-primary" 
                 style={{ 
@@ -131,19 +130,22 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
                 {formatTime(time)}
               </Text>
             </View>
-          </View>
+          </GlassCard>
 
           {/* Status Messages */}
           <View className="mb-6">
             {isGuest ? (
-              <View 
-                className={`flex-row items-center p-5 rounded-2xl ${isDark ? 'bg-warning/15' : 'bg-warning/10'}`}
+              <GlassCard 
+                variant="default"
                 style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: isDark ? 'rgba(251, 146, 60, 0.15)' : 'rgba(251, 146, 60, 0.1)',
                   borderWidth: 2,
                   borderColor: isDark ? 'rgba(251, 146, 60, 0.4)' : 'rgba(251, 146, 60, 0.3)',
                 }}
               >
-                <Text className="text-3xl mr-4">⚠️</Text>
+                <Ionicons name="warning" size={32} color="#FB923C" style={{ marginRight: 16 }} />
                 <View className="flex-1">
                   <Text className="text-lg font-black text-warning mb-1">
                     Guest Mode
@@ -152,64 +154,67 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
                     Sign in to save scores
                   </Text>
                 </View>
-              </View>
+              </GlassCard>
             ) : (
               <>
                 {saving && (
-                  <View 
-                    className={`flex-row items-center justify-center p-5 rounded-2xl ${isDark ? 'bg-primary/15' : 'bg-primary/10'}`}
+                  <GlassCard 
+                    variant="default"
                     style={{
-                      borderWidth: 1,
-                      borderColor: isDark ? 'rgba(168, 85, 247, 0.3)' : 'rgba(168, 85, 247, 0.2)',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
                     <ActivityIndicator size="small" color="#A855F7" />
                     <Text className="ml-3 text-primary font-bold">Saving...</Text>
-                  </View>
+                  </GlassCard>
                 )}
 
                 {saved && isNewBest && (
-                  <View 
-                    className={`flex-row items-center p-5 rounded-2xl ${isDark ? 'bg-mint/15' : 'bg-mint/10'}`}
+                  <GlassCard 
+                    variant="neon"
+                    glowColor="secondary"
                     style={{
-                      borderWidth: 2,
-                      borderColor: '#22D3EE',
-                      shadowColor: '#22D3EE',
-                      shadowOpacity: 0.3,
-                      shadowOffset: { width: 0, height: 0 },
-                      shadowRadius: 16,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: isDark ? 'rgba(244, 114, 182, 0.15)' : 'rgba(244, 114, 182, 0.1)',
+                      borderColor: '#F472B6',
                     }}
                   >
-                    <Text className="text-3xl mr-4">🏆</Text>
-                    <View className="flex-1">
-                      <Text className="text-lg font-black text-mint mb-1">
-                        New Record!
-                      </Text>
-                      <Text className="text-mint/80 font-medium">
-                        Personal best achieved
-                      </Text>
-                    </View>
-                  </View>
-                )}
-
-                {saved && !isNewBest && (
-                  <View 
-                    className={`flex-row items-center p-5 rounded-2xl ${isDark ? 'bg-secondary/15' : 'bg-secondary/10'}`}
-                    style={{
-                      borderWidth: 2,
-                      borderColor: isDark ? 'rgba(244, 114, 182, 0.4)' : 'rgba(244, 114, 182, 0.3)',
-                    }}
-                  >
-                    <Text className="text-3xl mr-4">💪</Text>
+                    <Ionicons name="trophy" size={32} color="#F472B6" style={{ marginRight: 16 }} />
                     <View className="flex-1">
                       <Text className="text-lg font-black text-secondary mb-1">
-                        Nice Try!
+                        NEW BEST!
                       </Text>
                       <Text className="text-secondary/80 font-medium">
-                        Keep practicing
+                        Personal record achieved
                       </Text>
                     </View>
-                  </View>
+                  </GlassCard>
+                )}
+
+                {saved && !isNewBest && previousBest && (
+                  <GlassCard 
+                    variant="default"
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: isDark ? 'rgba(168, 85, 247, 0.15)' : 'rgba(168, 85, 247, 0.1)',
+                      borderWidth: 2,
+                      borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : 'rgba(168, 85, 247, 0.3)',
+                    }}
+                  >
+                    <Ionicons name="trending-up" size={32} color="#A855F7" style={{ marginRight: 16 }} />
+                    <View className="flex-1">
+                      <Text className="text-lg font-black text-primary mb-1">
+                        Keep Trying!
+                      </Text>
+                      <Text className="text-primary/80 font-medium">
+                        Beat your best: {formatTime(previousBest)}
+                      </Text>
+                    </View>
+                  </GlassCard>
                 )}
               </>
             )}
@@ -217,35 +222,33 @@ export default function ResultScreen({ time, onNavigate, isGuest }: ResultScreen
 
           {/* Action Buttons */}
           <View className="mt-auto gap-3 pb-4">
-            <Button
-              variant="secondary"
+            <NeonPrimaryButton
               size="lg"
               onPress={() => onNavigate('Game')}
               disabled={saving}
-              icon={<Text className="text-white text-xl">🎮</Text>}
+              icon="refresh"
             >
               Play Again
-            </Button>
+            </NeonPrimaryButton>
 
-            <Button
-              variant="primary"
+            <NeonSecondaryButton
               size="lg"
               onPress={() => onNavigate('Highscores')}
               disabled={saving}
-              icon={<Text className="text-white text-xl">🏆</Text>}
+              icon="trophy"
             >
               Leaderboard
-            </Button>
+            </NeonSecondaryButton>
 
-            <Button
-              variant="outline"
+            <NeonGhostButton
               size="md"
               onPress={() => onNavigate('Menu')}
               disabled={saving}
-              icon={<Text className="text-lg">←</Text>}
+              icon="home"
+              fullWidth={true}
             >
               Menu
-            </Button>
+            </NeonGhostButton>
           </View>
         </View>
       </ScrollView>
