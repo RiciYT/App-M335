@@ -6,7 +6,7 @@
     "scheme": "tiltmaze",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -45,7 +45,9 @@
     "originalFullName": "@riciyt/app-m335",
     "plugins": [
       "@react-native-google-signin/google-signin",
-      "expo-font"
+      "expo-font",
+      "expo-audio",
+      "expo-asset"
     ]
   }
 }

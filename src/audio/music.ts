@@ -1,41 +1,39 @@
-import { Audio } from "expo-av";
+// Functions are exported and used in useAppSettings.ts and SettingsScreen.tsx
+import { AudioPlayer, createAudioPlayer } from "expo-audio";
 
-let sound: Audio.Sound | null = null;
+let player: AudioPlayer | null = null;
 
 export async function initMusic() {
-    await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: true,
-    });
+    // expo-audio handles audio mode configuration automatically
 }
 
 export async function playMainMusic(volume = 0.6) {
-    if (sound) return;
+    if (player) return;
 
-    sound = new Audio.Sound();
-    await sound.loadAsync(require("../../assets/audio/main_theme.mp3"), {
-        shouldPlay: true,
-        isLooping: true,
-        volume,
-    });
-    await sound.playAsync();
+    player = createAudioPlayer(require("../../assets/audio/main_theme.mp3"));
+    player.loop = true;
+    player.volume = volume;
+    player.play();
 }
 
+// Reserved for future use (e.g., cleanup on app close)
+// @ts-ignore - exported for future use
 export async function stopMusic() {
-    if (!sound) return;
-    await sound.stopAsync();
-    await sound.unloadAsync();
-    sound = null;
+    if (!player) return;
+    player.pause();
+    player.release();
+    player = null;
 }
 
 export async function setMusicEnabled(enabled: boolean) {
-    if (!sound) return;
-    if (enabled) await sound.playAsync();
-    else await sound.pauseAsync();
+    if (!player) return;
+    if (enabled) player.play();
+    else player.pause();
 }
 
+// Reserved for future use (e.g., volume slider in settings)
+// @ts-ignore - exported for future use
 export async function setMusicVolume(volume: number) {
-    if (!sound) return;
-    await sound.setVolumeAsync(volume);
+    if (!player) return;
+    player.volume = volume;
 }
