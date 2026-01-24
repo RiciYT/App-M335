@@ -584,6 +584,7 @@ Die App «Tilt Maze» erfüllt alle definierten Anforderungen des Kompetenznachw
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) – Detaillierte Architektur-Dokumentation
 - [FIREBASE_SETUP.md](FIREBASE_SETUP.md) – Anleitung zur Firebase-Konfiguration
+- [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md) – Anleitung zur Google OAuth-Konfiguration
 - [TESTING.md](TESTING.md) – Ausführliche Testanleitung
 - [QUICKSTART.md](QUICKSTART.md) – Kurzanleitung für den Schnellstart
 

@@ -1,4 +1,4 @@
-r# Quick Start Guide
+# Quick Start Guide
 
 Get up and running with Tilt Maze in just a few minutes!
 
