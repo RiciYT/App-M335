@@ -2,20 +2,6 @@
 
 ## Projektdokumentation: Tilt Maze
 
-> **🎯 Abgabepaket:** Alle abgaberelevanten Dateien befinden sich im Ordner [`/deliverables`](./deliverables/). Siehe [README_ABGABE.md](./deliverables/README_ABGABE.md) für Details.
-
----
-
-## 📦 Abgabe-Übersicht
-
-| Deliverable | Status | Pfad |
-|-------------|--------|------|
-| **Dokumentation (PDF)** | ✅ | [`deliverables/dokumentation.pdf`](./deliverables/dokumentation.pdf) |
-| **Projekt-ZIP** | ✅ | [`deliverables/project.zip`](./deliverables/project.zip) |
-| **APK Build** | ✅ | [`deliverables/apk_link.txt`](./deliverables/apk_link.txt) |
-| **Selbstbewertung** | ✅ | [`deliverables/selbstbewertung.xlsx`](./deliverables/selbstbewertung.xlsx) |
-| **Quellcode** | ✅ | GitHub Repository |
-
 ---
 
 ## Inhaltsverzeichnis
@@ -827,5 +813,6 @@ Siehe [docs/04_build_apk_eas.md](docs/04_build_apk_eas.md) für Details.
 - [matter-js Dokumentation](https://brm.io/matter-js/)
 
 ---
+
 
 *Erstellt im Rahmen des Kompetenznachweises Modul 335 – Mobile Applikation realisieren*
