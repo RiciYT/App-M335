@@ -580,6 +580,17 @@ Die App «Tilt Maze» erfüllt alle definierten Anforderungen des Kompetenznachw
 
 ## Anhang
 
+### Dokumentationsstruktur (/docs)
+
+| Dokument | Beschreibung |
+|----------|--------------|
+| [docs/01_planung.md](docs/01_planung.md) | Funktionsliste und Storyboard-Verweis |
+| [docs/02_testplan.md](docs/02_testplan.md) | Funktionale Testfälle |
+| [docs/03_loesungskonzept.md](docs/03_loesungskonzept.md) | Technisches Lösungskonzept |
+| [docs/04_build_apk_eas.md](docs/04_build_apk_eas.md) | Anleitung APK Build mit EAS |
+| [docs/05_testbericht.md](docs/05_testbericht.md) | Testdurchführung und Ergebnisse |
+| [docs/storyboard/](docs/storyboard/) | Screen-Storyboards |
+
 ### Weitere Dokumentation
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) – Detaillierte Architektur-Dokumentation
@@ -587,6 +598,75 @@ Die App «Tilt Maze» erfüllt alle definierten Anforderungen des Kompetenznachw
 - [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md) – Anleitung zur Google OAuth-Konfiguration
 - [TESTING.md](TESTING.md) – Ausführliche Testanleitung
 - [QUICKSTART.md](QUICKSTART.md) – Kurzanleitung für den Schnellstart
+
+---
+
+## Anforderungs-Mapping
+
+Diese Tabelle zeigt, welche Anforderungen des Kompetenznachweises durch welche Dateien/Komponenten erfüllt werden:
+
+| Anforderung | Status | Erfüllende Datei(en) |
+|-------------|--------|----------------------|
+| **2 Sensoren/Aktoren** | ✅ | |
+| → Accelerometer | ✅ | `src/input/tiltInput.ts`, `src/screens/GameScreen.tsx` |
+| → Vibration | ✅ | `src/screens/GameScreen.tsx` (Zeile mit `Vibration.vibrate`) |
+| **Persistente Speicherung** | ✅ | |
+| → Firebase Realtime Database | ✅ | `src/config/firebase.ts`, `src/screens/ResultScreen.tsx`, `src/screens/HighscoresScreen.tsx` |
+| **Authentifizierung** | ✅ | |
+| → Firebase Auth (Google) | ✅ | `src/config/firebase.ts`, `src/screens/LoginScreen.tsx` |
+| **Planungsartefakte** | ✅ | |
+| → Funktionsliste | ✅ | `docs/01_planung.md` |
+| → Storyboard | ✅ | `docs/storyboard/storyboard.md` |
+| **Testplan** | ✅ | `docs/02_testplan.md` |
+| **Lösungskonzept** | ✅ | `docs/03_loesungskonzept.md` |
+| **Build APK Anleitung** | ✅ | `docs/04_build_apk_eas.md` |
+| **Testbericht** | ✅ | `docs/05_testbericht.md` |
+| **EAS Konfiguration** | ✅ | `eas.json`, `app.json` |
+
+---
+
+## Quick Start
+
+### Installation
+
+```bash
+# Repository klonen
+git clone https://github.com/RiciYT/App-M335.git
+cd App-M335
+
+# Abhängigkeiten installieren
+npm install
+```
+
+### Firebase konfigurieren
+
+1. Firebase-Projekt erstellen (siehe [FIREBASE_SETUP.md](FIREBASE_SETUP.md))
+2. `src/config/firebase.ts` mit eigenen Keys anpassen
+
+### App starten (Entwicklung)
+
+```bash
+npm start
+```
+
+Dann QR-Code mit Expo Go scannen (Android/iOS).
+
+### APK erstellen
+
+```bash
+# EAS CLI installieren (einmalig)
+npm install -g eas-cli
+
+# Bei Expo anmelden
+eas login
+
+# APK erstellen
+eas build --platform android --profile preview
+```
+
+Siehe [docs/04_build_apk_eas.md](docs/04_build_apk_eas.md) für Details.
+
+---
 
 ### Quellenverzeichnis
 
