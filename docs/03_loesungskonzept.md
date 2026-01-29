@@ -114,8 +114,9 @@ export function startTilt(config: TiltConfig) {
     const { x, y } = data;
     
     // Tiefpassfilter für Glättung
-    smoothedX = config.smoothingAlpha * x + (1 - alpha) * smoothedX;
-    smoothedY = config.smoothingAlpha * y + (1 - alpha) * smoothedY;
+    const alpha = config.smoothingAlpha;
+    smoothedX = alpha * x + (1 - alpha) * smoothedX;
+    smoothedY = alpha * y + (1 - alpha) * smoothedY;
     
     // Deadzone (kleine Bewegungen ignorieren)
     if (Math.abs(smoothedX) < config.deadzone) smoothedX = 0;
