@@ -34,9 +34,9 @@ export const TILT_CONTROLS = {
    * Lower values = more smoothing (smoother but less responsive).
    * Higher values = less smoothing (more responsive but more jittery).
    * Range: 0.1 - 0.5 recommended.
-   * Default: 0.25
+   * Default: 0.3
    */
-  SMOOTHING_ALPHA: 0.5,
+  SMOOTHING_ALPHA: 0.3,
 
   /**
    * Curve Power (non-linear shaping)
