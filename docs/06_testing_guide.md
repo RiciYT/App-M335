@@ -3,7 +3,7 @@
 ## Prerequisites
 
 Before testing, ensure you have:
-1. Completed the Firebase setup (see FIREBASE_SETUP.md)
+1. Completed the Firebase setup (see [08_firebase_setup.md](./08_firebase_setup.md))
 2. A physical Android device (recommended) or iOS device
 3. Expo Go app installed on your device
 

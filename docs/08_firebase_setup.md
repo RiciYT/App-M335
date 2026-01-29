@@ -49,7 +49,7 @@ This guide will walk you through setting up Firebase for the Tilt Maze app.
 6. In the **Authorized redirect URIs** section, add: `https://auth.expo.io/@riciyt/app-m335`
 7. Click "Save"
 
-**Important**: See [GOOGLE_OAUTH_SETUP.md](./GOOGLE_OAUTH_SETUP.md) for detailed instructions on configuring the redirect URI for Expo Go.
+**Important**: See [09_google_oauth_setup.md](./09_google_oauth_setup.md) for detailed instructions on configuring the redirect URI for Expo Go.
 
 **Note**: For development with Expo Go, you only need the Web Client ID. The redirect URI must be configured correctly for Google Sign-In to work.
 

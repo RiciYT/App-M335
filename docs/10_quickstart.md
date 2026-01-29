@@ -10,7 +10,7 @@ npm install
 ```
 
 ### 2. Set Up Firebase (Required)
-Follow the detailed guide in [FIREBASE_SETUP.md](FIREBASE_SETUP.md) to:
+Follow the detailed guide in [08_firebase_setup.md](./08_firebase_setup.md) to:
 - Create a Firebase project
 - Enable Google and Anonymous authentication
 - Create a Realtime Database
@@ -76,9 +76,9 @@ The game requires device motion sensors, so testing on a physical device is esse
 
 ## 📚 Documentation
 
-- [README.md](README.md) - Full project overview
-- [FIREBASE_SETUP.md](FIREBASE_SETUP.md) - Detailed Firebase configuration
-- [TESTING.md](TESTING.md) - Complete testing guide
+- [README.md](../README.md) - Full project overview
+- [08_firebase_setup.md](./08_firebase_setup.md) - Detailed Firebase configuration
+- [06_testing_guide.md](./06_testing_guide.md) - Complete testing guide
 
 ## 🎯 Next Steps
 
@@ -113,7 +113,7 @@ Note: You'll need an Expo account. Run `npx eas login` first.
 
 ## 📞 Need Help?
 
-- Check [TESTING.md](TESTING.md) for troubleshooting
+- Check [06_testing_guide.md](./06_testing_guide.md) for troubleshooting
 - Review Firebase Console for authentication/database issues
 - Check the terminal output for error messages
 - Ensure all dependencies are installed: `npm install`

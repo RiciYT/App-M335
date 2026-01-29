@@ -418,7 +418,7 @@ Das Projekt wird vollständig über GitHub verwaltet:
 - **Repository:** [App-M335](https://github.com/RiciYT/App-M335)
 - **Branches:** Main-Branch für stabile Releases, Feature-Branches für Entwicklung
 - **Commits:** Regelmässige Commits mit aussagekräftigen Nachrichten
-- **Dokumentation:** README.md, ARCHITECTURE.md, FIREBASE_SETUP.md, TESTING.md, QUICKSTART.md
+- **Dokumentation:** README.md und alle Dokumentation unter [docs/](docs/)
 
 ---
 
@@ -589,15 +589,12 @@ Die App «Tilt Maze» erfüllt alle definierten Anforderungen des Kompetenznachw
 | [docs/03_loesungskonzept.md](docs/03_loesungskonzept.md) | Technisches Lösungskonzept |
 | [docs/04_build_apk_eas.md](docs/04_build_apk_eas.md) | Anleitung APK Build mit EAS |
 | [docs/05_testbericht.md](docs/05_testbericht.md) | Testdurchführung und Ergebnisse |
-| [docs/storyboard/](docs/storyboard/) | Screen-Storyboards |
-
-### Weitere Dokumentation
-
-- [ARCHITECTURE.md](ARCHITECTURE.md) – Detaillierte Architektur-Dokumentation
-- [FIREBASE_SETUP.md](FIREBASE_SETUP.md) – Anleitung zur Firebase-Konfiguration
-- [GOOGLE_OAUTH_SETUP.md](GOOGLE_OAUTH_SETUP.md) – Anleitung zur Google OAuth-Konfiguration
-- [TESTING.md](TESTING.md) – Ausführliche Testanleitung
-- [QUICKSTART.md](QUICKSTART.md) – Kurzanleitung für den Schnellstart
+| [docs/06_testing_guide.md](docs/06_testing_guide.md) | Ausführliche Testanleitung |
+| [docs/07_architektur.md](docs/07_architektur.md) | Detaillierte Architektur-Dokumentation |
+| [docs/08_firebase_setup.md](docs/08_firebase_setup.md) | Anleitung zur Firebase-Konfiguration |
+| [docs/09_google_oauth_setup.md](docs/09_google_oauth_setup.md) | Anleitung zur Google OAuth-Konfiguration |
+| [docs/10_quickstart.md](docs/10_quickstart.md) | Kurzanleitung für den Schnellstart |
+| [docs/assets/storyboard/](docs/assets/storyboard/) | Screen-Storyboards |
 
 ---
 
@@ -616,7 +613,7 @@ Diese Tabelle zeigt, welche Anforderungen des Kompetenznachweises durch welche D
 | → Firebase Auth (Google) | ✅ | `src/config/firebase.ts`, `src/screens/LoginScreen.tsx` |
 | **Planungsartefakte** | ✅ | |
 | → Funktionsliste | ✅ | `docs/01_planung.md` |
-| → Storyboard | ✅ | `docs/storyboard/storyboard.md` |
+| → Storyboard | ✅ | `docs/assets/storyboard/storyboard.md` |
 | **Testplan** | ✅ | `docs/02_testplan.md` |
 | **Lösungskonzept** | ✅ | `docs/03_loesungskonzept.md` |
 | **Build APK Anleitung** | ✅ | `docs/04_build_apk_eas.md` |
@@ -640,7 +637,7 @@ npm install
 
 ### Firebase konfigurieren
 
-1. Firebase-Projekt erstellen (siehe [FIREBASE_SETUP.md](FIREBASE_SETUP.md))
+1. Firebase-Projekt erstellen (siehe [docs/08_firebase_setup.md](docs/08_firebase_setup.md))
 2. `src/config/firebase.ts` mit eigenen Keys anpassen
 
 ### App starten (Entwicklung)
