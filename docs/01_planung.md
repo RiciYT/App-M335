@@ -56,8 +56,10 @@ Die Storyboard-Skizzen befinden sich im Ordner [assets/storyboard/](./assets/sto
 | ID | Funktion | Beschreibung |
 |----|----------|--------------|
 | F01 | Google Sign-In | Anmeldung mit Google-Konto über OAuth 2.0 |
-| F02 | Logout | Abmeldung und Rückkehr zum Login-Screen |
-| F03 | Nickname | Benutzer können einen Spielernamen festlegen |
+| F02 | Anonyme Anmeldung | Anmeldung ohne Google-Konto (Firebase Anonymous Auth) |
+| F03 | Gastmodus | Spielen ohne Anmeldung, keine Speicherung von Zeiten |
+| F04 | Logout | Abmeldung und Rückkehr zum Login-Screen |
+| F05 | Nickname | Benutzer können einen Spielernamen festlegen |
 
 ### 3.2 Spielfunktionen
 
@@ -120,6 +122,8 @@ Die Storyboard-Skizzen befinden sich im Ordner [assets/storyboard/](./assets/sto
 - **Technologie:** Firebase Authentication
 - **Methoden:**
   - Google Sign-In (OAuth 2.0)
+  - Anonyme Anmeldung (Firebase Anonymous Auth)
+  - Gastmodus (ohne Authentifizierung, keine Datenspeicherung)
 - **Konfiguration:** `src/config/firebase.ts`
 
 ---

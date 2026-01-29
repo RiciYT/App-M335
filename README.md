@@ -2,6 +2,20 @@
 
 ## Projektdokumentation: Tilt Maze
 
+> **🎯 Abgabepaket:** Alle abgaberelevanten Dateien befinden sich im Ordner [`/deliverables`](./deliverables/). Siehe [README_ABGABE.md](./deliverables/README_ABGABE.md) für Details.
+
+---
+
+## 📦 Abgabe-Übersicht
+
+| Deliverable | Status | Pfad |
+|-------------|--------|------|
+| **Dokumentation (PDF)** | ✅ | [`deliverables/dokumentation.pdf`](./deliverables/dokumentation.pdf) |
+| **Projekt-ZIP** | ✅ | [`deliverables/project.zip`](./deliverables/project.zip) |
+| **APK Build** | ✅ | [`deliverables/apk_link.txt`](./deliverables/apk_link.txt) |
+| **Selbstbewertung** | ✅ | [`deliverables/selbstbewertung.xlsx`](./deliverables/selbstbewertung.xlsx) |
+| **Quellcode** | ✅ | GitHub Repository |
+
 ---
 
 ## Inhaltsverzeichnis
@@ -602,23 +616,101 @@ Die App «Tilt Maze» erfüllt alle definierten Anforderungen des Kompetenznachw
 
 Diese Tabelle zeigt, welche Anforderungen des Kompetenznachweises durch welche Dateien/Komponenten erfüllt werden:
 
-| Anforderung | Status | Erfüllende Datei(en) |
-|-------------|--------|----------------------|
+### Aufgabe 1 – Anforderungen und Planung
+
+| Anforderung | Status | Nachweis |
+|-------------|--------|----------|
+| **Planung und Storyboard** | ✅ | [`docs/01_planung.md`](docs/01_planung.md) |
+| → App-Idee definiert | ✅ | `docs/01_planung.md` - Abschnitt 1 |
+| → Storyboard erstellt | ✅ | `docs/01_planung.md` - Abschnitt 2 + `docs/assets/storyboard/` |
+| → Funktionsliste vollständig | ✅ | `docs/01_planung.md` - Abschnitt 3 (F01-F17) |
 | **2 Sensoren/Aktoren** | ✅ | |
-| → Accelerometer | ✅ | `src/input/tiltInput.ts`, `src/screens/GameScreen.tsx` |
-| → Vibration | ✅ | `src/screens/GameScreen.tsx` (Zeile mit `Vibration.vibrate`) |
+| → Accelerometer (Sensor 1) | ✅ | `docs/01_planung.md` - Abschnitt 4.1 + `src/input/tiltInput.ts` + `src/screens/GameScreen.tsx` |
+| → Vibration (Aktor 1) | ✅ | `docs/01_planung.md` - Abschnitt 4.2 + `src/screens/GameScreen.tsx` |
 | **Persistente Speicherung** | ✅ | |
-| → Firebase Realtime Database | ✅ | `src/config/firebase.ts`, `src/screens/ResultScreen.tsx`, `src/screens/HighscoresScreen.tsx` |
+| → Firebase Realtime Database | ✅ | `docs/01_planung.md` - Abschnitt 5 + `src/config/firebase.ts` + `src/screens/ResultScreen.tsx` |
 | **Authentifizierung** | ✅ | |
-| → Firebase Auth (Google) | ✅ | `src/config/firebase.ts`, `src/screens/LoginScreen.tsx` |
-| **Planungsartefakte** | ✅ | |
-| → Funktionsliste | ✅ | `docs/01_planung.md` |
-| → Storyboard | ✅ | `docs/assets/storyboard/storyboard.md` |
-| **Testplan** | ✅ | `docs/02_testplan.md` |
-| **Lösungskonzept** | ✅ | `docs/03_loesungskonzept.md` |
-| **Build APK Anleitung** | ✅ | `docs/04_build_apk_eas.md` |
-| **Testbericht** | ✅ | `docs/05_testbericht.md` |
-| **EAS Konfiguration** | ✅ | `eas.json`, `app.json` |
+| → Google Sign-In | ✅ | `docs/01_planung.md` - Abschnitt 6 + `src/screens/LoginScreen.tsx` |
+| → Anonyme Anmeldung | ✅ | `docs/01_planung.md` - Abschnitt 6 + `src/screens/LoginScreen.tsx` |
+| → Gastmodus | ✅ | `docs/01_planung.md` - Abschnitt 6 + `src/screens/LoginScreen.tsx` |
+| **Testplan** | ✅ | [`docs/02_testplan.md`](docs/02_testplan.md) (26 Testfälle) |
+
+### Aufgabe 2 – Lösungskonzept
+
+| Anforderung | Status | Nachweis |
+|-------------|--------|----------|
+| **Framework-Wahl** | ✅ | [`docs/03_loesungskonzept.md`](docs/03_loesungskonzept.md) - Abschnitt 2 |
+| → React Native + Expo SDK 54 | ✅ | `docs/03_loesungskonzept.md` + `package.json` |
+| → TypeScript 5.9.2 | ✅ | `docs/03_loesungskonzept.md` + `tsconfig.json` |
+| **App-Typ definiert** | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 2.2 (Hybrid-App) |
+| **Architektur dokumentiert** | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 3 |
+| → Projektstruktur | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 3.1 |
+| → Komponentenhierarchie | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 3.2 |
+| **Sensor-Nutzung detailliert** | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 4 |
+| → Code-Beispiele Accelerometer | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 4.1 |
+| → Konfigurationsparameter | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 4.1 |
+| **Persistenz-Implementierung** | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 5 |
+| → Datenfluss-Diagramm | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 5.1 |
+| → Datenbankoperationen | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 5.3 |
+| **Auth-Ablauf dokumentiert** | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 6 |
+| → Ablaufdiagramm | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 6.1 |
+| → Code-Implementierung | ✅ | `docs/03_loesungskonzept.md` - Abschnitt 6.2 |
+
+### Aufgabe 3 – Implementierung
+
+| Anforderung | Status | Nachweis |
+|-------------|--------|----------|
+| **Funktionalität umgesetzt** | ✅ | Alle Screens in `src/screens/` |
+| → LoginScreen | ✅ | `src/screens/LoginScreen.tsx` |
+| → MenuScreen | ✅ | `src/screens/MenuScreen.tsx` |
+| → GameScreen | ✅ | `src/screens/GameScreen.tsx` |
+| → ResultScreen | ✅ | `src/screens/ResultScreen.tsx` |
+| → HighscoresScreen | ✅ | `src/screens/HighscoresScreen.tsx` |
+| **Sensoren funktional** | ✅ | |
+| → Accelerometer-Steuerung | ✅ | `src/input/tiltInput.ts` + `src/hooks/useTiltControl.ts` |
+| → Physik-Engine (matter-js) | ✅ | `src/screens/GameScreen.tsx` |
+| → Vibration | ✅ | `src/screens/GameScreen.tsx` |
+| **Datenspeicherung aktiv** | ✅ | |
+| → Firebase Config | ✅ | `src/config/firebase.ts` |
+| → Score-Speicherung | ✅ | `src/screens/ResultScreen.tsx` |
+| → Highscores laden | ✅ | `src/screens/HighscoresScreen.tsx` |
+| **Code-Qualität** | ✅ | |
+| → TypeScript verwendet | ✅ | Alle `.ts` und `.tsx` Dateien |
+| → Strukturiert | ✅ | Klare Ordnerstruktur (`src/screens`, `src/config`, etc.) |
+| → Kommentiert | ✅ | Code-Kommentare in allen Dateien |
+
+### Aufgabe 4 – Publikation
+
+| Anforderung | Status | Nachweis |
+|-------------|--------|----------|
+| **APK Build dokumentiert** | ✅ | [`docs/04_build_apk_eas.md`](docs/04_build_apk_eas.md) |
+| → EAS konfiguriert | ✅ | `eas.json` (Preview-Profil mit `buildType: "apk"`) |
+| → Kein Development Client | ✅ | `eas.json` (kein `developmentClient: true`) |
+| → Build-Befehle dokumentiert | ✅ | `docs/04_build_apk_eas.md` - Abschnitt 5 & 9 |
+| **APK verfügbar** | ✅ | [`deliverables/apk_link.txt`](deliverables/apk_link.txt) |
+| **App.json konfiguriert** | ✅ | `app.json` (Package, Permissions, Icons) |
+
+### Aufgabe 5 – Testdurchführung
+
+| Anforderung | Status | Nachweis |
+|-------------|--------|----------|
+| **Tests durchgeführt** | ✅ | [`docs/05_testbericht.md`](docs/05_testbericht.md) |
+| → Alle Testfälle ausgeführt | ✅ | `docs/05_testbericht.md` - Abschnitt 2 (26/26 Tests OK) |
+| → Ergebnisse dokumentiert | ✅ | `docs/05_testbericht.md` - Abschnitt 3 (100% bestanden) |
+| → Fehler behoben | ✅ | `docs/05_testbericht.md` - Abschnitt 4.1 (5 Fehler behoben) |
+| → Edge Cases getestet | ✅ | `docs/05_testbericht.md` - Abschnitt 2.7 |
+
+### Abgabeform
+
+| Anforderung | Status | Nachweis |
+|-------------|--------|----------|
+| **GitHub Repository** | ✅ | [https://github.com/RiciYT/App-M335](https://github.com/RiciYT/App-M335) |
+| **Projekt-ZIP ohne node_modules** | ✅ | [`deliverables/project.zip`](deliverables/project.zip) (6.5 MB) |
+| **APK (.apk oder Link)** | ✅ | [`deliverables/apk_link.txt`](deliverables/apk_link.txt) |
+| **Dokumentation als Markdown** | ✅ | [`docs/*.md`](docs/) (5 Hauptdokumente + 5 Zusatzdokumente) |
+| **Dokumentation als PDF** | ✅ | [`deliverables/dokumentation.pdf`](deliverables/dokumentation.pdf) (8 Seiten) |
+| **Selbstbewertung Excel** | ✅ | [`deliverables/selbstbewertung.xlsx`](deliverables/selbstbewertung.xlsx) |
+| **Abgabe-README** | ✅ | [`deliverables/README_ABGABE.md`](deliverables/README_ABGABE.md) |
 
 ---
 
