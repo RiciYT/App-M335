@@ -131,7 +131,7 @@ LoginScreen → MenuScreen → GameScreen → ResultScreen
 ```typescript
 // src/input/tiltInput.ts (Auszug)
 import { DeviceMotion, DeviceMotionMeasurement } from 'expo-sensors';
-// gamma = links-rechts Neigung in Radians
+// gamma = links-rechts Neigung in Radiant
 let tiltValue = rotation.gamma / maxTiltAngle;
 ```
 
@@ -158,7 +158,7 @@ engine.gravity.x = filteredX * currentSettings.sensitivity;
 | **Bibliothek** | `react-native` (Vibration API) |
 | **Verwendung** | Haptisches Feedback bei Kollisionen, Spielende |
 | **Code-Datei** | `src/screens/GameScreen.tsx` |
-| **Relevante Zeilen** | Zeile 2 (Import), Zeilen 245-246, 272-273, 571-572 |
+| **Relevante Zeilen** | Zeile 2 (Import), Zeilen 246, 273, 572 |
 
 ```typescript
 // src/screens/GameScreen.tsx (Auszug)

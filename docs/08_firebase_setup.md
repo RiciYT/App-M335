@@ -124,7 +124,7 @@ const firebaseConfig = {
 ## Step 7: Test Your Setup
 
 1. Run your app: `npm start`
-2. Try to sign up with a test email and password
+2. Try to sign in with Google
 3. Play the game and complete it
 4. Check your Firebase Console:
    - Go to Authentication to see the registered user
