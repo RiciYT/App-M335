@@ -6,7 +6,7 @@
 
 ## 2. Screen-Storyboard
 
-Die Storyboard-Skizzen befinden sich im Ordner [/docs/storyboard/](./storyboard/).
+Die Storyboard-Skizzen befinden sich im Ordner [assets/storyboard/](./assets/storyboard/).
 
 ### Übersicht der Screens
 
