@@ -212,7 +212,7 @@ export default function GameScreen({ onGameComplete, onBack }: GameScreenProps) 
     // Add all bodies to the world
     Matter.Composite.add(newEngine.world, [ball, target, ...walls]);
 
-    const updateGrounded = (pairs: Matter.IPair[]) => {
+    const updateGrounded = (pairs: Matter.Pair[]) => {
       let grounded = false;
       pairs.forEach(({ bodyA, bodyB }) => {
         const ballBody = bodyA.label === 'ball' ? bodyA : bodyB.label === 'ball' ? bodyB : null;
