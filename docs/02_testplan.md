@@ -20,7 +20,7 @@ Dieser Testplan beschreibt die funktionalen Testfälle für die App «Tilt Maze�
 | Nr. | Testfall | Vorbedingung | Aktion | Erwartetes Resultat |
 |-----|----------|--------------|--------|---------------------|
 | T01 | Google Sign-In | App gestartet, Login-Screen angezeigt | «Mit Google anmelden» tippen, Google-Konto wählen | Erfolgreiche Authentifizierung, Weiterleitung zum Menü |
-| T02 | Logout | Benutzer ist eingeloggt, Menü-Screen angezeigt | «Logout» tippen | Benutzer wird abgemeldet, Login-Screen wird angezeigt |
+| T02 | Logout | Benutzer ist eingeloggt, Menü-Screen angezeigt | Settings öffnen, «Logout» tippen | Benutzer wird abgemeldet, Login-Screen wird angezeigt |
 | T03 | Kein Internet beim Login | Internetverbindung deaktiviert | Login-Versuch | Fehlermeldung wird angezeigt |
 
 ### 3.2 Navigation
@@ -37,44 +37,46 @@ Dieser Testplan beschreibt die funktionalen Testfälle für die App «Tilt Maze�
 |-----|----------|--------------|--------|---------------------|
 | T07 | Kugelsteuerung links | Spiel gestartet | Gerät nach links neigen | Kugel bewegt sich nach links |
 | T08 | Kugelsteuerung rechts | Spiel gestartet | Gerät nach rechts neigen | Kugel bewegt sich nach rechts |
-| T09 | Kugelsteuerung oben | Spiel gestartet | Gerät nach vorne neigen | Kugel bewegt sich nach oben |
-| T10 | Kugelsteuerung unten | Spiel gestartet | Gerät nach hinten neigen | Kugel bewegt sich nach unten |
-| T11 | Kollision mit Wand | Kugel in Bewegung Richtung Wand | Kugel erreicht Wand | Kugel prallt ab, bleibt im Spielfeld |
-| T12 | Ziel erreichen | Spiel gestartet | Kugel ins Zielfeld navigieren | «You Won!» wird angezeigt, Timer stoppt |
-| T13 | Timer-Funktion | Spiel gestartet | Beobachten | Timer zählt in Echtzeit hoch (0.00s → ...) |
-| T14 | Vibration bei Ereignis | Vibration aktiviert | Kollision oder Spielende | Gerät vibriert kurz |
+| T09 | Kollision mit Wand | Kugel in Bewegung Richtung Wand | Kugel erreicht Wand | Kugel prallt ab, bleibt im Spielfeld |
+| T10 | Ziel erreichen | Spiel gestartet | Kugel ins Zielfeld navigieren | «You Won!» wird angezeigt, Timer stoppt |
+| T11 | Timer-Funktion | Spiel gestartet | Beobachten | Timer zählt in Echtzeit hoch (0.00s → ...) |
+| T12 | Vibration bei Ereignis | Vibration aktiviert | Kollision oder Spielende | Gerät vibriert kurz |
+| T13 | Kalibrierung | Spiel gestartet | Kalibrierungs-Button tippen | Aktuelle Geräteposition wird als Nullpunkt gesetzt |
 
 ### 3.4 Steuerungseinstellungen
 
 | Nr. | Testfall | Vorbedingung | Aktion | Erwartetes Resultat |
 |-----|----------|--------------|--------|---------------------|
-| T15 | Sensitivität ändern | Spiel gestartet, Einstellungen öffnen | Sensitivität-Slider bewegen | Kugel reagiert empfindlicher/träger |
-| T16 | X-Achse invertieren | Einstellungen öffnen | «Invert X» aktivieren | Steuerung horizontal umgekehrt |
+| T14 | Sensitivität ändern | Settings-Screen geöffnet | Sensitivität-Wert ändern | Steuerung reagiert empfindlicher/träger |
+| T15 | X-Achse invertieren | Settings-Screen geöffnet | «Invert X» aktivieren | Steuerung horizontal umgekehrt |
+| T16 | Vibration umschalten | Settings-Screen geöffnet | Vibration ein/aus | Vibration wird aktiviert/deaktiviert |
+| T17 | Sound umschalten | Settings-Screen geöffnet | Sound ein/aus | Hintergrundmusik wird aktiviert/deaktiviert |
 
 ### 3.5 Datenspeicherung
 
 | Nr. | Testfall | Vorbedingung | Aktion | Erwartetes Resultat |
 |-----|----------|--------------|--------|---------------------|
-| T17 | Erste Bestzeit speichern | Eingeloggt, noch keine Zeit gespeichert | Spiel abschliessen | «New Personal Best!» wird angezeigt, Zeit in DB gespeichert |
-| T18 | Neue Bestzeit (schneller) | Bestzeit existiert | Spiel schneller abschliessen | «New Personal Best!» erscheint, DB aktualisiert |
-| T19 | Keine neue Bestzeit (langsamer) | Bestzeit existiert | Spiel langsamer abschliessen | Hinweis zum Weiterüben, alte Bestzeit bleibt |
-| T20 | Nickname speichern | Eingeloggt, Menü angezeigt | Nickname bearbeiten und speichern | Nickname wird in DB gespeichert |
+| T18 | Erste Bestzeit speichern | Eingeloggt, noch keine Zeit gespeichert | Spiel abschliessen | «New Personal Best!» wird angezeigt, Zeit in DB gespeichert |
+| T19 | Neue Bestzeit (schneller) | Bestzeit existiert | Spiel schneller abschliessen | «New Personal Best!» erscheint, DB aktualisiert |
+| T20 | Keine neue Bestzeit (langsamer) | Bestzeit existiert | Spiel langsamer abschliessen | Hinweis zum Weiterüben, alte Bestzeit bleibt |
+| T21 | Nickname speichern | Eingeloggt, Menü angezeigt | Nickname bearbeiten und speichern | Nickname wird in DB gespeichert |
+| T22 | Settings speichern | Settings-Screen geöffnet | Einstellungen ändern, zurück navigieren | Einstellungen werden in AsyncStorage gespeichert und beim Neustart geladen |
 
 ### 3.6 Bestenliste
 
 | Nr. | Testfall | Vorbedingung | Aktion | Erwartetes Resultat |
 |-----|----------|--------------|--------|---------------------|
-| T21 | Highscores laden | Scores in Datenbank vorhanden | Highscores-Screen öffnen | Top 10 werden angezeigt, sortiert nach Zeit |
-| T22 | Leere Bestenliste | Keine Scores in Datenbank | Highscores-Screen öffnen | Hinweis «Keine Scores vorhanden» |
-| T23 | Podium-Anzeige | Mind. 3 Scores vorhanden | Highscores-Screen öffnen | Top 3 mit Gold/Silber/Bronze hervorgehoben |
+| T23 | Highscores laden | Scores in Datenbank vorhanden | Highscores-Screen öffnen | Top 10 werden angezeigt, sortiert nach Zeit |
+| T24 | Leere Bestenliste | Keine Scores in Datenbank | Highscores-Screen öffnen | Hinweis «Keine Scores vorhanden» |
+| T25 | Podium-Anzeige | Mind. 3 Scores vorhanden | Highscores-Screen öffnen | Top 3 mit Gold/Silber/Bronze hervorgehoben |
 
 ### 3.7 Sonderfälle / Edge Cases
 
 | Nr. | Testfall | Vorbedingung | Aktion | Erwartetes Resultat |
 |-----|----------|--------------|--------|---------------------|
-| T24 | App in Hintergrund | Spiel läuft | Home-Button drücken, App wieder öffnen | Spielzustand erhalten oder kontrolliert zurückgesetzt |
-| T25 | Schnelle Gerätebewegungen | Spiel läuft | Gerät schnell schütteln | Kugel verhält sich stabil, kein Absturz |
-| T26 | Offline-Modus | Keine Internetverbindung | Spiel abschliessen | Lokale Meldung, Speicherung scheitert mit Hinweis |
+| T26 | App in Hintergrund | Spiel läuft | Home-Button drücken, App wieder öffnen | Spielzustand erhalten oder kontrolliert zurückgesetzt |
+| T27 | Schnelle Gerätebewegungen | Spiel läuft | Gerät schnell schütteln | Kugel verhält sich stabil, kein Absturz |
+| T28 | Offline-Modus | Keine Internetverbindung | Spiel abschliessen | Lokale Meldung, Speicherung scheitert mit Hinweis |
 
 ## 4. Nicht-funktionale Tests
 

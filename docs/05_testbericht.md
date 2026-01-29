@@ -39,42 +39,44 @@
 |-----|----------|----------|-----------|
 | T07 | Kugelsteuerung links | ✅ OK | Reaktion korrekt |
 | T08 | Kugelsteuerung rechts | ✅ OK | Reaktion korrekt |
-| T09 | Kugelsteuerung oben | ✅ OK | Reaktion korrekt |
-| T10 | Kugelsteuerung unten | ✅ OK | Reaktion korrekt |
-| T11 | Kollision mit Wand | ✅ OK | Kugel prallt ab |
-| T12 | Ziel erreichen | ✅ OK | «You Won!» erscheint, Timer stoppt |
-| T13 | Timer-Funktion | ✅ OK | Zählt korrekt in Echtzeit |
-| T14 | Vibration bei Ereignis | ✅ OK | Haptisches Feedback funktioniert (wenn aktiviert) |
+| T09 | Kollision mit Wand | ✅ OK | Kugel prallt ab |
+| T10 | Ziel erreichen | ✅ OK | «You Won!» erscheint, Timer stoppt |
+| T11 | Timer-Funktion | ✅ OK | Zählt korrekt in Echtzeit |
+| T12 | Vibration bei Ereignis | ✅ OK | Haptisches Feedback funktioniert (wenn aktiviert) |
+| T13 | Kalibrierung | ✅ OK | Nullpunkt wird korrekt gesetzt |
 
-**Fazit Spielmechanik:** Alle Tests bestanden (8/8)
+**Fazit Spielmechanik:** Alle Tests bestanden (7/7)
 
 ### 2.4 Steuerungseinstellungen
 
 | Nr. | Testfall | Ergebnis | Bemerkung |
 |-----|----------|----------|-----------|
-| T15 | Sensitivität ändern | ✅ OK | Änderung wirkt sich sofort aus |
-| T16 | X-Achse invertieren | ✅ OK | Steuerung wird umgekehrt |
+| T14 | Sensitivität ändern | ✅ OK | Änderung wirkt sich aus |
+| T15 | X-Achse invertieren | ✅ OK | Steuerung wird umgekehrt |
+| T16 | Vibration umschalten | ✅ OK | Ein-/Ausschalten funktioniert |
+| T17 | Sound umschalten | ✅ OK | Musik wird aktiviert/deaktiviert |
 
-**Fazit Einstellungen:** Alle Tests bestanden (2/2)
+**Fazit Einstellungen:** Alle Tests bestanden (4/4)
 
 ### 2.5 Datenspeicherung
 
 | Nr. | Testfall | Ergebnis | Bemerkung |
 |-----|----------|----------|-----------|
-| T17 | Erste Bestzeit speichern | ✅ OK | «New Personal Best!» wird angezeigt |
-| T18 | Neue Bestzeit (schneller) | ✅ OK | Zeit wird aktualisiert |
-| T19 | Keine neue Bestzeit | ✅ OK | Alte Bestzeit bleibt erhalten |
-| T20 | Nickname speichern | ✅ OK | Nickname erscheint in Highscores |
+| T18 | Erste Bestzeit speichern | ✅ OK | «New Personal Best!» wird angezeigt |
+| T19 | Neue Bestzeit (schneller) | ✅ OK | Zeit wird aktualisiert |
+| T20 | Keine neue Bestzeit | ✅ OK | Alte Bestzeit bleibt erhalten |
+| T21 | Nickname speichern | ✅ OK | Nickname erscheint in Highscores |
+| T22 | Settings speichern | ✅ OK | AsyncStorage funktioniert korrekt |
 
-**Fazit Datenspeicherung:** Alle Tests bestanden (4/4)
+**Fazit Datenspeicherung:** Alle Tests bestanden (5/5)
 
 ### 2.6 Bestenliste
 
 | Nr. | Testfall | Ergebnis | Bemerkung |
 |-----|----------|----------|-----------|
-| T21 | Highscores laden | ✅ OK | Top 10 werden korrekt sortiert angezeigt |
-| T22 | Leere Bestenliste | ✅ OK | Hinweis erscheint |
-| T23 | Podium-Anzeige | ✅ OK | Gold/Silber/Bronze-Hervorhebung funktioniert |
+| T23 | Highscores laden | ✅ OK | Top 10 werden korrekt sortiert angezeigt |
+| T24 | Leere Bestenliste | ✅ OK | Hinweis erscheint |
+| T25 | Podium-Anzeige | ✅ OK | Gold/Silber/Bronze-Hervorhebung funktioniert |
 
 **Fazit Bestenliste:** Alle Tests bestanden (3/3)
 
@@ -82,9 +84,9 @@
 
 | Nr. | Testfall | Ergebnis | Bemerkung |
 |-----|----------|----------|-----------|
-| T24 | App in Hintergrund | ✅ OK | Spielzustand wird zurückgesetzt |
-| T25 | Schnelle Gerätebewegungen | ✅ OK | Kugel verhält sich stabil |
-| T26 | Offline-Modus | ✅ OK | Fehlermeldung bei Speicherversuch |
+| T26 | App in Hintergrund | ✅ OK | Spielzustand wird zurückgesetzt |
+| T27 | Schnelle Gerätebewegungen | ✅ OK | Kugel verhält sich stabil |
+| T28 | Offline-Modus | ✅ OK | Fehlermeldung bei Speicherversuch |
 
 **Fazit Edge Cases:** Alle Tests bestanden (3/3)
 
@@ -94,10 +96,12 @@
 |---------|-----------|--------|---------|
 | Authentifizierung | 3 | 3 | 100% |
 | Navigation | 3 | 3 | 100% |
-| Spielmechanik | 8 | 8 | 100% |
-| Einstellungen | 2 | 2 | 100% |
-| Datenspeicherung | 4 | 4 | 100% |
+| Spielmechanik | 7 | 7 | 100% |
+| Einstellungen | 4 | 4 | 100% |
+| Datenspeicherung | 5 | 5 | 100% |
 | Bestenliste | 3 | 3 | 100% |
+| Edge Cases | 3 | 3 | 100% |
+| **GESAMT** | **28** | **28** | **100%** |
 | Edge Cases | 3 | 3 | 100% |
 | **Total** | **26** | **26** | **100%** |
 
