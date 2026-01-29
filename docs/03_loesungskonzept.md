@@ -356,15 +356,15 @@ const fetchHighscores = async () => {
 
 ```typescript
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { GoogleAuthProvider, signInWithCredential, signInAnonymously } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { auth } from '../config/firebase';
 
 // Google Sign-In konfigurieren
 GoogleSignin.configure({
-  webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com'
+  webClientId: '205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com'
 });
 
-// Google Sign-In
+// Google Sign-In (einzige implementierte Methode)
 const handleGoogleSignIn = async () => {
   try {
     await GoogleSignin.hasPlayServices();
@@ -378,23 +378,6 @@ const handleGoogleSignIn = async () => {
   } catch (error) {
     // Fehlerbehandlung
   }
-};
-
-// Anonyme Anmeldung
-const handleAnonymousSignIn = async () => {
-  try {
-    await signInAnonymously(auth);
-    onLogin(); // Navigation zum Menü
-  } catch (error) {
-    // Fehlerbehandlung
-  }
-};
-
-// Gastmodus (ohne Auth)
-const handleGuestMode = () => {
-  // Direkt zum Menü navigieren
-  // Zeiten werden nicht gespeichert
-  onLogin();
 };
 ```
 

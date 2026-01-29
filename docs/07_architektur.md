@@ -10,23 +10,19 @@
 └──────────────┬──────────────────────────────────┘
                │
                ├─── Firebase Auth State Listener
-               │    (Guest Mode Support)
                │
-         ┌─────┼──────┐
-         │     │      │
-     Guest  Anonymous  Google
-         │     │      │
-         └─────┴──────┘
-                   │
-                   ▼
-              MenuScreen
-                   │
-      ┌────────────┼─────────────┐
-      │            │             │
-      ▼            ▼             ▼
- GameScreen  HighscoresScreen  Logout
-      │
-      └──> ResultScreen
+               ▼
+         Google Sign-In
+               │
+               ▼
+          MenuScreen
+               │
+      ┌────────┼─────────────┐
+      │        │             │
+      ▼        ▼             ▼
+ GameScreen  HighscoresScreen  SettingsScreen
+      │                              │
+      └──> ResultScreen          Logout
 ```
 
 ### Component Hierarchy
@@ -34,17 +30,14 @@
 App (Root)
 │
 ├─ LoginScreen
-│  ├─ Button (Play as Guest)
-│  ├─ Button (Google Sign-In)
-│  └─ Button (Anonymous Login)
+│  └─ Button (Google Sign-In)
 │
 ├─ MenuScreen
 │  ├─ Welcome Message (with nickname)
-│  ├─ Guest Warning (if guest)
-│  ├─ Nickname Editor (if logged in)
+│  ├─ Nickname Editor
 │  ├─ Button (Play Game)
 │  ├─ Button (Highscores)
-│  └─ Button (Logout/Back)
+│  └─ Button (Settings)
 │
 ├─ GameScreen (matter-js physics)
 │  ├─ Header
@@ -59,37 +52,45 @@ App (Root)
 │
 ├─ ResultScreen
 │  ├─ Time Display
-│  ├─ Guest Warning (if guest)
-│  ├─ Save Status (loading/best/not best - logged in only)
+│  ├─ Save Status (loading/best/not best)
 │  ├─ Button (Play Again)
 │  ├─ Button (View Highscores)
 │  └─ Button (Back to Menu)
 │
-└─ HighscoresScreen
-   ├─ Header (with Back Button)
-   └─ FlatList (Top 10 Scores)
-      └─ ScoreItem (rank, nickname, time)
+├─ HighscoresScreen
+│  ├─ Header (with Back Button)
+│  └─ FlatList (Top 10 Scores)
+│     └─ ScoreItem (rank, nickname, time)
+│
+└─ SettingsScreen
+   ├─ Sound Toggle
+   ├─ Vibration Toggle
+   ├─ Sensitivity Settings
+   └─ Logout Button
 ```
 
 ## Data Flow
 
 ### Authentication Flow
 ```
-User Selects Login Option
-(Google/Anonymous/Guest)
-    │
-    ▼
+User taps Google Sign-In
+     │
+     ▼
+Google OAuth 2.0
+     │
+     ▼
 Firebase Auth API
-    │
-    ├─ Success ──> onAuthStateChanged
-    │              │
-    │              ▼
-    │          Update App State
-    │              │
-    │              ▼
-    │          Navigate to Menu
-    │
-    └─ Error ──> Display Alert
+(signInWithCredential)
+     │
+     ├─ Success ──> onAuthStateChanged
+     │              │
+     │              ▼
+     │          Update App State
+     │              │
+     │              ▼
+     │          Navigate to Menu
+     │
+     └─ Error ──> Display Toast
 ```
 
 ### Game Play Flow
@@ -208,8 +209,7 @@ Display in List
 ```
 Firebase Auth Module
 │
-├─ signInAnonymously()
-├─ signInWithCredential() (Google)
+├─ signInWithCredential() (Google OAuth)
 ├─ signOut()
 └─ onAuthStateChanged()
 ```
@@ -344,9 +344,9 @@ Login (Google)
 ### Authentication Errors
 ```
 try {
-  await signInAnonymously(...)
+  await signInWithCredential(auth, credential)
 } catch (error) {
-  Alert.alert('Login Error', error.message)
+  showToast(error.message)
 }
 ```
 
@@ -439,7 +439,6 @@ try {
 │  ┌───────────────────────────────┐  │
 │  │   Authentication               │  │
 │  │   - Google Sign-In             │  │
-│  │   - Anonymous                  │  │
 │  └───────────────────────────────┘  │
 │  ┌───────────────────────────────┐  │
 │  │   Realtime Database (NoSQL)    │  │

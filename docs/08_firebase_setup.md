@@ -21,23 +21,16 @@ This guide will walk you through setting up Firebase for the Tilt Maze app.
 
 ## Step 3: Enable Authentication Methods
 
-### Anonymous Authentication
+### Google Sign-In (Required)
 
 1. In the left sidebar, click "Authentication"
 2. Click "Get started" if you haven't used Authentication before
 3. In the "Sign-in method" tab
-4. Click on "Anonymous"
+4. Click on "Google"
 5. Enable the toggle
-6. Click "Save"
-
-### Google Sign-In
-
-1. In the "Sign-in method" tab
-2. Click on "Google"
-3. Enable the toggle
-4. Add a project support email
-5. Click "Save"
-6. **Important**: Copy the Web Client ID for your app configuration
+6. Add a project support email
+7. Click "Save"
+8. **Important**: Copy the Web Client ID for your app configuration
 
 #### Configure Google OAuth for Expo
 
@@ -140,7 +133,7 @@ const firebaseConfig = {
 ## Troubleshooting
 
 ### Authentication Errors
-- **"auth/operation-not-allowed"**: Make sure Google and Anonymous authentication are enabled in Firebase Console
+- **"auth/operation-not-allowed"**: Make sure Google authentication is enabled in Firebase Console
 - **"Google Sign-In Error"**: Verify your Google OAuth client IDs are correctly configured
 
 ### Database Errors
