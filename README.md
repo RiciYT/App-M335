@@ -67,35 +67,40 @@ Die App «Tilt Maze» kombiniert klassische Labyrinth-Spiele mit moderner Sensor
 
 | Screen | Beschreibung | Navigationsmöglichkeiten |
 |--------|--------------|--------------------------|
-| **LoginScreen** | Anmeldebildschirm mit Optionen für Google-Login, anonyme Anmeldung oder Gastmodus | → MenuScreen |
-| **MenuScreen** | Hauptmenü mit Willkommensnachricht, Nickname-Bearbeitung (für angemeldete Benutzer) und Navigation zu Spiel oder Bestenliste | → GameScreen, → HighscoresScreen, → LoginScreen (Logout) |
-| **GameScreen** | Spielbildschirm mit Labyrinth, beweglicher Kugel, Zielfeld, Timer und Einstellungen für Neigungssteuerung | → ResultScreen (bei Spielende), → MenuScreen (Zurück) |
+| **LoginScreen** | Anmeldebildschirm mit Google-Login | → MenuScreen |
+| **MenuScreen** | Hauptmenü mit Willkommensnachricht, Nickname-Bearbeitung und Navigation zu Spiel, Bestenliste oder Einstellungen | → GameScreen, → HighscoresScreen, → SettingsScreen |
+| **GameScreen** | Spielbildschirm mit Labyrinth, beweglicher Kugel (Neigungssteuerung), Zielfeld und Timer | → ResultScreen (bei Spielende), → MenuScreen (Zurück) |
 | **ResultScreen** | Ergebnisanzeige mit Zeit, Speicherstatus (neuer Rekord / nicht Rekord) und Optionen für erneutes Spielen | → GameScreen, → HighscoresScreen, → MenuScreen |
 | **HighscoresScreen** | Bestenliste mit Top 10 Spielzeiten, sortiert nach kürzester Zeit | → MenuScreen |
+| **SettingsScreen** | Einstellungen für Sound, Vibration, Tilt-Parameter und Logout | → MenuScreen |
 
 #### Auflistung aller Funktionalitäten
 
 1. **Benutzerauthentifizierung**
-   - Google Sign-In
-   - Anonyme Anmeldung
-   - Gastmodus (ohne Speicherung)
+   - Google Sign-In (OAuth 2.0)
+   - Logout-Funktion
 
 2. **Spielfunktionen**
-   - Kugelsteuerung durch Geräteneigung (Accelerometer)
-   - Physik-Engine für realistische Kugelbewegung
-   - Labyrinth mit Hindernissen (Wände)
+   - Kugelsteuerung durch Geräteneigung (Accelerometer + DeviceMotion)
+   - Physik-Engine für realistische Kugelbewegung (matter-js)
+   - Labyrinth mit Zick-Zack-Hindernissen (Wände)
    - Kollisionserkennung (Wände und Zielfeld)
    - Zeitmessung mit Millisekunden-Genauigkeit
-   - Einstellbare Steuerungsparameter (Sensitivität, Deadzone, Glättung)
+   - Kalibrierbare Neigungssteuerung (Nullpunkt-Anpassung)
+   - Einstellbare Steuerungsparameter (Sensitivität, Invert X, Deadzone, Glättung)
+   - Haptisches Feedback (Vibration, ein-/ausschaltbar)
+   - Hintergrundmusik (ein-/ausschaltbar)
 
 3. **Datenspeicherung**
-   - Speicherung der Bestzeiten in Firebase Realtime Database
-   - Nickname-Verwaltung pro Benutzer
+   - Speicherung der Bestzeiten in Firebase Realtime Database (`scores/{uid}`)
+   - Nickname-Verwaltung pro Benutzer (`users/{uid}/nickname`)
    - Automatische Aktualisierung bei neuer Bestzeit
+   - Lokale App-Einstellungen (AsyncStorage): Sound, Vibration, Tilt-Parameter
 
 4. **Bestenliste**
    - Anzeige der Top 10 Spieler mit kürzesten Zeiten
    - Farbliche Hervorhebung der Podiumsplätze (Gold, Silber, Bronze)
+   - Echtzeit-Synchronisation mit Firebase
 
 ---
 
@@ -103,70 +108,101 @@ Die App «Tilt Maze» kombiniert klassische Labyrinth-Spiele mit moderner Sensor
 
 #### Sensoren/Aktoren (mindestens 2)
 
-| Sensor/Aktor | Beschreibung | Verwendung in der App |
-|--------------|--------------|----------------------|
-| **Accelerometer (Beschleunigungssensor)** | Misst die Beschleunigung des Geräts in drei Achsen (x, y, z). | Die x- und y-Achsen werden verwendet, um die Neigung des Geräts zu erfassen. Diese Werte steuern die Gravitation in der Physik-Engine, wodurch sich die Kugel in Neigungsrichtung bewegt. Die z-Achse wird für das 2D-Spielkonzept ignoriert. |
-| **Vibration (Haptic Feedback)** | Erzeugt taktiles Feedback durch Vibration des Geräts. | Kann bei Kollisionen mit Wänden oder beim Erreichen des Ziels aktiviert werden, um den Spielenden ein physisches Feedback zu geben. (Erweiterungsmöglichkeit) |
+| Sensor/Aktor | Beschreibung | Verwendung in der App | Code-Referenz |
+|--------------|--------------|----------------------|---------------|
+| **1. Accelerometer (Beschleunigungssensor)** | Misst die Beschleunigung des Geräts auf der X-Achse. | Die X-Achse wird verwendet, um die horizontale Neigung des Geräts zu erfassen. Diese Werte steuern die horizontale Gravitation in der Physik-Engine, wodurch sich die Kugel nach links/rechts bewegt. Die Y-Achse (vertikale Gravitation) bleibt konstant. | `src/hooks/useTiltControl.ts` (Zeilen 2, 58-86) |
+| **2. DeviceMotion (Gyroskop)** | Erfasst die Geräterotation (Gamma-Winkel) für präzise Neigungsmessung. | Wird für die Kalibrierung und präzisere Neigungssteuerung verwendet. Ermöglicht das Setzen eines individuellen Nullpunkts (Kalibrierung). | `src/input/tiltInput.ts` (Zeilen 8, 54-87) |
+| **3. Vibration (Haptic Feedback)** | Erzeugt taktiles Feedback durch Vibration des Geräts. | Bei Kollisionen mit Wänden oder beim Erreichen des Ziels wird das Gerät kurz vibriert (100ms), um den Spielenden physisches Feedback zu geben. | `src/screens/GameScreen.tsx` (Zeile 2, verwendet mit `Vibration.vibrate()`) |
 
-**Technische Details zum Accelerometer:**
-- Update-Intervall: 50 ms (20 Updates pro Sekunde)
-- Deadzone: 0.05 (kleine Bewegungen werden ignoriert)
-- Glättung: Alpha-Wert 0.3 (Tiefpassfilter)
-- Sensitivität: Einstellbar zwischen 0.3 und 3.0
+**Technische Details:**
+- **Update-Intervall:** 16 ms (60 Updates pro Sekunde)
+- **Deadzone:** 0.02 (kleine Bewegungen werden ignoriert)
+- **Glättung:** Alpha-Wert 0.3 (Low-pass Filter)
+- **Sensitivität:** Einstellbar (Standard 1.0)
+- **Kalibrierung:** Kalibrierungsfunktion in `src/input/tiltInput.ts` (Zeilen 114-119)
 
 #### Persistente Speicherung
 
-| Technologie | Begründung |
-|-------------|------------|
-| **Firebase Realtime Database** | Firebase bietet eine serverlose, echtzeitfähige NoSQL-Datenbank, die sich ideal für die Speicherung von Spielständen und Benutzerdaten eignet. Die Synchronisation erfolgt automatisch über alle Geräte, und die Integration mit Firebase Authentication ermöglicht eine nahtlose Benutzerverwaltung. Die kostenlose Stufe (Spark Plan) ist für die Anforderungen dieser App ausreichend. |
+| Technologie | Verwendung | Begründung | Code-Referenz |
+|-------------|-----------|------------|---------------|
+| **Firebase Realtime Database** | Speicherung von Bestzeiten und Nicknames | Firebase bietet eine serverlose, echtzeitfähige NoSQL-Datenbank, die sich ideal für die Speicherung von Spielständen und Benutzerdaten eignet. Die Synchronisation erfolgt automatisch über alle Geräte, und die Integration mit Firebase Authentication ermöglicht eine nahtlose Benutzerverwaltung. Die kostenlose Stufe (Spark Plan) ist für die Anforderungen dieser App ausreichend. | `src/config/firebase.ts` (Zeile 27), `src/screens/ResultScreen.tsx` (Zeilen 37-80), `src/screens/HighscoresScreen.tsx` (Zeilen 26-44) |
+| **AsyncStorage** | Lokale Speicherung von App-Einstellungen | Persistente lokale Speicherung für Benutzereinstellungen (Sound, Vibration, Tilt-Parameter), die unabhängig vom Login-Status erhalten bleiben. | `src/hooks/useAppSettings.ts` (Zeilen 2, 19, 34), `src/screens/SettingsScreen.tsx` (Zeile 3), `src/config/firebase.ts` (Zeilen 5, 24) |
 
-**Datenbankstruktur:**
+**Firebase Datenbankstruktur:**
 ```
+Root (https://expo-app-m335-default-rtdb.europe-west1.firebasedatabase.app)
 ├── users/
 │   └── {userId}/
-│       └── nickname: "Spielername"
+│       └── nickname: "Spielername" (String)
 │
 └── scores/
     └── {userId}/
-        ├── userId: "abc123"
-        ├── email: "benutzer@beispiel.ch"
-        ├── nickname: "Spielername"
-        ├── time: 5420 (Millisekunden)
-        └── timestamp: 1704902400000
+        ├── userId: "abc123" (String)
+        ├── email: "benutzer@beispiel.ch" (String)
+        ├── nickname: "Spielername" (String)
+        ├── time: 5420 (Number, Millisekunden)
+        └── timestamp: 1704902400000 (Number, Unix-Timestamp)
 ```
+
+**AsyncStorage-Struktur:**
+```json
+Key: "@tiltmaze_settings"
+Value: {
+  "soundEnabled": true/false,
+  "vibrationEnabled": true/false,
+  "sensitivity": 1.0,
+  "invertX": false,
+  "deadzone": 0.02,
+  "smoothingAlpha": 0.3
+}
+```
+
+**Datenbankoperationen:**
+- **Scores speichern:** `src/screens/ResultScreen.tsx` (Zeilen 52-70)
+- **Nickname speichern:** `src/screens/MenuScreen.tsx` (Zeilen 96, 101)
+- **Highscores laden:** `src/screens/HighscoresScreen.tsx` (Zeile 28)
+- **Settings speichern:** `src/screens/SettingsScreen.tsx` (Zeile 127)
 
 #### Authentifizierung
 
-| Technologie | Begründung |
-|-------------|------------|
-| **Firebase Authentication** | Firebase Authentication bietet mehrere Anmeldemethoden (Google, anonym) in einem einheitlichen API. Die Integration mit der Firebase Realtime Database ermöglicht eine sichere Zuordnung von Benutzerdaten. Die SDK übernimmt Token-Management und Session-Handling automatisch. |
+| Technologie | Verwendung | Begründung | Code-Referenz |
+|-------------|-----------|------------|---------------|
+| **Firebase Authentication** | Google Sign-In (OAuth 2.0) | Firebase Authentication bietet eine sichere OAuth 2.0-Implementierung für Google Sign-In. Die Integration mit der Firebase Realtime Database ermöglicht eine sichere Zuordnung von Benutzerdaten. Die SDK übernimmt Token-Management und Session-Handling automatisch. Persistence erfolgt über React Native AsyncStorage. | `src/config/firebase.ts` (Zeilen 23-24), `src/screens/LoginScreen.tsx` (Zeilen 1-100), `App.tsx` (Zeilen 29-39) |
 
-**Unterstützte Anmeldemethoden:**
-- Google Sign-In (OAuth 2.0)
-- Anonyme Anmeldung
-- Gastmodus (ohne Firebase-Authentifizierung)
+**Implementierte Anmeldemethoden:**
+- **Google Sign-In (OAuth 2.0):** Einzige implementierte Methode
+  - Google Client ID: `205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com`
+  - Konfiguration: `src/screens/LoginScreen.tsx` (Zeilen 21-23)
+  - Login-Handler: `src/screens/LoginScreen.tsx` (Zeilen 62-100)
+
+**Auth-Datenfluss:**
+1. User tippt "Login with Google" → `handleGoogleSignIn()`
+2. Google Sign-In Dialog öffnet sich → User wählt Konto
+3. ID-Token wird von Google zurückgegeben → `GoogleAuthProvider.credential(idToken)`
+4. `signInWithCredential(auth, credential)` authentifiziert bei Firebase
+5. `onAuthStateChanged()` Listener in `App.tsx` erkennt Login → Navigation zu MenuScreen
+6. Auth-State wird in React Native AsyncStorage persistiert
+
+**Logout:**
+- Implementiert in `src/screens/SettingsScreen.tsx` (Zeilen 139-147)
+- Funktion: `signOut(auth)` → Rückkehr zum LoginScreen
 
 ---
 
 ### 2.3 Testplan
 
-| Testfall-Nr. | Beschreibung | Erwartetes Resultat | Effektives Resultat | Status |
-|--------------|--------------|---------------------|---------------------|--------|
-| T01 | Anmeldung mit Google Sign-In | Erfolgreiche Authentifizierung, Weiterleitung zum Menü | Erfolgreiche Anmeldung, Benutzer wird im Menü begrüsst | OK |
-| T02 | Anonyme Anmeldung | Erfolgreiche Authentifizierung, Weiterleitung zum Menü | Anonymer Benutzer wird erstellt und zum Menü weitergeleitet | OK |
-| T03 | Gastmodus starten | Spielen ohne Anmeldung möglich, Warnung dass Punkte nicht gespeichert werden | Gastmodus funktioniert, Warnhinweis wird angezeigt | OK |
-| T04 | Kugelsteuerung durch Neigung | Kugel bewegt sich in Neigungsrichtung des Geräts | Kugel reagiert korrekt auf Neigung in alle Richtungen | OK |
-| T05 | Kollisionserkennung mit Wänden | Kugel prallt von Wänden ab, kann Spielfeld nicht verlassen | Kollisionen werden erkannt, Kugel bleibt im Spielfeld | OK |
-| T06 | Ziel erreichen | Timer stoppt, Gewinn-Nachricht erscheint, Weiterleitung zu Ergebnissen | «You Won!» wird angezeigt, automatische Weiterleitung nach 0.5 Sekunden | OK |
-| T07 | Bestzeit speichern (neue Bestzeit) | Zeit wird gespeichert, Nachricht «New Personal Best!» erscheint | Speicherung erfolgreich, Bestätigungsnachricht wird angezeigt | OK |
-| T08 | Bestzeit speichern (langsamer als Bestzeit) | Bestehende Zeit bleibt erhalten, Hinweis zum Weiterüben | Bestzeit bleibt unverändert, Motivationsnachricht erscheint | OK |
-| T09 | Bestenliste laden | Top 10 Zeiten werden sortiert angezeigt | Zeiten werden korrekt geladen und nach Zeit aufsteigend sortiert | OK |
-| T10 | Nickname speichern | Nickname wird in Datenbank gespeichert und in Bestenliste angezeigt | Nickname wird gespeichert und in Bestenliste korrekt angezeigt | OK |
-| T11 | Logout-Funktion | Benutzer wird abgemeldet, Weiterleitung zum Login-Screen | Abmeldung erfolgreich, Login-Screen wird angezeigt | OK |
-| T12 | Steuerungseinstellungen anpassen | Änderungen an Sensitivität/Deadzone werden sofort wirksam | Einstellungen können im Spiel angepasst werden und wirken sich direkt aus | OK |
-| T13 | App im Hintergrund und Vordergrund | Spielzustand bleibt erhalten oder wird korrekt zurückgesetzt | Spiel wird bei Rückkehr in den Vordergrund fortgesetzt | OK |
-| T14 | Keine Internetverbindung beim Login | Fehlermeldung wird angezeigt | Fehlermeldung wird korrekt angezeigt | OK |
-| T15 | Timer-Funktion | Timer zählt in Echtzeit hoch und zeigt korrekte Zeit an | Timer wird alle 100ms aktualisiert, Anzeige im Format X.XXs | OK |
+Die vollständige Testdokumentation befindet sich in:
+- **Testplan:** [`docs/02_testplan.md`](./docs/02_testplan.md) - 28 Testfälle (T01-T28)
+- **Testbericht:** [`docs/05_testbericht.md`](./docs/05_testbericht.md) - Alle Tests bestanden (28/28, 100%)
+
+**Testübersicht:**
+- **Authentifizierung (3):** Google Sign-In, Logout, Offline-Login
+- **Navigation (3):** Screen-Wechsel zwischen allen 6 Screens
+- **Spielmechanik (7):** Steuerung, Kollision, Timer, Vibration, Kalibrierung
+- **Einstellungen (4):** Sensitivität, Invert X, Vibration, Sound
+- **Datenspeicherung (5):** Bestzeiten, Nickname, AsyncStorage
+- **Bestenliste (3):** Top 10, Podium, leere Liste
+- **Edge Cases (3):** Hintergrund, schnelle Bewegungen, Offline-Modus
 
 ---
 
@@ -390,28 +426,45 @@ Alle geplanten Funktionalitäten wurden erfolgreich implementiert:
 
 | Funktionalität | Status | Implementierungsdetails |
 |----------------|--------|------------------------|
-| Benutzerauthentifizierung | ✅ Umgesetzt | LoginScreen.tsx mit Google OAuth, anonymer Anmeldung und Gastmodus |
-| Kugelsteuerung | ✅ Umgesetzt | GameScreen.tsx mit Accelerometer und matter-js Physik-Engine |
-| Labyrinth mit Hindernissen | ✅ Umgesetzt | Drei horizontale Maze-Wände mit Kollisionserkennung |
-| Zeitmessung | ✅ Umgesetzt | Millisekunden-genauer Timer mit 100ms Aktualisierung |
+| Benutzerauthentifizierung | ✅ Umgesetzt | LoginScreen.tsx mit Google OAuth (einzige implementierte Methode) |
+| Kugelsteuerung | ✅ Umgesetzt | GameScreen.tsx mit Accelerometer + DeviceMotion, matter-js Physik-Engine |
+| Labyrinth mit Hindernissen | ✅ Umgesetzt | 8 horizontale Maze-Wände im Zick-Zack-Muster mit Kollisionserkennung |
+| Zeitmessung | ✅ Umgesetzt | Millisekunden-genauer Timer mit Echtzeit-Anzeige |
 | Bestzeit-Speicherung | ✅ Umgesetzt | ResultScreen.tsx mit Firebase Realtime Database |
-| Bestenliste | ✅ Umgesetzt | HighscoresScreen.tsx mit Top 10 Anzeige |
+| Bestenliste | ✅ Umgesetzt | HighscoresScreen.tsx mit Top 10 Anzeige und Podium |
 | Nickname-System | ✅ Umgesetzt | MenuScreen.tsx mit Bearbeitung und Speicherung |
-| Steuerungseinstellungen | ✅ Umgesetzt | In-Game Settings Modal mit Live-Anpassung |
+| Steuerungseinstellungen | ✅ Umgesetzt | SettingsScreen.tsx mit Sound, Vibration, Tilt-Parameter |
+| Hintergrundmusik | ✅ Umgesetzt | Audio-Player mit expo-audio (ein-/ausschaltbar) |
+| Vibration (Haptic Feedback) | ✅ Umgesetzt | Bei Spielereignissen, ein-/ausschaltbar |
 
 ### Umsetzung der Sensoren
 
-**Accelerometer:**
-- Expo Sensors Library für plattformübergreifenden Zugriff
-- Nur x- und y-Achse verwendet (z-Achse für 2D-Spiel irrelevant)
-- Tiefpassfilter für Glättung implementiert
-- Konfigurierbares Update-Intervall (20–100ms)
+**Sensor 1: Accelerometer**
+- Expo Sensors Library (`expo-sensors`) für plattformübergreifenden Zugriff
+- Nur X-Achse verwendet für horizontale Steuerung
+- Y-Achse (Gravitation) ist konstant und NICHT vom Sensor gesteuert
+- Low-pass Filter für Glättung implementiert
+- Update-Intervall: 16ms (60 FPS)
 - Deadzone zur Vermeidung von Jitter bei ruhig gehaltenem Gerät
+- Implementierung: `src/hooks/useTiltControl.ts`
+
+**Sensor 2: DeviceMotion (Gyroskop)**
+- Expo Sensors Library (`expo-sensors`) DeviceMotion API
+- Erfasst Geräterotation (gamma) für präzise Neigungssteuerung
+- Ermöglicht Kalibrierung (Nullpunkt-Anpassung)
+- Response Curve mit Power 1.5 für bessere Kontrolle
+- Implementierung: `src/input/tiltInput.ts`
+
+**Aktor: Vibration**
+- React Native Vibration API
+- 100ms Vibration bei Spielereignissen
+- Ein-/ausschaltbar in Settings
 
 **Physikalische Parameter:**
-- Ball-Radius: 15 Pixel
-- Ziel-Radius: 30 Pixel
-- Restitution (Bounciness): 0.7
+- Ball-Radius: 16 Pixel
+- Target-Radius: 32 Pixel
+- Constant Gravity Y: 0.8 (Downward)
+- Horizontal Gravity X: Controlled by tilt (variable)
 - Friction: 0.05
 - Air Friction: 0.02
 
@@ -419,11 +472,12 @@ Alle geplanten Funktionalitäten wurden erfolgreich implementiert:
 
 | Ziel | Erreicht | Anmerkung |
 |------|----------|-----------|
-| Intuitive Neigungssteuerung | ✅ | Anpassbare Sensitivität, Inversion und Deadzone |
-| Physikalisch realistische Kugelbewegung | ✅ | matter-js Engine mit Reibung und Kollisionen |
-| Benutzeridentifikation | ✅ | Google Login, Anonym Login, Gastmodus |
-| Persistente Speicherung | ✅ | Firebase Realtime Database |
-| Wettbewerb durch Bestenliste | ✅ | Top 10 mit Podium-Hervorhebung |
+| Intuitive Neigungssteuerung | ✅ | Accelerometer + DeviceMotion mit Kalibrierung, anpassbare Sensitivität, Inversion und Deadzone |
+| Physikalisch realistische Kugelbewegung | ✅ | matter-js Engine mit Gravitation und Kollisionen |
+| Benutzeridentifikation | ✅ | Google Sign-In (OAuth 2.0) |
+| Persistente Speicherung | ✅ | Firebase Realtime Database + AsyncStorage |
+| Wettbewerb durch Bestenliste | ✅ | Top 10 mit Podium-Hervorhebung (Gold/Silber/Bronze) |
+| Hintergrundmusik & Vibration | ✅ | Audio-Player und haptisches Feedback, beide ein-/ausschaltbar |
 
 ### Verwaltung des Projekts über GitHub
 
@@ -694,10 +748,18 @@ Diese Tabelle zeigt, welche Anforderungen des Kompetenznachweises durch welche D
 
 | Anforderung | Status | Nachweis |
 |-------------|--------|----------|
-| **Tests durchgeführt** | ✅ | [`docs/05_testbericht.md`](docs/05_testbericht.md) |
-| → Alle Testfälle ausgeführt | ✅ | `docs/05_testbericht.md` - Abschnitt 2 (26/26 Tests OK) |
+| **Testplan erstellt** | ✅ | `docs/02_testplan.md` (28 Testfälle T01-T28) |
+| → Authentifizierung-Tests | ✅ | `docs/02_testplan.md` - Abschnitt 3.1 (T01-T03) |
+| → Navigation-Tests | ✅ | `docs/02_testplan.md` - Abschnitt 3.2 (T04-T06) |
+| → Spielmechanik-Tests | ✅ | `docs/02_testplan.md` - Abschnitt 3.3 (T07-T13) |
+| → Settings-Tests | ✅ | `docs/02_testplan.md` - Abschnitt 3.4 (T14-T17) |
+| → Datenspeicherung-Tests | ✅ | `docs/02_testplan.md` - Abschnitt 3.5 (T18-T22) |
+| → Bestenliste-Tests | ✅ | `docs/02_testplan.md` - Abschnitt 3.6 (T23-T25) |
+| → Edge Case-Tests | ✅ | `docs/02_testplan.md` - Abschnitt 3.7 (T26-T28) |
+| **Tests durchgeführt** | ✅ | `docs/05_testbericht.md` |
+| → Alle Testfälle ausgeführt | ✅ | `docs/05_testbericht.md` - Abschnitt 2 (28/28 Tests OK) |
 | → Ergebnisse dokumentiert | ✅ | `docs/05_testbericht.md` - Abschnitt 3 (100% bestanden) |
-| → Fehler behoben | ✅ | `docs/05_testbericht.md` - Abschnitt 4.1 (5 Fehler behoben) |
+| → Test auf physischem Gerät | ✅ | Android 14 Smartphone |
 | → Edge Cases getestet | ✅ | `docs/05_testbericht.md` - Abschnitt 2.7 |
 
 ### Abgabeform

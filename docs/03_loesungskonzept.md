@@ -97,60 +97,92 @@ App (Root)
 ### 4.1 Accelerometer (Sensor 1)
 
 #### Verwendungszweck
-Der Beschleunigungssensor erfasst die Neigung des Geräts in 3 Achsen (x, y, z). Für das 2D-Spiel werden nur x- und y-Achse verwendet.
+Der Beschleunigungssensor erfasst die Beschleunigung des Geräts auf der X-Achse. Nur die X-Achse wird für die horizontale Kugelsteuerung verwendet. Die Y-Achse (vertikale Gravitation) ist konstant und wird NICHT vom Sensor beeinflusst.
 
 #### Technische Umsetzung
 
-**Datei:** `src/input/tiltInput.ts`
+**Datei:** `src/hooks/useTiltControl.ts`
 
 ```typescript
-import { Accelerometer } from 'expo-sensors';
+import { Accelerometer, AccelerometerMeasurement } from 'expo-sensors';
 
 // Sensor-Listener starten
-export function startTilt(config: TiltConfig) {
-  Accelerometer.setUpdateInterval(config.updateInterval); // 50ms
+Accelerometer.setUpdateInterval(settings.updateInterval); // 16ms (60 FPS)
+
+subscriptionRef.current = Accelerometer.addListener((data: AccelerometerMeasurement) => {
+  const { x } = data; // NUR X-Achse wird verwendet
   
-  subscription = Accelerometer.addListener((data) => {
-    const { x, y } = data;
-    
-    // Tiefpassfilter für Glättung
-    const alpha = config.smoothingAlpha;
-    smoothedX = alpha * x + (1 - alpha) * smoothedX;
-    smoothedY = alpha * y + (1 - alpha) * smoothedY;
-    
-    // Deadzone (kleine Bewegungen ignorieren)
-    if (Math.abs(smoothedX) < config.deadzone) smoothedX = 0;
-    if (Math.abs(smoothedY) < config.deadzone) smoothedY = 0;
-    
-    // Optional: Invertierung
-    if (config.invertX) smoothedX = -smoothedX;
-    
-    // Werte für Physik-Engine bereitstellen
-    currentTilt = { x: smoothedX, y: smoothedY };
-  });
-}
-```
-
-**Datei:** `src/screens/GameScreen.tsx`
-
-```typescript
-// In der Game-Loop: Physik-Engine mit Neigungswerten aktualisieren
-const tiltX = getTiltX();
-const force = tiltX * sensitivity * 0.0015;
-Matter.Body.applyForce(ball, ball.position, { x: force, y: 0 });
+  // Low-pass filter für Glättung
+  smoothedXRef.current = lerp(smoothedXRef.current, x, smoothingAlpha);
+  
+  // Deadzone anwenden
+  let filteredX = applyDeadzone(smoothedXRef.current, deadzone);
+  
+  // Optional: Invertierung
+  if (invertX) filteredX = -filteredX;
+  
+  // Horizontal gravity setzen (X-Achse)
+  engine.gravity.x = filteredX * sensitivity;
+  // Y-Gravitation bleibt konstant: engine.gravity.y = CONSTANT_GRAVITY_Y
+});
 ```
 
 #### Konfigurationsparameter
 
 | Parameter | Standardwert | Beschreibung |
 |-----------|--------------|--------------|
-| `updateInterval` | 50ms | Abtastrate des Sensors |
-| `deadzone` | 0.05 | Schwelle für minimale Bewegung |
+| `updateInterval` | 16ms | Abtastrate des Sensors (60 FPS) |
+| `deadzone` | 0.02 | Schwelle für minimale Bewegung |
 | `smoothingAlpha` | 0.3 | Glättungsfaktor (0–1) |
 | `sensitivity` | 1.0 | Multiplikator für Steuerungsempfindlichkeit |
 | `invertX` | false | X-Achse invertieren |
 
-### 4.2 Vibration (Aktor 1)
+### 4.2 DeviceMotion (Sensor 2)
+
+#### Verwendungszweck
+DeviceMotion erfasst die Geräterotation (gamma-Winkel) für präzisere Neigungssteuerung und ermöglicht die Kalibrierung des Nullpunkts.
+
+#### Technische Umsetzung
+
+**Datei:** `src/input/tiltInput.ts`
+
+```typescript
+import { DeviceMotion, DeviceMotionMeasurement } from 'expo-sensors';
+
+DeviceMotion.setUpdateInterval(16); // 60 FPS
+
+subscription = DeviceMotion.addListener((data: DeviceMotionMeasurement) => {
+  const rotation = data.rotation;
+  if (!rotation) return;
+  
+  // gamma = links-rechts Neigung in Radians (-π bis π)
+  const maxTiltAngle = Math.PI / 4; // 45 Grad
+  let tiltValue = rotation.gamma / maxTiltAngle;
+  
+  // Kalibrierungsoffset anwenden
+  tiltValue -= calibrationOffset;
+  
+  // Clamp auf -1 bis 1
+  tiltValue = clamp(tiltValue, -1, 1);
+  
+  // Deadzone und Response Curve
+  let processed = applyDeadzone(tiltValue, deadzone);
+  processed = applyResponseCurve(processed, curvePower); // Power 1.5
+  
+  // Smoothing
+  smoothedTiltX = lerp(smoothedTiltX, processed, smoothingAlpha);
+});
+```
+
+**Kalibrierungsfunktion:**
+```typescript
+export function calibrateTilt(): void {
+  calibrationOffset = rawTiltX; // Aktuellen Winkel als Nullpunkt setzen
+  smoothedTiltX = 0;
+}
+```
+
+### 4.3 Vibration (Aktor 1)
 
 #### Verwendungszweck
 Haptisches Feedback bei Spielereignissen (Kollisionen, Spielende).
@@ -167,6 +199,8 @@ if (vibrationEnabled) {
   Vibration.vibrate(100); // 100ms Vibration
 }
 ```
+
+**Steuerung:** Ein-/Ausschaltbar in SettingsScreen über AsyncStorage.
 
 ## 5. Persistenz (Firebase Realtime Database)
 
