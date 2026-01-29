@@ -6,7 +6,7 @@
  */
 
 import { DeviceMotion, DeviceMotionMeasurement } from 'expo-sensors';
-import { applyDeadzone, lerp, clamp } from '../config/tiltControls';
+import { TILT_CONTROLS, applyDeadzone, lerp, clamp } from '../config/tiltControls';
 
 export interface TiltOptions {
   invertX: boolean;
@@ -22,11 +22,11 @@ let rawTiltX = 0;
 let smoothedTiltX = 0;
 let calibrationOffset = 0;
 let currentOptions: TiltOptions = {
-  invertX: false,
-  smoothingAlpha: 0.5,
-  deadzone: 0.02,
-  curvePower: 1.15,
-  updateInterval: 16,
+  invertX: TILT_CONTROLS.INVERT_X,
+  smoothingAlpha: TILT_CONTROLS.SMOOTHING_ALPHA,
+  deadzone: TILT_CONTROLS.DEADZONE,
+  curvePower: TILT_CONTROLS.CURVE_POWER,
+  updateInterval: TILT_CONTROLS.UPDATE_INTERVAL,
 };
 
 /**
@@ -52,8 +52,8 @@ export function startTilt(options: TiltOptions): void {
   DeviceMotion.setUpdateInterval(options.updateInterval);
 
   subscription = DeviceMotion.addListener((data: DeviceMotionMeasurement) => {
-    // Use rotation rate (gyroscope) combined with orientation for best precision
-    // DeviceMotion provides rotation which gives us device orientation
+    // Use device orientation from the DeviceMotion API
+    // The rotation property provides device orientation angles (not rotation rate)
     const rotation = data.rotation;
     if (!rotation) return;
 
