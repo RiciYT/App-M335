@@ -390,17 +390,6 @@ Diese Tabelle zeigt die Zuordnung der PDF-Anforderungen (`08.1_Kompetenznachweis
 | **a) Ergebnisse dokumentiert** | Dokumentation | [docs/05_testbericht.md](docs/05_testbericht.md) Abschnitt 3 (28/28 Tests bestanden, 100%) |
 | **Korrekturen vorgenommen** | Dokumentation | [docs/05_testbericht.md](docs/05_testbericht.md) Abschnitt 4 (behobene Fehler B01-B05) |
 
-### Abgabeform
-
-| Anforderung (PDF) | Status | Nachweis |
-|-------------------|--------|----------|
-| **GitHub Repository** | ✅ | [github.com/RiciYT/App-M335](https://github.com/RiciYT/App-M335) |
-| **.zip ohne node_modules** | ✅ | Kann via GitHub Download erstellt werden |
-| **.apk Deployment-Datei** | ✅ | Via EAS Build: `eas build --platform android --profile preview` |
-| **Dokumentation als .md** | ✅ | `README.md`, `docs/*.md` |
-| **Selbstbewertung Excel** | ⚠️ | Separat einzureichen |
-
----
 
 ## Technologie-Stack
 
