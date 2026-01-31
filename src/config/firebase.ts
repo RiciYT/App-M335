@@ -3,17 +3,40 @@ import { initializeApp } from 'firebase/app';
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
-// Firebase configuration
+// Get config from app.config.js extra
+const extra = Constants.expoConfig?.extra ?? {};
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'firebaseApiKey',
+  'firebaseAuthDomain',
+  'firebaseDatabaseUrl',
+  'firebaseProjectId',
+  'firebaseStorageBucket',
+  'firebaseMessagingSenderId',
+  'firebaseAppId',
+];
+
+const missingVars = requiredEnvVars.filter((key) => !extra[key]);
+if (missingVars.length > 0) {
+  console.warn(
+    `Missing Firebase environment variables: ${missingVars.join(', ')}. ` +
+    'Please check your .env file and app.config.js setup.'
+  );
+}
+
+// Firebase configuration from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyCSKogzBS0Cs6Xg00OHbCm4tF-MEt_atW4",
-  authDomain: "expo-app-m335.firebaseapp.com",
-  databaseURL: "https://expo-app-m335-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "expo-app-m335",
-  storageBucket: "expo-app-m335.firebasestorage.app",
-  messagingSenderId: "205887865955",
-  appId: "1:205887865955:web:dfda1888e09e10e7a6e456",
-  measurementId: "G-8M9VQQD567"
+  apiKey: extra.firebaseApiKey,
+  authDomain: extra.firebaseAuthDomain,
+  databaseURL: extra.firebaseDatabaseUrl,
+  projectId: extra.firebaseProjectId,
+  storageBucket: extra.firebaseStorageBucket,
+  messagingSenderId: extra.firebaseMessagingSenderId,
+  appId: extra.firebaseAppId,
+  measurementId: extra.firebaseMeasurementId
 };
 
 // Initialize Firebase

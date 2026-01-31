@@ -33,6 +33,11 @@ yarn-error.*
 # local env files
 .env
 .env.*
+!.env.example
+
+# Sensitive configuration files
+credentials.json
+google-services.json
 
 # editor
 .vscode/

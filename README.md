@@ -53,34 +53,43 @@ Dann den QR-Code mit Expo Go scannen.
 
 ## Konfiguration
 
-### Firebase
+### Umgebungsvariablen
 
-Die Firebase-Konfiguration befindet sich in:
-- **Datei:** `src/config/firebase.ts`
-- **Keys:** Direkt im Code (für Entwicklung)
+Die App verwendet Umgebungsvariablen für sensible Konfigurationsdaten. Erstelle eine `.env` Datei basierend auf `.env.example`:
 
-```typescript
-// src/config/firebase.ts
-const firebaseConfig = {
-  apiKey: "AIzaSyCSKogzBS0Cs6Xg00OHbCm4tF-MEt_atW4",
-  authDomain: "expo-app-m335.firebaseapp.com",
-  databaseURL: "https://expo-app-m335-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "expo-app-m335",
-  // ...
-};
+```bash
+# .env Datei erstellen
+cp .env.example .env
 ```
 
-### Google Sign-In
+Fülle die folgenden Werte in deiner `.env` Datei aus:
 
-Die Google OAuth Client-ID ist konfiguriert in:
-- **Datei:** `src/screens/LoginScreen.tsx` (Zeile 21)
-- **Web Client ID:** `205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com`
+```env
+# Firebase Configuration
+FIREBASE_API_KEY=your_firebase_api_key_here
+FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+FIREBASE_DATABASE_URL=https://your_project_id.firebasedatabase.app
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+FIREBASE_APP_ID=your_firebase_app_id
+FIREBASE_MEASUREMENT_ID=your_measurement_id
 
-### Expo/EAS
+# Google Sign-In Configuration
+GOOGLE_WEB_CLIENT_ID=your_google_web_client_id.apps.googleusercontent.com
+```
 
-- **app.json:** Expo-Konfiguration (Package: `com.riciyt.tiltmaze`, Permissions, Icons)
-- **eas.json:** EAS Build-Profile
-- **google-services.json:** Firebase Android-Konfiguration
+### Firebase & Google Services
+
+Kopiere die Beispiel-Konfigurationsdateien und fülle sie mit deinen eigenen Werten:
+
+```bash
+cp credentials.example.json credentials.json
+cp google-services.example.json google-services.json
+```
+
+- **credentials.json:** Android Keystore-Konfiguration für EAS Builds
+- **google-services.json:** Firebase Android-Konfiguration (aus Firebase Console)
 
 ---
 
@@ -259,26 +268,30 @@ Die Datei `eas.json` definiert das Build-Profil:
 }
 ```
 
-### Wichtige app.json Werte
+### Wichtige app.config.js Werte
 
-```json
-{
-  "expo": {
-    "name": "TiltMaze",
-    "slug": "app-m335",
-    "version": "1.0.0",
-    "android": {
-      "package": "com.riciyt.tiltmaze",
-      "permissions": ["android.permission.SENSORS"],
-      "googleServicesFile": "./google-services.json"
+```javascript
+// app.config.js
+export default {
+  expo: {
+    name: "TiltMaze",
+    slug: "app-m335",
+    version: "1.0.0",
+    android: {
+      package: "com.riciyt.tiltmaze",
+      permissions: ["android.permission.SENSORS"],
+      googleServicesFile: "./google-services.json"
     },
-    "extra": {
-      "eas": {
-        "projectId": "ea02cbdc-02ce-4529-a804-2cfd1dcc00c9"
-      }
+    extra: {
+      eas: {
+        projectId: "ea02cbdc-02ce-4529-a804-2cfd1dcc00c9"
+      },
+      // Loaded from .env file
+      firebaseApiKey: process.env.FIREBASE_API_KEY,
+      // ...
     }
   }
-}
+};
 ```
 
 ### Build-Befehle (APK ohne Dev Client)
