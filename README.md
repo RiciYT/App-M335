@@ -343,7 +343,6 @@ Alle Detail-Dokumentationen befinden sich im `/docs`-Ordner:
 
 ## Anforderungs-Mapping
 
-Diese Tabelle zeigt die Zuordnung der PDF-Anforderungen (`08.1_Kompetenznachweis_335_func-2025.pdf`) zu den Nachweisen:
 
 ### Aufgabe 1 – Anforderungen und Planung
 
@@ -404,5 +403,3 @@ Diese Tabelle zeigt die Zuordnung der PDF-Anforderungen (`08.1_Kompetenznachweis
 | expo-audio | 1.1.1 | Hintergrundmusik |
 
 ---
-
-*Erstellt im Rahmen des Kompetenznachweises Modul 335 – Mobile Applikation realisieren*
