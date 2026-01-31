@@ -11,6 +11,7 @@ import {
   statusCodes,
 } from '@react-native-google-signin/google-signin';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { auth } from '../config/firebase';
 import { Toast, ScreenContainer } from '../components/ui';
 
@@ -18,8 +19,18 @@ import { Toast, ScreenContainer } from '../components/ui';
 const NEON_CYAN = '#00f2ff';
 const DEEP_NAVY = '#020617';
 
+// Get Google Web Client ID from environment variables
+const googleWebClientId = Constants.expoConfig?.extra?.googleWebClientId;
+
+if (!googleWebClientId) {
+  console.warn(
+    'Missing GOOGLE_WEB_CLIENT_ID environment variable. ' +
+    'Please check your .env file and app.config.js setup.'
+  );
+}
+
 GoogleSignin.configure({
-  webClientId: '205887865955-vh3dhhluv4a1i65ku62tfdlstkctcja9.apps.googleusercontent.com',
+  webClientId: googleWebClientId,
 });
 
 interface LoginScreenProps {
